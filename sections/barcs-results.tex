@@ -400,7 +400,9 @@ near 0.5 and its effect correlation remains near zero.}
 The baseline result was not presented as a single favorable simulation.  We
 varied MOI, the high-quality-guide fraction, the number of genes, and the
 number of independent screen replicates one at a time, using five paired seeds
-at every setting (nine unique settings and 45 simulations in total).  In the
+at every setting (ten unique settings and 50 simulations in total).  Nine
+settings had at least three replicates; the one-replicate setting was a
+prespecified diagnostic boundary.  Among the supported settings, in the
 primary low--bulk--high comparison,
 BARCS-minus-MAGeCK-MLE average precision ranged only from $-0.015$ to $0.022$
 and changed sign across settings.  Thus this experiment does not support a
@@ -433,7 +435,17 @@ increased.  Rather, BARCS's relative sensitivity is largest in the
 low-replication regime, whereas MAGeCK-MLE catches up when information is
 abundant.
 
-\clearpage
+One replicate crossed from low information into non-confirmatory inference.
+BARCS retained higher average precision than MAGeCK-MLE, 0.633 versus 0.548,
+but made no discoveries at gene FDR 0.10 across the five seeds; MAGeCK-MLE's
+mean directional recall was only 0.014.  This is calibrated abstention, not
+evidence that one replicate is adequate.  edgeR-QL and limma-voom reported
+mean directional recall of 0.708 and 0.684 in the same data, but their mean
+realized FDP was 0.526 and 0.507.  DESeq2 was less inflated (FDP 0.141), yet
+still exceeded the nominal 0.10 target.  We therefore treat $R=1$ as useful
+for ranking hypotheses only and recommend independent replication before
+thresholded discovery.
+
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\textwidth]{figures/crispulator_facs_parameter_sensitivity.pdf}
@@ -444,12 +456,14 @@ varies (A) MOI, (B) high-quality-guide fraction, (C) number of genes, or
 (D) independent screen replicates while holding the other parameters at their
 baseline values.  Ranking differences remain close to zero, whereas
 directional-recall differences are usually positive but reverse at MOI 0.40
-and six replicates.}
+and six replicates.  The shaded $R=1$ region is a diagnostic boundary and not
+a recommended confirmatory design.}
 \label{fig:crispulator-sensitivity}
 \end{figure}
 
 \paragraph{Multiple count models expose the calibration--power tradeoff.}
-Across the nine scenarios, mean realized FDP was 0.094 for BARCS and 0.064 for
+Across the nine supported scenarios with $R\geq3$, mean realized FDP was 0.094
+for BARCS and 0.064 for
 MAGeCK-MLE, compared with 0.250 for edgeR-QL plus Stouffer, 0.243 for DESeq2
 plus Stouffer, and 0.230 for limma-voom plus Stouffer.  Figure~
 \ref{fig:crispulator-multimethod} makes the consequence visible.  The general
@@ -477,7 +491,9 @@ errors.  (A) Average precision, (B) directionally correct recall at nominal
 gene FDR 0.10, (C) F1 at the same threshold, and (D) realized FDP; the dotted
 line is the nominal 0.10 target.  edgeR-QL, DESeq2, and limma-voom use the
 common directional Stouffer gene summary.  Their higher raw recall is
-accompanied by substantial FDP inflation.}
+accompanied by substantial FDP inflation.  The shaded one-replicate region is
+diagnostic only: the calibrated methods largely abstain, while several general
+count-model pipelines make discoveries with inflated FDP.}
 \label{fig:crispulator-multimethod}
 \end{figure}
 

@@ -7,7 +7,8 @@
 # (git-ignored). Compact cross-seed metrics and figures are versioned. The
 # default one-at-a-time grid varies MOI, high-quality-guide fraction, gene
 # count, and replicate count around the manuscript baseline without
-# confounding their effects.
+# confounding their effects. The one-replicate setting is a diagnostic
+# boundary case: only the low--bulk--high design has positive residual df.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
@@ -61,7 +62,7 @@ gene_values <- as.integer(parse_numeric_values(
   "CRISPULATOR_GENE_VALUES", c(100, 400, 1000)
 ))
 replicate_values <- as.integer(parse_numeric_values(
-  "CRISPULATOR_REPLICATE_VALUES", c(3, 4, 6)
+  "CRISPULATOR_REPLICATE_VALUES", c(1, 3, 4, 6)
 ))
 grid_mode <- Sys.getenv("CRISPULATOR_GRID_MODE", "one_at_a_time")
 
@@ -81,9 +82,9 @@ if (!is.finite(baseline_genes) || baseline_genes < 20L ||
     any(gene_values < 20L)) {
   stop("Gene counts must be integers of at least 20.")
 }
-if (!is.finite(baseline_replicates) || baseline_replicates < 3L ||
-    any(replicate_values < 3L)) {
-  stop("Replicate counts must be integers of at least three.")
+if (!is.finite(baseline_replicates) || baseline_replicates < 1L ||
+    any(replicate_values < 1L)) {
+  stop("Replicate counts must be positive integers.")
 }
 if (!grid_mode %in% c("single", "one_at_a_time", "full_factorial")) {
   stop(
@@ -206,12 +207,20 @@ required_methods <- c(
   "Bulk vs input"
 )
 
-analysis_matches <- function(metric_file) {
+analysis_matches <- function(metric_file, replicates) {
   if (!file.exists(metric_file)) {
     return(FALSE)
   }
   metrics <- tryCatch(read.csv(metric_file), error = function(error) NULL)
-  !is.null(metrics) && all(required_methods %in% metrics$method)
+  expected_methods <- if (replicates >= 2L) {
+    required_methods
+  } else {
+    setdiff(required_methods, "Bulk vs input")
+  }
+  !is.null(metrics) &&
+    all(expected_methods %in% metrics$method) &&
+    (replicates >= 2L ||
+      all(metrics$design == "Low + bulk + high"))
 }
 
 all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
@@ -237,7 +246,7 @@ all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
   rerun <- identical(Sys.getenv("RERUN_CRISPULATOR"), "1")
   simulation_needed <- !cache_matches(parameter_file, run) || rerun
   analysis_needed <- simulation_needed ||
-    !analysis_matches(metric_file) || rerun
+    !analysis_matches(metric_file, run$replicates) || rerun
 
   if (simulation_needed || analysis_needed) {
     message(
@@ -382,6 +391,9 @@ write.csv(
 design_concordance <- do.call(rbind, lapply(seq_len(nrow(runs)), function(
     index) {
   run <- runs[index, ]
+  if (run$replicates < 2L) {
+    return(NULL)
+  }
   cache_scenario <- cache_scenario_name(
     run$moi,
     run$high_quality_guide_fraction,
@@ -836,6 +848,20 @@ for (index in seq_along(parameter_specs)) {
     main = paste(parameter$panel, parameter$label),
     bty = "l"
   )
+  if (parameter$column == "replicates" &&
+      any(summary$value == 1L)) {
+    rect(
+      1, par("usr")[3L], 2, par("usr")[4L],
+      col = "#BDBDBD35", border = NA
+    )
+    text(
+      1.5, par("usr")[4L],
+      "diagnostic only",
+      adj = c(0.5, 1.25),
+      cex = 0.58,
+      col = "#555555"
+    )
+  }
   abline(h = 0, lty = 3, col = "#666666")
   for (spec in difference_specs) {
     estimate <- summary[[paste0(spec$column, "_mean")]]
@@ -992,6 +1018,19 @@ for (metric_index in seq_along(replicate_figure_metrics)) {
     xaxt = "n",
     bty = "l"
   )
+  if (any(replicate_values == 1L)) {
+    rect(
+      1, par("usr")[3L], 2, par("usr")[4L],
+      col = "#BDBDBD35", border = NA
+    )
+    text(
+      1.5, par("usr")[4L],
+      "diagnostic only",
+      adj = c(0.5, 1.25),
+      cex = 0.58,
+      col = "#555555"
+    )
+  }
   axis(1, at = sort(unique(replicate_values)))
   if (metric$column == "empirical_fdp_fdr_0_10") {
     abline(h = 0.10, lty = 3, col = "#555555")

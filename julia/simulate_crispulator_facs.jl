@@ -76,7 +76,7 @@ n_genes = parse_integer(
     6, environment_integer("CRISPULATOR_GENES", 400)
 )
 
-n_replicates >= 3 || error("At least three replicates are required")
+n_replicates >= 1 || error("At least one replicate is required")
 0 < moi < 0.5 || error("MOI must be greater than zero and below 0.5")
 0 <= high_quality_fraction <= 1 ||
     error("High-quality guide fraction must be between zero and one")

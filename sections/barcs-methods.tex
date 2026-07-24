@@ -281,14 +281,23 @@ high-quality-guide fraction, $G$ is the number of genes, and $R$ is the number
 of independent screen replicates.  The evaluated levels were
 $\mathrm{MOI}\in\{0.10,0.25,0.40\}$,
 $q\in\{0.60,0.75,0.90\}$, $G\in\{100,400,1000\}$, and
-$R\in\{3,4,6\}$.  After removing duplicate baseline settings, this yielded
-nine scenarios; each used the same five prespecified seeds, for 45
-simulations.  One parameter changed at a time, so its main sensitivity
-remained interpretable.  For each seed and scenario, we paired BARCS and
-MAGeCK-MLE results from the low--bulk--high design and reported differences as
-BARCS minus MAGeCK-MLE.  The executable benchmark also supports the complete
-$3^4$ factorial (81 scenarios and 405 five-seed simulations) when interaction
-effects are the target.
+$R\in\{1,3,4,6\}$.  After removing duplicate baseline settings, this yielded
+ten scenarios; each used the same five prespecified seeds, for 50 simulations.
+One parameter changed at a time, so its main sensitivity remained
+interpretable.  For each seed and scenario, we paired BARCS and MAGeCK-MLE
+results from the low--bulk--high design and reported differences as BARCS
+minus MAGeCK-MLE.  The executable benchmark also supports the complete
+$3\times3\times3\times4$ factorial (108 scenarios and 540 simulations across
+five seeds) when interaction effects are the target.
+
+The $R=1$ setting was prespecified as a diagnostic boundary rather than a
+confirmatory design.  Its three low--bulk--high samples and two regression
+coefficients leave only one residual degree of freedom.  The corresponding
+two-tail and bulk-versus-input fits have two samples and two coefficients,
+leave zero residual degrees of freedom, and were therefore not fitted.  All
+pairwise-design comparisons and the primary performance interpretation use
+$R\geq3$; the one-replicate result is shown separately to expose the
+consequence of insufficient replication.
 
 CRISPulator's arbitrary percentile ranges were set to $(0,0.25)$ for low,
 $(0.75,1)$ for high, and $(0,1)$ for bulk.  Thus bulk deliberately overlaps

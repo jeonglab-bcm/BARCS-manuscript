@@ -50,6 +50,29 @@ stopifnot(
   all(fitted(fit) > 0 & fitted(fit) < 1)
 )
 
+# A one-replicate low--bulk--high screen has three observations and two
+# coefficients. It is estimable, but its single residual degree of freedom
+# makes it a diagnostic/ranking case rather than a confirmatory design.
+single_screen_data <- data.frame(
+  phenotype_z = c(-1.271, 0, 1.271)
+)
+single_screen_total <- rep(50000, 3L)
+single_screen_count <- c(70, 100, 145)
+single_screen_fit <- bbreg(
+  single_screen_count,
+  single_screen_total,
+  ~ phenotype_z,
+  single_screen_data
+)
+stopifnot(
+  single_screen_fit$converged,
+  single_screen_fit$df.residual == 1L,
+  is.finite(coef(single_screen_fit)[["phenotype_z"]]),
+  is.finite(
+    single_screen_fit$coefficient_table["phenotype_z", "p_value"]
+  )
+)
+
 dose_contrast <- bb_contrast(fit, c(dose = 1))
 assert_close(dose_contrast$estimate, coef(fit)[["dose"]])
 assert_close(

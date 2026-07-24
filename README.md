@@ -149,17 +149,18 @@ distribution. The manuscript baseline is MOI 0.25, 90% high-quality guides,
 400 genes, and four independent screen replicates.
 
 ```sh
-# The default sensitivity analysis is nine scenarios x five seeds:
+# The default sensitivity analysis is ten scenarios x five seeds:
 # three MOIs, guide-quality fractions, gene counts, and replicate counts are
-# varied one at a time (45 simulations, including the baseline).
+# varied one at a time (50 simulations, including the baseline and a
+# diagnostic one-replicate boundary case).
 Rscript examples/crispulator_facs_repeated_benchmark.R
 
-# Optional full 3^4 factorial (405 simulations across five seeds).
+# Optional 3 x 3 x 3 x 4 factorial (540 simulations across five seeds).
 CRISPULATOR_GRID_MODE=full_factorial \
 CRISPULATOR_MOI_VALUES=0.10,0.25,0.40 \
 CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION_VALUES=0.60,0.75,0.90 \
 CRISPULATOR_GENE_VALUES=100,400,1000 \
-CRISPULATOR_REPLICATE_VALUES=3,4,6 \
+CRISPULATOR_REPLICATE_VALUES=1,3,4,6 \
 Rscript examples/crispulator_facs_repeated_benchmark.R
 
 # Run one custom scenario across five seeds.
@@ -206,12 +207,17 @@ FACS contrast; it also overlaps the tails and uses 50% more sequencing.
 The same continuous design is fitted with BARCS, MAGeCK-MLE, edgeR-QL,
 DESeq2, and limma-voom. The latter three use a common directional Stouffer
 guide-to-gene summary, whereas MAGeCK-MLE retains its native gene model.
-Across the nine-scenario sensitivity grid, BARCS-minus-MAGeCK average
+Across the nine supported scenarios with at least three replicates,
+BARCS-minus-MAGeCK average
 precision ranges from -0.015 to 0.022, showing no universal ranking advantage.
 The directional-recall difference is positive in seven of nine scenarios and
 ranges from -0.018 to 0.136; the F1 difference ranges from -0.022 to 0.080.
-Across all scenarios, realized FDP averages 0.094 for BARCS and 0.064 for
-MAGeCK-MLE, versus 0.230-0.250 for the three general count-model pipelines.
+Across those nine scenarios, realized FDP averages 0.094 for BARCS and 0.064
+for MAGeCK-MLE, versus 0.230-0.250 for the three general count-model pipelines.
+The additional one-replicate stress test is reported separately: BARCS
+improves average precision over MAGeCK-MLE (0.633 versus 0.548) but makes no
+discoveries at gene FDR 0.10, establishing one replicate as a ranking-only,
+not confirmatory, use case.
 
 On GSE70038, beta-binomial versus official MAGeCK-MLE gene-effect Spearman
 correlations are 0.888-0.928 across the four terminal-condition coefficients;

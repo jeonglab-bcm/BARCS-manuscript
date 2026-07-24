@@ -51,8 +51,8 @@ stopifnot(
   all(table(sample_data$replicate) == length(unique(sample_data$sample_type)))
 )
 n_replicates <- length(unique(sample_data$replicate))
-if (n_replicates < 3L) {
-  stop("At least three screen replicates are required.")
+if (n_replicates < 1L) {
+  stop("At least one screen replicate is required.")
 }
 
 # Load the RcppArmadillo weighted-crossproduct kernels when available.
@@ -115,7 +115,11 @@ run_barcs <- function(label, sample_index, term = "phenotype_z") {
   design <- droplevels(sample_data[sample_index, , drop = FALSE])
   count_subset <- counts[, sample_index, drop = FALSE]
   formula <- if (term == "phenotype_z") {
-    ~ phenotype_z + replicate
+    if (n_replicates >= 2L) {
+      ~ phenotype_z + replicate
+    } else {
+      ~ phenotype_z
+    }
   } else {
     ~ bulk_indicator + replicate
   }
@@ -213,7 +217,12 @@ run_edger <- function(label, sample_index) {
     stop("The Bioconductor package `edgeR` is required.")
   }
   design_data <- droplevels(sample_data[sample_index, , drop = FALSE])
-  design <- model.matrix(~ phenotype_z + replicate, data = design_data)
+  formula <- if (n_replicates >= 2L) {
+    ~ phenotype_z + replicate
+  } else {
+    ~ phenotype_z
+  }
+  design <- model.matrix(formula, data = design_data)
   count_subset <- counts[, sample_index, drop = FALSE]
   start <- proc.time()
   dge <- edgeR::DGEList(counts = count_subset)
@@ -244,7 +253,11 @@ run_deseq2 <- function(label, sample_index) {
   dds <- DESeq2::DESeqDataSetFromMatrix(
     countData = round(count_subset),
     colData = design_data,
-    design = ~ replicate + phenotype_z
+    design = if (n_replicates >= 2L) {
+      ~ replicate + phenotype_z
+    } else {
+      ~ phenotype_z
+    }
   )
   dds <- DESeq2::estimateSizeFactors(dds, type = "poscounts")
   dds <- suppressMessages(DESeq2::DESeq(
@@ -275,7 +288,12 @@ run_limma_voom <- function(label, sample_index) {
     stop("The Bioconductor packages `limma` and `edgeR` are required.")
   }
   design_data <- droplevels(sample_data[sample_index, , drop = FALSE])
-  design <- model.matrix(~ phenotype_z + replicate, data = design_data)
+  formula <- if (n_replicates >= 2L) {
+    ~ phenotype_z + replicate
+  } else {
+    ~ phenotype_z
+  }
+  design <- model.matrix(formula, data = design_data)
   count_subset <- counts[, sample_index, drop = FALSE]
   start <- proc.time()
   dge <- edgeR::DGEList(counts = count_subset)
@@ -307,10 +325,14 @@ tail_index <- sample_data$sample_type %in% c("low", "high")
 bulk_index <- sample_data$sample_type %in% c("input", "bulk")
 
 barcs_three <- run_barcs("barcs_low_bulk_high", three_sample_index)
-barcs_tails <- run_barcs("barcs_two_tails", tail_index)
-barcs_bulk <- run_barcs(
-  "barcs_bulk_vs_input", bulk_index, term = "bulk_indicator"
-)
+barcs_tails <- NULL
+barcs_bulk <- NULL
+if (n_replicates >= 2L) {
+  barcs_tails <- run_barcs("barcs_two_tails", tail_index)
+  barcs_bulk <- run_barcs(
+    "barcs_bulk_vs_input", bulk_index, term = "bulk_indicator"
+  )
+}
 
 mageck <- file.path(".venv", "bin", "mageck")
 if (!file.exists(mageck)) {
@@ -342,9 +364,13 @@ run_mageck_mle <- function(label, sample_index) {
     count_path,
     sep = "\t", quote = FALSE, row.names = FALSE
   )
-  replicate_matrix <- model.matrix(
-    ~ replicate, data = design_data
-  )[, -1L, drop = FALSE]
+  replicate_matrix <- if (n_replicates >= 2L) {
+    model.matrix(
+      ~ replicate, data = design_data
+    )[, -1L, drop = FALSE]
+  } else {
+    matrix(numeric(0), nrow = nrow(design_data), ncol = 0L)
+  }
   mageck_design <- data.frame(
     samples = design_data$sample,
     baseline = 1,
@@ -405,16 +431,21 @@ run_mageck_mle <- function(label, sample_index) {
 mageck_three <- run_mageck_mle(
   "mageck_mle_low_bulk_high", three_sample_index
 )
-mageck_tails <- run_mageck_mle("mageck_mle_two_tails", tail_index)
-
 edger_three <- run_edger("edger_ql_low_bulk_high", three_sample_index)
-edger_tails <- run_edger("edger_ql_two_tails", tail_index)
 deseq2_three <- run_deseq2("deseq2_low_bulk_high", three_sample_index)
-deseq2_tails <- run_deseq2("deseq2_two_tails", tail_index)
 limma_three <- run_limma_voom(
   "limma_voom_low_bulk_high", three_sample_index
 )
-limma_tails <- run_limma_voom("limma_voom_two_tails", tail_index)
+mageck_tails <- NULL
+edger_tails <- NULL
+deseq2_tails <- NULL
+limma_tails <- NULL
+if (n_replicates >= 2L) {
+  mageck_tails <- run_mageck_mle("mageck_mle_two_tails", tail_index)
+  edger_tails <- run_edger("edger_ql_two_tails", tail_index)
+  deseq2_tails <- run_deseq2("deseq2_two_tails", tail_index)
+  limma_tails <- run_limma_voom("limma_voom_two_tails", tail_index)
+}
 
 auroc <- function(truth, score) {
   score_rank <- rank(score, ties.method = "average")
@@ -485,19 +516,27 @@ evaluate <- function(method, gene_result, design) {
   )
 }
 
-metrics <- rbind(
+metric_rows <- list(
   evaluate("BARCS", barcs_three, "Low + bulk + high"),
   evaluate("MAGeCK-MLE", mageck_three, "Low + bulk + high"),
   evaluate("edgeR-QL", edger_three, "Low + bulk + high"),
   evaluate("DESeq2", deseq2_three, "Low + bulk + high"),
-  evaluate("limma-voom", limma_three, "Low + bulk + high"),
-  evaluate("BARCS", barcs_tails, "Two 25% tails"),
-  evaluate("MAGeCK-MLE", mageck_tails, "Two 25% tails"),
-  evaluate("edgeR-QL", edger_tails, "Two 25% tails"),
-  evaluate("DESeq2", deseq2_tails, "Two 25% tails"),
-  evaluate("limma-voom", limma_tails, "Two 25% tails"),
-  evaluate("Bulk vs input", barcs_bulk, "Unsorted 0-100%")
+  evaluate("limma-voom", limma_three, "Low + bulk + high")
 )
+if (n_replicates >= 2L) {
+  metric_rows <- c(
+    metric_rows,
+    list(
+      evaluate("BARCS", barcs_tails, "Two 25% tails"),
+      evaluate("MAGeCK-MLE", mageck_tails, "Two 25% tails"),
+      evaluate("edgeR-QL", edger_tails, "Two 25% tails"),
+      evaluate("DESeq2", deseq2_tails, "Two 25% tails"),
+      evaluate("limma-voom", limma_tails, "Two 25% tails"),
+      evaluate("Bulk vs input", barcs_bulk, "Unsorted 0-100%")
+    )
+  )
+}
+metrics <- do.call(rbind, metric_rows)
 write.csv(
   metrics,
   file.path(result_dir, "benchmark_metrics.csv"),
@@ -509,14 +548,21 @@ all_results <- list(
   `MAGeCK-MLE / low + bulk + high` = mageck_three,
   `edgeR-QL / low + bulk + high` = edger_three,
   `DESeq2 / low + bulk + high` = deseq2_three,
-  `limma-voom / low + bulk + high` = limma_three,
-  `BARCS / two tails` = barcs_tails,
-  `MAGeCK-MLE / two tails` = mageck_tails,
-  `edgeR-QL / two tails` = edger_tails,
-  `DESeq2 / two tails` = deseq2_tails,
-  `limma-voom / two tails` = limma_tails,
-  `Bulk vs input` = barcs_bulk
+  `limma-voom / low + bulk + high` = limma_three
 )
+if (n_replicates >= 2L) {
+  all_results <- c(
+    all_results,
+    list(
+      `BARCS / two tails` = barcs_tails,
+      `MAGeCK-MLE / two tails` = mageck_tails,
+      `edgeR-QL / two tails` = edger_tails,
+      `DESeq2 / two tails` = deseq2_tails,
+      `limma-voom / two tails` = limma_tails,
+      `Bulk vs input` = barcs_bulk
+    )
+  )
+}
 effect_table <- do.call(rbind, lapply(names(all_results), function(label) {
   result <- merge(
     gene_truth[, c("gene", "class", "active", "theoretical_phenotype")],
@@ -608,42 +654,57 @@ legend(
   bty = "n"
 )
 
-bulk_effect <- merge(
-  gene_truth,
-  barcs_bulk[, c("gene", "estimate", "p_value")],
-  by = "gene"
-)
 par(mar = c(4.2, 4.2, 2.3, 0.8))
-plot(
-  bulk_effect$theoretical_phenotype,
-  bulk_effect$estimate,
-  pch = 16,
-  cex = 0.55,
-  col = ifelse(
-    bulk_effect$active,
-    paste0(barcs_method_colours[["BARCS"]], "99"),
-    "#99999966"
-  ),
-  xlab = "True guide-aggregated phenotype",
-  ylab = "Bulk-vs-input estimate",
-  main = "C  Unsorted null reference",
-  bty = "l"
-)
-abline(h = 0, lty = 2, col = "#555555")
-legend(
-  "topright",
-  legend = sprintf(
-    "AUROC = %.2f\nSpearman = %.2f",
-    metrics$auroc[metrics$method == "Bulk vs input"],
-    cor(
-      bulk_effect$theoretical_phenotype,
-      bulk_effect$estimate,
-      method = "spearman"
-    )
-  ),
-  bty = "n",
-  cex = 0.8
-)
+if (n_replicates >= 2L) {
+  bulk_effect <- merge(
+    gene_truth,
+    barcs_bulk[, c("gene", "estimate", "p_value")],
+    by = "gene"
+  )
+  plot(
+    bulk_effect$theoretical_phenotype,
+    bulk_effect$estimate,
+    pch = 16,
+    cex = 0.55,
+    col = ifelse(
+      bulk_effect$active,
+      paste0(barcs_method_colours[["BARCS"]], "99"),
+      "#99999966"
+    ),
+    xlab = "True guide-aggregated phenotype",
+    ylab = "Bulk-vs-input estimate",
+    main = "C  Unsorted null reference",
+    bty = "l"
+  )
+  abline(h = 0, lty = 2, col = "#555555")
+  legend(
+    "topright",
+    legend = sprintf(
+      "AUROC = %.2f\nSpearman = %.2f",
+      metrics$auroc[metrics$method == "Bulk vs input"],
+      cor(
+        bulk_effect$theoretical_phenotype,
+        bulk_effect$estimate,
+        method = "spearman"
+      )
+    ),
+    bty = "n",
+    cex = 0.8
+  )
+} else {
+  plot.new()
+  title(main = "C  Pairwise contrasts")
+  text(
+    0.5, 0.55,
+    "Not estimable with\none screen replicate",
+    cex = 1
+  )
+  text(
+    0.5, 0.34,
+    "Two samples and two coefficients\nleave zero residual degrees of freedom",
+    cex = 0.72
+  )
+}
 dev.off()
 
 print(metrics)

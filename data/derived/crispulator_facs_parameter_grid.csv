@@ -1,5 +1,6 @@
 "moi","high_quality_guide_fraction","genes","replicates","scenario_id","is_baseline"
 0.25,0.9,400,4,"moi_0.25_quality_0.9_genes_400_replicates_4",TRUE
+0.25,0.9,400,1,"moi_0.25_quality_0.9_genes_400_replicates_1",FALSE
 0.25,0.9,400,3,"moi_0.25_quality_0.9_genes_400_replicates_3",FALSE
 0.25,0.9,100,4,"moi_0.25_quality_0.9_genes_100_replicates_4",FALSE
 0.25,0.6,400,4,"moi_0.25_quality_0.6_genes_400_replicates_4",FALSE
