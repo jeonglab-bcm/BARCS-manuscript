@@ -381,6 +381,47 @@ near 0.5 and its effect correlation remains near zero.}
 \label{fig:crispulator}
 \end{figure}
 
+\paragraph{Sensitivity to MOI, guide quality, and library size.}
+The baseline result was not presented as a single favorable simulation.  We
+varied MOI, the high-quality-guide fraction, and the number of genes one at a
+time, using five paired seeds at every setting (seven unique settings and 35
+simulations in total).  In the primary low--bulk--high comparison,
+BARCS-minus-MAGeCK-MLE average precision ranged only from $-0.015$ to $0.022$
+and changed sign across settings.  Thus this experiment does not support a
+general ranking advantage for BARCS.  Its more consistent strength was
+directional recovery at the prespecified FDR threshold: the directional-recall
+difference was positive in six of seven settings and ranged from $-0.018$ to
+$0.119$, while the F1 difference ranged from $-0.022$ to $0.076$.
+
+The largest directional-recall differences occurred at MOI 0.10
+($+0.107$) and a high-quality-guide fraction of 0.75 ($+0.119$).  At MOI
+0.40, however, MAGeCK-MLE led directional recall by $0.018$ and F1 by
+$0.022$; with only 60\% high-quality guides, the methods were nearly tied on
+directional recall and MAGeCK-MLE led F1 by $0.005$.  Across 100, 400, and
+1,000 genes, BARCS directional-recall differences were $+0.081$, $+0.047$,
+and $+0.064$, respectively, whereas average-precision differences again
+remained small.  The 100-gene setting also produced realized FDP above 0.10
+for both methods (0.181 for BARCS and 0.147 for MAGeCK-MLE), warning that five
+small-library replicates do not establish finite-sample FDR control.  These
+results sharpen the claim: BARCS can improve directionally correct thresholded
+recovery under some noisy or low-MOI conditions, but neither method dominates
+every metric or simulation regime.
+
+\clearpage
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_parameter_sensitivity.pdf}
+\caption{Paired parameter sensitivity across five seeds per setting.
+Points show mean BARCS-minus-MAGeCK-MLE differences in the low--bulk--high
+design, with standard-error bars.  Positive values favor BARCS.  Each panel
+varies (A) MOI, (B) high-quality-guide fraction, or (C) number of genes while
+holding the other two parameters at their baseline values.  Ranking
+differences remain close to zero, whereas directional-recall differences are
+usually positive but reverse at MOI 0.40.}
+\label{fig:crispulator-sensitivity}
+\end{figure}
+
+\clearpage
 \subsection{Backward compatibility: GSE70038}
 
 GSE70038 contains 64,747 guides measured in 16 libraries from two glioblastoma

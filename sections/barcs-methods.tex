@@ -267,8 +267,22 @@ gene.  The default guide-quality mixture---90\% complete-knockout guides and
 cells per guide, multiplicity of infection was 0.25, Gaussian phenotype noise
 was 2, sorting representation was 50 cells per guide, and sequencing depth was
 50 reads per guide per sample.  Both multiplicity of infection and the
-high-quality-guide fraction are exposed as simulation parameters.
+high-quality-guide fraction are exposed as simulation parameters, as is the
+number of genes.
 The five benchmark seeds were 20250724 through 20250728.
+
+We additionally performed a one-factor-at-a-time sensitivity analysis around
+the baseline $(\mathrm{MOI},q,G)=(0.25,0.90,400)$, where $q$ is the
+high-quality-guide fraction and $G$ is the number of genes.  The evaluated
+levels were $\mathrm{MOI}\in\{0.10,0.25,0.40\}$,
+$q\in\{0.60,0.75,0.90\}$, and $G\in\{100,400,1000\}$.  After removing
+duplicate baseline settings, this yielded seven scenarios; each used the same
+five prespecified seeds, for 35 simulations.  One parameter changed at a time,
+so its main sensitivity remained interpretable.  For each seed and scenario,
+we paired BARCS and MAGeCK-MLE results from the low--bulk--high design and
+reported differences as BARCS minus MAGeCK-MLE.  The executable benchmark
+also supports the complete $3\times3\times3$ factorial when interaction
+effects are the target.
 
 CRISPulator's arbitrary percentile ranges were set to $(0,0.25)$ for low,
 $(0.75,1)$ for high, and $(0,1)$ for bulk.  Thus bulk deliberately overlaps

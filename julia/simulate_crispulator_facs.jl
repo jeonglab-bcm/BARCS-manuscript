@@ -13,9 +13,10 @@
 # carry no sorting direction and provide a negative-reference comparison.
 #
 # Optional positional arguments:
-#   output_dir  replicates  seed  MOI  high_quality_guide_fraction
-# MOI and guide quality can instead be supplied through CRISPULATOR_MOI and
-# CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION.
+#   output_dir  replicates  seed  MOI  high_quality_guide_fraction  genes
+# MOI, guide quality, and gene count can instead be supplied through
+# CRISPULATOR_MOI, CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION, and
+# CRISPULATOR_GENES.
 
 using CSV
 using Crispulator
@@ -71,15 +72,19 @@ high_quality_fraction = parse_float(
         "CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION", 0.90
     ),
 )
+n_genes = parse_integer(
+    6, environment_integer("CRISPULATOR_GENES", 400)
+)
 
 n_replicates >= 3 || error("At least three replicates are required")
 0 < moi < 0.5 || error("MOI must be greater than zero and below 0.5")
 0 <= high_quality_fraction <= 1 ||
     error("High-quality guide fraction must be between zero and one")
+n_genes >= 20 || error("At least 20 genes are required")
 mkpath(output_dir)
 
 setup = FacsScreen()
-setup.num_genes = environment_integer("CRISPULATOR_GENES", 400)
+setup.num_genes = n_genes
 setup.coverage = environment_integer("CRISPULATOR_GUIDES_PER_GENE", 5)
 setup.representation = environment_integer(
     "CRISPULATOR_TRANSFECTION_REPRESENTATION", 500
