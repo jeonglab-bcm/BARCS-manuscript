@@ -12,16 +12,24 @@ response. Continuous phenotypes, donors, batches, interactions, and other
 sample variables are predictors. Coefficients and named contrasts use a
 Student t reference based on independent samples rather than reads.
 
-The mathematical relationship is stated narrowly and proved. Original CB² is
-exactly a binary-design generalized least-squares contrast when its weighted
-group proportions and group variances are used. The default logit-scale
-CB²-Reg statistic is first-order equivalent to that raw-proportion statistic
-under a correctly specified binary design and local alternatives. It is not an
-exact finite-sample reproduction: original CB² uses separate group weighting
-and Welch–Satterthwaite degrees of freedom, whereas CB²-Reg uses a common
-guide-wise dispersion across the design and residual degrees of freedom. See
-`examples/cb2_generalization_proof.R` for the machine-precision identity check
-and convergence illustration.
+The mathematical relationship is deliberately narrow. A legacy representation
+lemma shows that a saturated two-cell generalized least-squares calculation
+reproduces original CB² after its weighted group proportions and variances have
+already been computed. This is an algebraic compatibility identity, not proof
+that default `bbreg()` strictly nests the original estimator. Under a correctly
+specified common-dispersion binary design, local alternatives, and increasing
+numbers of independent libraries, the logit-scale CB²-Reg statistic is
+first-order equivalent to the raw-proportion statistic. Increasing read depth
+at fixed biological replication is not sufficient. See
+`examples/cb2_generalization_proof.R` for the machine-precision representation
+check and convergence illustration.
+
+The current covariance is model based and treats the guide-wise
+dispersion estimate as a fixed plug-in value. Residual Student t degrees of
+freedom do not formally propagate dispersion-estimation uncertainty, so
+small-sample calibration remains a stated limitation. Control-tail calibration
+also requires controls to share one residual degree of freedom, as they do
+under one common complete design.
 
 For a version written without matrix algebra, start with
 [`docs/cb2-generalization-high-school-proof.md`](docs/cb2-generalization-high-school-proof.md).
@@ -72,9 +80,9 @@ commits the updated submodule pointer. See
   guide-by-guide screens.
 - `examples/simulation.R`: reproducible beta-binomial simulation comparing the
   beta-binomial t test, a misspecified binomial z test, and official MAGeCK-MLE.
-- `examples/cb2_generalization_proof.R`: exact numerical recovery of the
-  original CB² statistic as a binary-design GLS contrast and a local-equivalence
-  illustration for the logit statistic.
+- `examples/cb2_generalization_proof.R`: numerical verification of the legacy
+  GLS representation and a local-equivalence illustration for the logit
+  statistic.
 - `examples/cb2_generalization_walkthrough.R`: six code-first examples,
   including hand-checkable numbers, 1,000 randomized identity checks, original
   `fit_ab()` counts, the finite-sample logit difference, local convergence, and

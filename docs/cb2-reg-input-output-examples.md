@@ -9,6 +9,10 @@ Rscript examples/cb2_reg_input_output_examples.R
 The runnable source is
 [`examples/cb2_reg_input_output_examples.R`](../examples/cb2_reg_input_output_examples.R).
 
+The original-CB² calculation below is a legacy compatibility example. It
+shows that saturated GLS reproduces completed CB² group summaries; it does not
+claim that default `bbreg(~ group)` is the same finite-sample estimator.
+
 ## Minimum input structure
 
 For one guide, `bbreg()` needs:
@@ -117,6 +121,10 @@ $$
 
 Consequently, the effect numbers have different units. Their t-statistics are
 close, but finite-sample identity is not claimed.
+
+The model-based CB²-Reg standard errors shown below treat the guide-wise
+dispersion estimate as a fixed plug-in value. Residual Student t degrees of
+freedom do not formally account for dispersion-estimation uncertainty.
 
 ## Example 2: continuous dose
 

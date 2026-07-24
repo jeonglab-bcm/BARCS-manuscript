@@ -1,4 +1,4 @@
-# Why CB²-Reg is a generalization of CB²
+# How original CB² connects to CB²-Reg
 
 If you prefer to learn by running code, use the
 [`computational walkthrough`](cb2-generalization-computational-walkthrough.md).
@@ -10,9 +10,11 @@ the original `fit_ab()`, and finishes with a continuous-dose example.
 Original CB² compares two groups. CB²-Reg can analyze two groups, but it can
 also analyze dose, time, batch, donor, and other variables together.
 
-For the simple two-group problem, the old CB² calculation can be written as a
-special two-column regression calculation. The effect, standard error,
-t-statistic, and p-value are then exactly the same.
+For the simple two-group problem, the completed old CB² group summaries can be
+written as a saturated two-column regression calculation. The effect, standard
+error, t-statistic, and p-value are then exactly the same. This is a useful
+compatibility representation, but it does not prove that the default
+`bbreg()` estimator is literally the old estimator with extra columns.
 
 The default CB²-Reg model uses a logit transformation, so its answer is not
 always numerically identical to old CB² in a small dataset. However, when the
@@ -21,10 +23,12 @@ test statistics approach each other.
 
 That gives us two different conclusions:
 
-1. **Exact result:** old CB² is exactly a two-group weighted regression
-   contrast when we use its original weighted proportions and variances.
-2. **Approximate result:** the default logit version of CB²-Reg approaches the
-   old CB² test for small group differences and sufficiently large samples.
+1. **Legacy representation:** after old CB² has computed its weighted group
+   proportions and variances, a two-cell weighted regression reproduces its
+   statistic exactly.
+2. **Local-equivalence result:** the default logit version of CB²-Reg
+   approaches the old CB² test for small group differences as the number of
+   independent biological libraries grows.
 
 ## Step 1: What original CB² does
 
@@ -157,8 +161,10 @@ t_regression = -------------------------------------
 If we also use the same CB² degrees-of-freedom formula, the t-distribution is
 the same. Therefore, the p-value is exactly the same.
 
-This proves that original CB² is a special two-group case of weighted
-design-matrix regression.
+This shows that original CB² has an exact weighted-regression representation
+on its group-summary scale. Because any two independent group summaries can be
+placed in a saturated two-cell regression, this calculation alone does not
+prove that default `bbreg()` strictly contains the old estimator.
 
 ## Step 4: Why the default logit model is slightly different
 
@@ -208,7 +214,8 @@ That is the original CB² statistic.
 
 So the logit version is not exactly equal for every small dataset, but the two
 statistics become equivalent as the group difference becomes small and the
-sample size grows.
+number of independent biological libraries grows. Sequencing the same fixed
+set of libraries more deeply is not enough for this asymptotic argument.
 
 ## Step 5: Why the sample weights also match
 
@@ -278,10 +285,10 @@ logit t-statistics shrinks from `0.0583` to `0.000151`.
 
 ## What has and has not been proved
 
-### What is proved
+### What is established
 
-- The original CB² two-group statistic is exactly a weighted regression slope
-  statistic.
+- The completed original CB² group summaries have an exact saturated
+  weighted-regression representation.
 - Its standard error and p-value are exactly recovered when we use its original
   group variances and degrees of freedom.
 - Under a common beta-binomial dispersion, old CB² and CB²-Reg use the same
@@ -293,22 +300,29 @@ logit t-statistics shrinks from `0.0583` to `0.000151`.
 
 ### What is not claimed
 
+- The representation lemma does not prove strict nesting of the implemented
+  `bbreg()` estimator.
 - `bbreg(~ group)` is not guaranteed to return exactly the same finite-sample
   number as `measure_sgrna_stats()`.
 - Original CB² estimates the two groups separately, while CB²-Reg estimates one
   guide-level dispersion across the entire design.
 - Original CB² uses a group-variance degrees-of-freedom formula, while CB²-Reg
   normally uses residual sample degrees of freedom.
+- The model-based CB²-Reg covariance does not propagate uncertainty in the
+  per-guide dispersion estimate. Student t degrees of freedom are not a formal
+  correction for that uncertainty.
+- Greater read depth cannot replace additional independent biological
+  libraries in the local-equivalence argument.
 - Neither proof says CB²-Reg must outperform MAGeCK, Waterbear, MAUDE, Chronos,
   or another specialized method on every dataset.
 
 ## The one-sentence conclusion
 
-Original CB² is the two-group weighted-difference member of the larger
-design-matrix family, while CB²-Reg extends that family to coefficient-based
-questions and uses a logit model whose two-group test agrees with CB² to first
-order near the null hypothesis.
+Original CB² has a compatible two-cell regression representation, while
+CB²-Reg extends the beta-binomial weighting principle to coefficient-based
+questions; under explicit common-dispersion and replication assumptions, its
+two-group logit test agrees with CB² to first order near the null hypothesis.
 
-For the formal matrix proof, see
+For the formal matrix derivation and assumptions, see
 [`main.tex`](../main.tex) or the
 [`rendered manuscript`](../output/pdf/beta-binomial-regression-continuous-phenotypes.pdf).

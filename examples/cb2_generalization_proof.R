@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
-# Executable verification of the two precise connections between original CB2
-# and CB2-Reg. The first is exact; the second is a local/asymptotic statement.
+# Executable verification of two connections between original CB2 and CB2-Reg.
+# The first is an exact legacy summary-scale representation, not strict nesting
+# of the default estimator. The second is a local/asymptotic statement.
 
 if (file.exists(file.path("CB2", "DESCRIPTION")) &&
     requireNamespace("devtools", quietly = TRUE)) {
@@ -51,7 +52,7 @@ exact_checks <- c(
 )
 stopifnot(max(abs(exact_checks)) < 1e-12)
 
-cat("Exact binary-design embedding\n")
+cat("Legacy summary-scale GLS representation\n")
 print(data.frame(
   quantity = c("effect", "standard error", "t", "df", "two-sided p"),
   original_CB2 = c(

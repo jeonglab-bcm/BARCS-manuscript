@@ -1,7 +1,9 @@
 # CB² to CB²-Reg: a computational walkthrough
 
-This version proves the relationship by running small examples. You can execute
-everything at once from the repository root:
+This version demonstrates the relationship with small examples. Computational
+checks verify the code paths; the manuscript supplies the algebra and
+asymptotic assumptions. You can execute everything at once from the repository
+root:
 
 ```sh
 Rscript examples/cb2_generalization_walkthrough.R
@@ -28,8 +30,9 @@ $V_A$ and $V_B$ are their estimated variances.
 
 We want to check three claims:
 
-1. A weighted regression with a 0/1 group column gives exactly the same effect,
-   standard error, and t-statistic.
+1. After original CB² has computed its group summaries, a saturated weighted
+   regression with a 0/1 group column reproduces the same effect, standard
+   error, and t-statistic.
 2. The default logit regression is close near the null hypothesis, although it
    need not be exactly equal in a small dataset.
 3. Once the group column has been written as a design-matrix column, we can
@@ -185,7 +188,9 @@ $$
 =T_{\mathrm{CB2}}.
 $$
 
-This is the entire exact proof in one small computation.
+This is the legacy representation lemma in one small computation. It is a
+summary-scale compatibility identity, not proof that default `bbreg()` is a
+strictly nested version of the original estimator.
 
 ## Example 2: try to break the identity
 
@@ -318,8 +323,9 @@ variances from actual read counts.
 
 ## Example 4: deliberately compare the two finite-sample estimators
 
-The exact result above embeds the original CB² summaries in weighted
-regression. The default `bbreg()` function makes additional modeling choices:
+The representation above embeds the completed original CB² summaries in
+weighted regression. The default `bbreg()` function makes additional modeling
+choices:
 
 - logit effect instead of raw proportion difference;
 - one guide-level dispersion across the design instead of separate group fits;
@@ -415,7 +421,8 @@ $$
 | 0.000050 | 0.293610 | 0.294190 | 1.001975 | 0.000580 |
 | 0.000025 | 0.146805 | 0.146957 | 1.001032 | 0.000151 |
 
-As the group difference approaches zero:
+As the group difference approaches zero and the number of independent
+biological libraries grows:
 
 $$
 \frac{T_{\logit}}{T_{\mathrm{raw}}}\longrightarrow1,
@@ -434,7 +441,9 @@ The standard error is multiplied by the same
 $\operatorname{logit}'(p_0)$, so that factor
 cancels from the t-statistic.
 
-This is the computational version of the local-equivalence proof.
+This is the computational illustration of the local-equivalence result.
+Increasing sequencing depth while holding the number of independent libraries
+fixed is not the asymptotic regime used by that result.
 
 ## Example 6: the part that is genuinely new
 
@@ -524,13 +533,13 @@ Nothing fundamental changed in the data table:
 - the second column now represents dose instead of a 0/1 group label;
 - more columns can represent batch, donor, CNV, or interactions.
 
-That is the practical meaning of generalization.
+That is the practical meaning of the design-matrix extension.
 
 ## What each example establishes
 
 | Example | What it shows |
 |---|---|
-| 1 | The direct two-group calculation and weighted regression are identical |
+| 1 | The completed legacy summaries have an identical saturated GLS representation |
 | 2 | The identity survives 1,000 random numerical stress tests |
 | 3 | The identity holds after original `fit_ab()` estimates from read counts |
 | 4 | Default logit `bbreg()` is close but not exactly equal in finite samples |
@@ -541,3 +550,8 @@ Computational checks cannot replace the algebraic proof for every possible
 dataset, but they make each step observable. The formal proof is in
 [`main.tex`](../main.tex), and the simpler conceptual explanation is in
 [`cb2-generalization-high-school-proof.md`](cb2-generalization-high-school-proof.md).
+
+The default covariance in these examples treats the estimated guide
+dispersion as a fixed plug-in value. Its Student t reference does not formally
+propagate dispersion-estimation uncertainty; this is a separate small-sample
+limitation from the legacy-representation question.

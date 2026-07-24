@@ -14,6 +14,7 @@
 \newcommand{\E}{\operatorname{E}}
 \newcommand{\Var}{\operatorname{Var}}
 \newcommand{\logit}{\operatorname{logit}}
+\newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}{Corollary}
 
@@ -34,10 +35,13 @@ multifactor designs that cannot be reduced to one pairwise contrast without
 discarding information.  We introduce CB\textsuperscript{2}-Reg, a
 design-matrix extension that preserves the original beta-binomial sampling
 logic while replacing the two-group comparison with regression coefficients
-and prespecified linear contrasts.  We prove that the original
-CB\textsuperscript{2} statistic is exactly a binary-design generalized
-least-squares contrast and that, under local alternatives, the logit-scale
-regression statistic is first-order equivalent to it.  Guide counts remain the response; sample
+and prespecified linear contrasts.  We show that the original
+CB\textsuperscript{2} statistic admits an algebraically exact
+generalized-least-squares representation on its group-summary scale.  This is
+a legacy-compatibility identity, not strict nesting of the default estimator.
+Under a common-dispersion model, local alternatives, and increasing numbers of
+independent libraries, the logit-scale regression statistic is first-order
+equivalent to the original statistic.  Guide counts remain the response; sample
 phenotypes and nuisance variables enter through a logit mean model; and a
 Student $t$ reference uses sample-level residual degrees of freedom rather than
 sequencing reads.  The implementation supports continuous and categorical
@@ -45,7 +49,7 @@ predictors, batch and donor adjustment, interactions, contrasts, empirical-null
 scaling with prespecified controls, parallel screening, and RcppArmadillo
 linear algebra.
 
-Four complementary benchmarks define what this generalization gains and where
+Four complementary benchmarks define what this regression extension gains and where
 it should not be used.  In simulation, a read-level binomial test is severely
 anti-conservative, whereas beta-binomial inference restores uncertainty to the
 sample level.  In the longitudinal HT-29 screen, CB\textsuperscript{2}-Reg
@@ -60,8 +64,9 @@ $p<0.05$ frequency from 13.3\% to 4.9\%.  The purpose-built Waterbear result
 remains the best calibrated modeling choice for correlated FACS partitions and
 recovers 24 of 26 controls.  Endpoint and copy-number analyses further show
 that no normalization or count model wins automatically in every design.
-CB\textsuperscript{2}-Reg is therefore best viewed as the regression form of
-CB\textsuperscript{2}: a fast, transparent general-purpose method for
+CB\textsuperscript{2}-Reg is therefore best viewed as a design-matrix
+beta-binomial extension of the original sampling principle: a fast,
+transparent general-purpose method for
 independent libraries with quantitative or adjusted sample designs, accompanied
 by diagnostics that reveal when a specialist likelihood is required.
 \end{abstract}
@@ -102,8 +107,8 @@ to a two-group contrast.  CB\textsuperscript{2}-Reg retains the same
 depth-aware, extra-binomial variance principle and changes the mean model from
 two group means to a design matrix.  ``Retains'' refers to the stochastic
 hierarchy and the sample-level information ceiling; it does not mean that the
-default logit fit reproduces the original finite-sample statistic.  The exact
-and asymptotic relationships are proved below.
+default logit fit reproduces the original finite-sample statistic.  The
+legacy representation and asymptotic relationship are established below.
 
 \begin{table}[ht]
 \centering
@@ -254,6 +259,15 @@ the dispersion estimate reaches its numerical upper boundary, the
 implementation additionally multiplies Equation~\eqref{eq:covariance} by the
 remaining Pearson scale.
 
+Equation~\eqref{eq:covariance} is a plug-in, model-based covariance: it
+conditions on the estimated $\widehat{\rho}$ as though it were fixed.  It does
+not propagate uncertainty from estimating a separate dispersion for every
+guide.  Referring the coefficient to $t_{m-q}$ gives a heavier-tailed
+small-sample reference than a normal approximation, but it is not a formal
+correction for dispersion-estimation uncertainty.  With few independent
+libraries, calibration must therefore be checked by simulation, phenotype
+permutation, or prespecified negative controls.
+
 For coefficient $\beta_j$, the statistic
 \begin{equation}
   t_j =
@@ -281,10 +295,15 @@ average slopes in interaction models, and other one-degree-of-freedom
 hypotheses.  Guide-wise two-sided $p$-values are adjusted using the
 Benjamini--Hochberg procedure \citep{benjamini1995controlling}.
 
-\subsection{Exact embedding and local-equivalence proof}
+\subsection{Legacy representation and local-equivalence result}
 
-We now state exactly in what sense CB\textsuperscript{2}-Reg generalizes
-CB\textsuperscript{2}.  For the original test, let
+We now separate an algebraic compatibility result from the substantive
+estimating-equation connection.  The first result reproduces
+CB\textsuperscript{2} after its weighted group summaries have already been
+computed; because a saturated two-cell GLS can represent any pair of
+independent group summaries, this result should not be interpreted as proof
+that the implemented \texttt{bbreg()} estimator strictly nests the original
+estimator.  For the original test, let
 \[
  \widehat p_A=\sum_{i\in A}a_iY_i,\qquad
  \widehat p_B=\sum_{i\in B}b_iY_i,
@@ -302,8 +321,8 @@ freedom are
  {V_A^2/(n_A-1)+V_B^2/(n_B-1)}. \label{eq:legacydf}
 \end{align}
 
-\begin{proposition}[Exact binary-design representation]
-\label{prop:exact}
+\begin{lemma}[Legacy CB\textsuperscript{2} representation]
+\label{lem:legacy}
 Let $X$ have row $(1,0)$ for samples in group $A$ and row $(1,1)$
 for samples in group $B$.  Define the working precision matrix
 \[
@@ -329,7 +348,7 @@ and
 \]
 Consequently, the GLS $t$ statistic for the slope is exactly
 $T_{\mathrm{CB2}}$.
-\end{proposition}
+\end{lemma}
 
 \begin{proof}
 Because the weights within each group sum to one, their groupwise total
@@ -358,12 +377,13 @@ gives the displayed coefficient vector.  Its slope standard error is
 $\sqrt{V_A+V_B}$, proving the result.
 \end{proof}
 
-\begin{corollary}[Exact recovery of legacy inference]
-If the slope statistic in Proposition~\ref{prop:exact} is referred to
+\begin{corollary}[Legacy-compatibility identity]
+If the slope statistic in Lemma~\ref{lem:legacy} is referred to
 $t_{\nu_{\mathrm{CB2}}}$ using Equation~\eqref{eq:legacydf}, its two-sided
 $p$-value is identical to the original CB\textsuperscript{2} $p$-value.
-Thus the original two-group test is an exact special case of
-design-matrix contrast inference on the identity-link, group-summary scale.
+Thus identity-link GLS algebra reproduces the original two-group inference on
+its group-summary scale.  This corollary is a compatibility check, not a claim
+of finite-sample equality with the default logit \texttt{bbreg()} fit.
 \end{corollary}
 
 The default implementation uses the logit link because it respects the
@@ -389,9 +409,11 @@ Then
 \]
 Under a correctly specified common-dispersion beta-binomial model, the
 binary-design IRLS Wald statistic has the same first-order expansion.  If
-$n_A,n_B\rightarrow\infty$, both its residual degrees of freedom and
+$n_A,n_B\rightarrow\infty$ through increasing numbers of independent
+biological libraries, both its residual degrees of freedom and
 Equation~\eqref{eq:legacydf} diverge, so their reference distributions also
-converge to the same standard normal limit.
+converge to the same standard normal limit.  Holding $n_A,n_B$ fixed while
+only increasing read depths $N_i$ is not this asymptotic regime.
 \end{proposition}
 
 \begin{proof}
@@ -428,9 +450,11 @@ of freedom diverge.
 \end{proof}
 
 These results establish two deliberately separate claims.  The original
-statistic is \emph{exactly nested} in design-matrix contrast algebra, while
-the implemented logit statistic is \emph{locally asymptotically equivalent}
-in the unadjusted binary design.  In finite samples,
+statistic has an \emph{algebraically exact legacy representation} after its
+group summaries are computed, while the implemented logit statistic is
+\emph{locally asymptotically equivalent} in the unadjusted binary design under
+the stated common-dispersion assumptions.  Strict finite-sample nesting of the
+implemented estimator is not claimed.  In finite samples,
 \texttt{bbreg(\textasciitilde group)} need not equal
 \texttt{measure\_sgrna\_stats()}: the effect scale, dispersion pooling,
 working weights, and degrees of freedom differ.  What regression adds is an
@@ -438,7 +462,7 @@ estimable coefficient for continuous predictors, adjustment variables, and
 interactions; what it changes must be assessed by calibration and benchmark
 data rather than hidden behind the word ``generalization.''  The executable
 example \texttt{examples/cb2\_generalization\_proof.R} verifies
-Proposition~\ref{prop:exact} to machine precision and illustrates the
+Lemma~\ref{lem:legacy} to machine precision and illustrates the
 convergence in Proposition~\ref{prop:local}.  In its deterministic guide,
 original CB\textsuperscript{2} and the GLS contrast both give effect
 $9.059929\times10^{-4}$, standard error $1.113105\times10^{-4}$,
@@ -1059,9 +1083,19 @@ question is a coefficient rather than a group label.
   \item \textbf{Enough sample-level degrees of freedom.}  Read depth cannot
   replace biological replication.  With very few samples, guide-wise
   $\widehat{\rho}$ is noisy and coefficient tests may be poorly calibrated.
+  The model-based covariance treats $\widehat{\rho}$ as a fixed plug-in value,
+  and the $t_{m-q}$ reference does not formally propagate its estimation
+  uncertainty.  The local-equivalence result likewise requires increasing
+  numbers of independent libraries; deeper sequencing at fixed replication is
+  not sufficient.  The optional \texttt{bb\_calibrate\_controls()} procedure
+  additionally requires all control guides to share one residual degree of
+  freedom, as they do when every guide uses the same complete design.  Guides
+  fitted with heterogeneous designs require stratified or redesigned
+  calibration.
   Dispersion shrinkage across guides or permutation of the phenotype should be
   evaluated before treating this prototype as a production method.
 
+  \pagebreak[2]
   \item \textbf{Mean-model form.}  A single slope assumes a linear relationship
   on the logit scale.  Residual plots should be checked.  A spline or a
   prespecified nonlinear term is preferable when the dose response is curved.
@@ -1101,8 +1135,11 @@ question is a coefficient rather than a group label.
 
 \section{Conclusion}
 
-CB\textsuperscript{2}-Reg turns a successful two-group idea into a regression
-framework without discarding what made the original method useful.  Counts
+CB\textsuperscript{2}-Reg extends the beta-binomial sampling principle behind
+a successful two-group method into a regression framework.  This is an
+estimating-equation and design-matrix extension, not a claim that the default
+finite-sample estimator strictly contains the original CB\textsuperscript{2}
+algorithm.  Counts
 remain tied to their library depths, extra-binomial heterogeneity limits the
 leverage of deep sequencing, and uncertainty is determined by independent
 samples.  What changes is the scientific interface: the target can now be a
@@ -1139,7 +1176,8 @@ quantitative and covariate-adjusted designs, with explicit boundaries that tell
 users when to move to a specialist model.  The next improvements are therefore
 well defined: empirical-Bayes dispersion moderation, a native gene-level
 hierarchy, blocked or random-effect inference for repeated biological units,
-and nonlinear time or dose effects.
+nonlinear time or dose effects, and covariance procedures that account for
+dispersion-estimation uncertainty.
 
 \bibliography{main}
 

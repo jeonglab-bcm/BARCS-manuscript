@@ -12,7 +12,7 @@ if (file.exists(file.path("CB2", "DESCRIPTION")) &&
   stop("Install CB2, or run this script from the CB2-Reg repository root.")
 }
 
-section("Example 1: a two-group calculation that can be checked by hand")
+section("Example 1: a legacy representation that can be checked by hand")
 
 p <- c(A = 0.0014, B = 0.0023)
 v <- c(A = 4e-8, B = 5e-8)
@@ -44,7 +44,7 @@ cat("Regression coefficients:\n")
 print(setNames(beta, colnames(x)), digits = 10)
 stopifnot(max(abs(direct - regression)) < 1e-12)
 
-section("Example 2: stress-test the identity on 1,000 random problems")
+section("Example 2: stress-test the representation on 1,000 random problems")
 
 set.seed(20260723)
 random_error <- replicate(1000, {
@@ -219,10 +219,10 @@ cat(
 
 section("Conclusion")
 cat(
-  "Examples 1-3 show exact equality for the legacy two-group statistic.\n",
+  "Examples 1-3 verify the exact legacy summary-scale representation.\n",
   "Example 4 shows the finite-sample difference made by the default logit ",
   "model.\n",
-  "Example 5 shows the local convergence.\n",
+  "Example 5 illustrates local convergence as biological replication grows.\n",
   "Example 6 shows the generalization: the same second design-matrix column ",
   "can contain dose rather than only 0/1 group labels.\n",
   sep = ""
