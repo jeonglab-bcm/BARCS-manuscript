@@ -1,0 +1,27 @@
+.DS_Store
+.venv/
+tmp/
+__pycache__/
+*.pyc
+
+# R package build and check artifacts
+*.Rcheck/
+*.tar.gz
+
+# LaTeX build artifacts (the final PDF under output/pdf is versioned)
+main.aux
+main.bbl
+main.blg
+main.fdb_latexmk
+main.fls
+main.log
+main.out
+main.pdf
+*.synctex.gz
+
+# Downloaded datasets and generated benchmark intermediates
+data/raw/
+results/
+
+# Rendered page images used only for visual QA
+output/rendered/

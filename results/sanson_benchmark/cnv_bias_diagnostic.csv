@@ -1,0 +1,5 @@
+"method","spearman_effect_vs_cnv_nonessential"
+"beta-binomial regression",-0.185352214637769
+"beta-binomial + MAGeCK CNV correction",-0.0422477619497253
+"official MAGeCK-MLE",-0.206802174275034
+"official MAGeCK-MLE + CNV",-0.00588979950169469

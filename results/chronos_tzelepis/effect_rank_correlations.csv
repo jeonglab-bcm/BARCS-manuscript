@@ -1,0 +1,5 @@
+"method_1","method_2","n_genes","spearman"
+"Beta-binomial time","Official MAGeCK time",6854,0.925963025997616
+"Beta-binomial time","Chronos joint",6854,0.814713072554349
+"Beta-binomial time","Published MAGeCK average",6854,0.812345355935674
+"Beta-binomial time","Published BAGEL2 average",6854,0.632953953455796
