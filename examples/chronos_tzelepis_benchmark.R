@@ -14,6 +14,7 @@
 #      (ACH-000552) DepMap Public 20Q2 profile.
 
 options(stringsAsFactors = FALSE)
+source(file.path("R", "method_palette.R"))
 
 benchmark_dir <- file.path("results", "chronos_tzelepis")
 figure_path <- file.path("figures", "chronos_tzelepis_benchmark.pdf")
@@ -479,7 +480,9 @@ write.csv(
   row.names = FALSE
 )
 
-colors <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00")
+colors <- unname(barcs_method_colours[c(
+  "BARCS", "MAGeCK", "Chronos", "Published MAGeCK", "BAGEL2"
+)])
 names(colors) <- names(effects)
 line_types <- c(1, 1, 1, 2, 2)
 names(line_types) <- names(effects)

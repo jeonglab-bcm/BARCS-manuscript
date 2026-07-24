@@ -20,6 +20,10 @@
 \definecolor{chronosgreen}{HTML}{009E73}
 \definecolor{mageckpink}{HTML}{CC79A7}
 \definecolor{bagelgold}{HTML}{E69F00}
+\definecolor{waterbearpurple}{HTML}{7A3E9D}
+\definecolor{maudered}{HTML}{A33D3D}
+\definecolor{naivegray}{HTML}{767676}
+\definecolor{cbtwocyan}{HTML}{56B4E9}
 \newcommand{\methodswatch}[1]{\textcolor{#1}{\rule{1.1ex}{1.1ex}}}
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
@@ -90,7 +94,11 @@ joint-bin model for fully generative inference.
 
 We evaluated BARCS first where its design-matrix structure should matter, then
 in pairwise and specialist-model settings that test backward compatibility and
-the limits of the approach.
+the limits of the approach.  Method colors are fixed throughout the tables and
+figures: BARCS is blue, MAGeCK orange, Chronos green, published endpoint
+MAGeCK pink, BAGEL2 gold, Waterbear purple, and MAUDE red.  Variants of one
+method reuse its base color and are distinguished by labels, line types, or
+point symbols.
 
 \input{sections/barcs-results}
 
@@ -173,17 +181,20 @@ contrast from a multivariable model.
 \toprule
 Design & Primary method & Reason\\
 \midrule
-Two independent groups & CB\textsuperscript{2} or MAGeCK &
+Two independent groups &
+\methodswatch{cbtwocyan} CB\textsuperscript{2} or
+\methodswatch{mageckorange} MAGeCK &
 The estimand is already a pairwise contrast\\
 Independent libraries across dose, time, or ordered phenotype &
-BARCS &
+\methodswatch{barcsblue} BARCS &
 Uses the full quantitative axis with sample-level $t$ inference\\
-Multivariable independent samples & BARCS &
+Multivariable independent samples & \methodswatch{barcsblue} BARCS &
 Adjusts batch, donor, and interactions in one explicit model matrix\\
-FACS bins partitioning the same donor pool & Waterbear &
+FACS bins partitioning the same donor pool &
+\methodswatch{waterbearpurple} Waterbear &
 Models the joint bin probabilities and within-donor dependence\\
-Multi-line viability dynamics & Chronos, with
-BARCS as a transparent trend analysis &
+Multi-line viability dynamics & \methodswatch{chronosgreen} Chronos, with
+\methodswatch{barcsblue} BARCS as a transparent trend analysis &
 Mechanistic growth and knockout timing may matter\\
 Cancer screen with suspected CNV artifact & Diagnose before correction &
 Post-fit CNV normalization can help, do nothing, or over-correct\\

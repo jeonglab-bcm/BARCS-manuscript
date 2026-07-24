@@ -22,7 +22,8 @@ CB\textsuperscript{2} method to BARCS.}
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{p{0.20\textwidth}p{0.32\textwidth}p{0.38\textwidth}}
 \toprule
-Feature & Original CB\textsuperscript{2} & BARCS\\
+Feature & \methodswatch{cbtwocyan} Original CB\textsuperscript{2} &
+\methodswatch{barcsblue} BARCS\\
 \midrule
 Primary question & Difference between two groups &
 Trend, adjusted association, interaction, or contrast\\
@@ -203,6 +204,53 @@ uses the same $m-q$ degrees of freedom.  This covers pairwise group contrasts,
 average slopes in interaction models, and other one-degree-of-freedom
 hypotheses.  Guide-wise two-sided $p$-values are adjusted using the
 Benjamini--Hochberg procedure \citep{benjamini1995controlling}.
+
+\subsubsection{From guide statistics to gene statistics}
+
+BARCS fits the count model guide by guide.  The primary HT-29, FACS,
+simulation, GSE70038, and A375 benchmark scripts then use an explicit
+directional Stouffer summary to obtain one gene-level statistic.
+For the $j$th valid guide targeting gene $g$, the two-sided guide $p$-value is
+converted back to a signed standard-normal score,
+\begin{equation}
+  z_{gj}
+  =
+  \operatorname{sign}(\widehat{\beta}_{gj})
+  \Phi^{-1}\!\left(1-\frac{p_{gj}}{2}\right).
+  \label{eq:signedz}
+\end{equation}
+If $m_g$ valid guides target the gene, their combined score and two-sided
+gene-level $p$-value are
+\begin{equation}
+  Z_g=\frac{1}{\sqrt{m_g}}\sum_{j=1}^{m_g}z_{gj},
+  \qquad
+  p_g=2\Phi(-|Z_g|).
+  \label{eq:genestouffer}
+\end{equation}
+The reported gene effect is the median of the guide coefficient estimates,
+\begin{equation}
+  \widehat{\beta}_g
+  =\operatorname{median}_{j=1,\ldots,m_g}
+    \widehat{\beta}_{gj},
+  \label{eq:geneeffect}
+\end{equation}
+and gene-level false-discovery rates are obtained by applying
+Benjamini--Hochberg to the collection of $p_g$ values.  Consequently,
+concordant guide directions reinforce one another, discordant directions
+cancel, and one extreme guide has limited influence on the reported effect.
+
+This aggregation is deliberately transparent, but it is not a native
+hierarchical gene model.  Equations~\eqref{eq:signedz}--\eqref{eq:genestouffer}
+give equal weight to valid guides and use the independence reference
+$\sqrt{m_g}$; shared sequence artifacts or other correlation can therefore
+make the gene statistic anti-conservative.  A production extension should
+estimate guide reliability and within-gene dependence or use a hierarchical
+effect model.  In the head-to-head benchmarks, this Stouffer--median procedure
+is used only for BARCS (and for the deliberately naive binomial comparator).
+MAGeCK, Chronos, BAGEL2, Waterbear, and MAUDE retain their native or deposited
+gene-level summaries.  The exploratory DeWeirdt false-discovery audit used
+Fisher aggregation as stated in its Results description and is not pooled
+with these primary benchmark statistics.
 
 \subsubsection{Legacy representation and local-equivalence result}
 

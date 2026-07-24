@@ -6,6 +6,7 @@
 #   Rscript examples/simulation.R
 
 source(file.path("R", "bbreg.R"))
+source(file.path("R", "method_palette.R"))
 
 set.seed(20260723)
 
@@ -287,23 +288,32 @@ null_naive_p <- sort(
 expected <- ppoints(length(null_bb_p))
 plot(
   expected, null_naive_p,
-  pch = 16, cex = 0.55, col = "#D55E00AA",
+  pch = 16, cex = 0.55,
+  col = adjustcolor(barcs_method_colours[["Naive binomial"]], alpha.f = 0.65),
   xlab = "Expected null p-value",
   ylab = "Observed null p-value",
-  main = "Null calibration"
+  main = "(A) Null calibration"
 )
-points(expected, null_bb_p, pch = 16, cex = 0.55, col = "#0072B2AA")
+points(
+  expected, null_bb_p, pch = 16, cex = 0.55,
+  col = adjustcolor(barcs_method_colours[["BARCS"]], alpha.f = 0.65)
+)
 points(
   ppoints(length(null_mageck_p)), null_mageck_p,
-  pch = 16, cex = 0.55, col = "#009E73AA"
+  pch = 16, cex = 0.55,
+  col = adjustcolor(barcs_method_colours[["MAGeCK"]], alpha.f = 0.65)
 )
 abline(0, 1, lty = 2)
 legend(
   "topleft",
   legend = c(
-    "naive binomial z", "beta-binomial t", "official MAGeCK-MLE Wald"
+    "naive binomial z", "BARCS t", "official MAGeCK-MLE Wald"
   ),
-  pch = 16, col = c("#D55E00", "#0072B2", "#009E73"), bty = "n",
+  pch = 16,
+  col = unname(barcs_method_colours[c(
+    "Naive binomial", "BARCS", "MAGeCK"
+  )]),
+  bty = "n",
   cex = 0.78
 )
 
@@ -318,18 +328,28 @@ prediction <- plogis(drop(prediction_matrix %*% coef(example_fit)))
 observed <- counts[example_index, ] / library_size
 plot(
   sample_data$dose, observed * 1e6,
-  pch = 16, col = as.integer(sample_data$batch),
+  pch = 16,
+  col = c("#4D4D4D", "#969696", "#CCCCCC")[
+    as.integer(sample_data$batch)
+  ],
   xlab = "Standardized continuous phenotype",
   ylab = "Guide abundance (CPM)",
-  main = sprintf("%s: true slope = %.1f", guide[example_index],
+  main = sprintf("(B) %s: true slope = %.1f", guide[example_index],
                  true_effect[example_index])
 )
-lines(dose_prediction, prediction * 1e6, lwd = 2, col = "#0072B2")
+lines(
+  dose_prediction, prediction * 1e6, lwd = 2,
+  col = barcs_method_colours[["BARCS"]]
+)
 legend(
   "topleft",
   legend = c(levels(sample_data$batch), "fitted batch 1"),
   pch = c(16, 16, 16, NA), lty = c(NA, NA, NA, 1),
-  col = c(1, 2, 3, "#0072B2"), bty = "n"
+  col = c(
+    "#4D4D4D", "#969696", "#CCCCCC",
+    barcs_method_colours[["BARCS"]]
+  ),
+  bty = "n"
 )
 
 par(old_par)

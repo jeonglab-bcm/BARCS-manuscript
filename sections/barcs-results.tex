@@ -156,7 +156,8 @@ uses each method's reported 0.10 discovery threshold and the independently
 validated direction.  BARCS and MAGeCK use adjusted
 $p$-values; Waterbear uses posterior inclusion probability above 0.90.
 The non-targeting column is guide-level.  Waterbear and MAUDE values are
-reported by the study and were not rerun.}
+reported by the study and were not rerun.  The highest validated recovery and
+the available non-targeting rate closest to 0.05 are highlighted.}
 \label{tab:waterbear}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -164,13 +165,18 @@ reported by the study and were not rerun.}
 \toprule
 Method & Discoveries & Validated recovery & NTC $p<0.05$\\
 \midrule
-BARCS, four bins + controls & 49 & 22/26 & 0.049\\
-BARCS, four bins raw & 127 & 23/26 & 0.133\\
-Official MAGeCK-MLE, four bins & 72 & 17/26 & ---\\
-BARCS, outer bins & 34 & 18/26 & 0.064\\
-Official MAGeCK test, outer bins & 32 & 18/26 & ---\\
-Waterbear, four bins (reported) & 79 & 24/26 & ---\\
-MAUDE, four bins (reported) & 406 & 25/26 & ---\\
+\methodswatch{barcsblue} BARCS, four bins + controls &
+  49 & 22/26 & \textcolor{barcsblue}{\textbf{0.049}}\\
+\methodswatch{barcsblue} BARCS, four bins raw & 127 & 23/26 & 0.133\\
+\methodswatch{mageckorange} Official MAGeCK-MLE, four bins &
+  72 & 17/26 & ---\\
+\methodswatch{barcsblue} BARCS, outer bins & 34 & 18/26 & 0.064\\
+\methodswatch{mageckorange} Official MAGeCK test, outer bins &
+  32 & 18/26 & ---\\
+\methodswatch{waterbearpurple} Waterbear, four bins (reported) &
+  79 & 24/26 & ---\\
+\methodswatch{maudered} MAUDE, four bins (reported) &
+  406 & \textcolor{maudered}{\textbf{25/26}} & ---\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -200,7 +206,8 @@ for the five methods rerun here.
 \caption{Classification in the selected 33-gene experimental follow-up panel
 (26 concordant positives and seven non-validating candidates).  This panel is
 small and was selected from a previous screen, so the metrics are supporting
-evidence rather than unbiased genome-wide performance estimates.}
+evidence rather than unbiased genome-wide performance estimates.  Higher is
+better for every metric; column maxima are highlighted.}
 \label{tab:waterbearpanel}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -208,15 +215,19 @@ evidence rather than unbiased genome-wide performance estimates.}
 \toprule
 Method & F1 & MCC & Balanced accuracy & AUROC & Avg. precision\\
 \midrule
-BARCS, four bins + controls
-  & 0.863 & 0.398 & 0.709 & 0.808 & 0.945\\
-BARCS, four bins raw
-  & 0.852 & 0.194 & 0.585 & 0.819 & 0.950\\
-Official MAGeCK-MLE, four bins
+\methodswatch{barcsblue} BARCS, four bins + controls
+  & \textcolor{barcsblue}{\textbf{0.863}}
+  & \textcolor{barcsblue}{\textbf{0.398}}
+  & \textcolor{barcsblue}{\textbf{0.709}} & 0.808 & 0.945\\
+\methodswatch{barcsblue} BARCS, four bins raw
+  & 0.852 & 0.194 & 0.585
+  & \textcolor{barcsblue}{\textbf{0.819}}
+  & \textcolor{barcsblue}{\textbf{0.950}}\\
+\methodswatch{mageckorange} Official MAGeCK-MLE, four bins
   & 0.723 & 0.070 & 0.541 & 0.626 & 0.872\\
-BARCS, outer bins
+\methodswatch{barcsblue} BARCS, outer bins
   & 0.783 & 0.340 & 0.703 & 0.714 & 0.913\\
-Official MAGeCK test, outer bins
+\methodswatch{mageckorange} Official MAGeCK test, outer bins
   & 0.766 & 0.224 & 0.632 & 0.703 & 0.906\\
 \bottomrule
 \end{tabular}
@@ -264,11 +275,11 @@ classification metrics to the methods rerun from complete outputs.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/waterbear_facs_benchmark.pdf}
-\caption{Ordered-bin IL2RA FACS benchmark.  Top: positive-control recovery for
-all methods and F1 in the selected 33-gene panel for methods rerun here.
-Bottom left: all-bin BARCS and MAGeCK-MLE effects, with
-validated genes highlighted.  Bottom right: non-targeting-guide empirical null
-curves, showing the correction of raw all-bin inflation.}
+\caption{Ordered-bin IL2RA FACS benchmark.  (A) Positive-control recovery for
+all methods.  (B) F1 in the selected 33-gene panel for methods rerun here.
+(C) All-bin BARCS and MAGeCK-MLE effects, with validated genes highlighted.
+(D) Non-targeting-guide empirical null curves, showing the correction of raw
+all-bin inflation.}
 \label{fig:waterbear}
 \end{figure}
 \clearpage
@@ -290,7 +301,9 @@ inference is reported.
 \centering
 \caption{Results from the simulation with random seed 20260723.  Type-I error
 and power use unadjusted $p<0.05$; discoveries and empirical FDR use
-Benjamini--Hochberg adjusted $p<0.05$.}
+Benjamini--Hochberg adjusted $p<0.05$.  Best means closest to 0.05 for Type I
+and empirical FDR, highest for power, lowest for RMSE, and closest to 0.95 for
+coverage; discoveries have no universal optimum.}
 \label{tab:simulation}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -298,9 +311,16 @@ Benjamini--Hochberg adjusted $p<0.05$.}
 \toprule
 Method & Type I & Power & Discoveries & Empirical FDR & RMSE & 95\% coverage\\
 \midrule
-Naive binomial $z$ & 0.844 & 1.000 & 174 & 0.770 & 0.158 & 0.185\\
-Beta-binomial $t$ & 0.081 & 1.000 & 46 & 0.130 & 0.156 & 0.935\\
-Official MAGeCK-MLE Wald & 0.038 & 0.975 & 41 & 0.049 & 0.140 & 0.970\\
+\methodswatch{naivegray} Naive binomial $z$ &
+  0.844 & \textcolor{naivegray}{\textbf{1.000}} &
+  174 & 0.770 & 0.158 & 0.185\\
+\methodswatch{barcsblue} BARCS $t$ &
+  0.081 & \textcolor{barcsblue}{\textbf{1.000}} &
+  46 & 0.130 & 0.156 & \textcolor{barcsblue}{\textbf{0.935}}\\
+\methodswatch{mageckorange} Official MAGeCK-MLE Wald &
+  \textcolor{mageckorange}{\textbf{0.038}} & 0.975 & 41 &
+  \textcolor{mageckorange}{\textbf{0.049}} &
+  \textcolor{mageckorange}{\textbf{0.140}} & 0.970\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -333,10 +353,10 @@ response.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/simulation_diagnostics.pdf}
-\caption{Left: observed versus expected gene-level null $p$-values for the
-naive binomial, beta-binomial, and official MAGeCK-MLE fits.  Right: observed
-guide abundance and the fitted batch-1 beta-binomial dose response for one
-truly associated guide.}
+\caption{(A) Observed versus expected gene-level null $p$-values for the
+naive binomial, BARCS, and official MAGeCK-MLE fits.  (B) Observed guide
+abundance and the fitted batch-1 BARCS dose response for one truly associated
+guide.}
 \label{fig:simulation}
 \end{figure}
 
@@ -372,18 +392,19 @@ coefficient are written to
 
 \begin{table}[ht]
 \centering
-\caption{Effect concordance between beta-binomial regression and official
-MAGeCK-MLE on GSE70038.  Jaccard is the overlap divided by the union of the 200
-most depleted genes from each method.}
+\caption{Effect concordance between \methodswatch{barcsblue} BARCS and
+\methodswatch{mageckorange} official MAGeCK-MLE on GSE70038.  Jaccard is the
+overlap divided by the union of the 200 most depleted genes from each method.
+Higher agreement is better; column maxima are shown in bold.}
 \label{tab:gse}
 \begin{tabular}{lrr}
 \toprule
 Terminal coefficient & Spearman effect correlation & Top-200 Jaccard\\
 \midrule
-GSC0131 & 0.928 & 0.550\\
+GSC0131 & \textbf{0.928} & 0.550\\
 GSC0827 & 0.888 & 0.533\\
 NSCCB660 & 0.905 & 0.544\\
-NSCU5 & 0.915 & 0.562\\
+NSCU5 & 0.915 & \textbf{0.562}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -404,10 +425,10 @@ comparison; the reproducible PDF contains one page per terminal coefficient.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/gse70038_head_to_head.pdf}
-\caption{GSE70038 GSC0131 head-to-head.  Panels compare gene effects, depletion
-ranks, FDR distributions, and published validation genes.  Orange points in
-the effect panel mark the prespecified genes PKMYT1, HEATR1, TFAP2C, FBXO42,
-HDAC2, and WEE1.}
+\caption{GSE70038 GSC0131 head-to-head.  (A) Gene effects, with dark points
+marking the prespecified genes PKMYT1, HEATR1, TFAP2C, FBXO42, HDAC2, and WEE1.
+(B) Depletion-rank concordance.  (C) Gene-level FDR distributions.  (D)
+Effects for the published validation genes.}
 \label{fig:gse}
 \end{figure}
 \clearpage
@@ -443,7 +464,8 @@ contains 1,506 essential and 869 nonessential genes.
 \caption{CNV-aware Sanson A375 benchmark.  The final column is Spearman
 correlation between effect and copy number among reference nonessential genes;
 values nearer zero indicate less residual CNV-associated depletion.  F1 uses
-nominal FDR 0.05 and a negative effect.}
+nominal FDR 0.05 and a negative effect.  Higher discrimination metrics and
+CNV correlation closest to zero are highlighted.}
 \label{tab:sanson}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -451,10 +473,18 @@ nominal FDR 0.05 and a negative effect.}
 \toprule
 Method & AUROC & Avg. precision & F1 & CNV correlation\\
 \midrule
-Beta-binomial regression & 0.9598 & 0.9786 & 0.8531 & $-0.185$\\
-Beta-binomial + CNV & 0.9533 & 0.9762 & 0.8531 & $-0.042$\\
-Official MAGeCK-MLE & 0.9598 & 0.9795 & 0.8277 & $-0.207$\\
-Official MAGeCK-MLE + CNV & 0.9501 & 0.9762 & 0.8277 & $-0.006$\\
+\methodswatch{barcsblue} BARCS &
+  \textcolor{barcsblue}{\textbf{0.9598}} & 0.9786 &
+  \textcolor{barcsblue}{\textbf{0.8531}} & $-0.185$\\
+\methodswatch{barcsblue} BARCS + CNV &
+  0.9533 & 0.9762 & \textcolor{barcsblue}{\textbf{0.8531}} & $-0.042$\\
+\methodswatch{mageckorange} Official MAGeCK-MLE &
+  \textcolor{mageckorange}{\textbf{0.9598}} &
+  \textcolor{mageckorange}{\textbf{0.9795}} &
+  0.8277 & $-0.207$\\
+\methodswatch{mageckorange} Official MAGeCK-MLE + CNV &
+  0.9501 & 0.9762 & 0.8277 &
+  \textcolor{mageckorange}{$\mathbf{-0.006}$}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -503,10 +533,11 @@ changing the benchmark or weakening MAGeCK.
 \centering
 \includegraphics[width=\textwidth]{figures/sanson_gold_standard_benchmark.pdf}
 \caption{CNV-aware essential-gene discrimination in the Sanson A375 screen.
-ROC (upper left), precision--recall (upper right), F1 across nominal FDR
-thresholds (lower left), and residual effect--CNV correlation among
-nonessential genes (lower right).  Curves compare uncorrected (dashed) and
-CNV-corrected (solid) beta-binomial and official MAGeCK-MLE results.}
+(A) ROC, (B) precision--recall, (C) F1 across nominal FDR thresholds, and
+(D) absolute residual effect--CNV correlation among nonessential genes, where
+values closer to zero are better.  Curves compare uncorrected (dashed) and
+CNV-corrected (solid) BARCS and official MAGeCK-MLE results; open points mark
+CNV-corrected values.}
 \label{fig:sanson}
 \end{figure}
 
@@ -568,7 +599,8 @@ condition--gene combinations used by the preprint, not a complete truth set.}
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{p{0.31\textwidth}p{0.27\textwidth}p{0.31\textwidth}}
 \toprule
-Audit target & Reported legacy result & Reanalysis result\\
+Audit target & \methodswatch{cbtwocyan} Reported legacy result &
+\methodswatch{barcsblue} BARCS reanalysis\\
 \midrule
 Avana null-only, FDR $<0.1$ &
 152 false discoveries after pre-fit guide subsetting &

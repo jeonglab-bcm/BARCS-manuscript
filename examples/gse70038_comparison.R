@@ -10,6 +10,7 @@
 # from the official MAGeCK-MLE executable.
 
 source(file.path("R", "bbreg.R"))
+source(file.path("R", "method_palette.R"))
 
 geo_url <- paste0(
   "https://ftp.ncbi.nlm.nih.gov/geo/series/GSE70nnn/",
@@ -331,14 +332,16 @@ for (term_name in terms) {
   plot(
     pair_bm$estimate_bb, pair_bm$estimate_mageck,
     pch = 16, cex = 0.35, col = "#00000025",
-    xlab = "Beta-binomial median guide effect",
-    ylab = "MAGeCK-MLE beta", main = term_name,
+    xlab = "BARCS median guide effect",
+    ylab = "MAGeCK-MLE beta",
+    main = paste("(A)", term_name, "gene effects"),
     xlim = x_limit, ylim = y_limit
   )
   abline(0, 1, lty = 2)
   special <- pair_bm$gene %in% validated_gene
   points(pair_bm$estimate_bb[special], pair_bm$estimate_mageck[special],
-         pch = 16, col = "#D55E00")
+         pch = 21, bg = barcs_method_colours[["Validation"]],
+         col = "white")
   text(pair_bm$estimate_bb[special], pair_bm$estimate_mageck[special],
        pair_bm$gene[special], pos = 3, cex = 0.65)
 
@@ -351,9 +354,9 @@ for (term_name in terms) {
   plot(
     bb_rank, mg_rank,
     pch = 16, cex = 0.35, col = "#00000025",
-    xlab = "Beta-binomial depletion rank",
+    xlab = "BARCS depletion rank",
     ylab = "MAGeCK-MLE depletion rank",
-    main = "Rank concordance"
+    main = "(B) Rank concordance"
   )
   abline(0, 1, lty = 2)
 
@@ -364,18 +367,19 @@ for (term_name in terms) {
     verticals = TRUE, do.points = FALSE,
     xlab = expression(-log[10](FDR)),
     ylab = "Empirical cumulative fraction",
-    main = "Gene-level significance",
-    col = "#0072B2", lwd = 2
+    main = "(C) Gene-level significance",
+    col = barcs_method_colours[["BARCS"]], lwd = 2
   )
   lines(
     stats::ecdf(mg_sig[is.finite(mg_sig)]),
     verticals = TRUE, do.points = FALSE,
-    col = "#D55E00", lwd = 2
+    col = barcs_method_colours[["MAGeCK"]], lwd = 2
   )
   legend(
     "bottomright",
-    legend = c("beta-binomial", "MAGeCK-MLE"),
-    col = c("#0072B2", "#D55E00"), lwd = 2, bty = "n"
+    legend = c("BARCS", "MAGeCK-MLE"),
+    col = unname(barcs_method_colours[c("BARCS", "MAGeCK")]),
+    lwd = 2, bty = "n"
   )
 
   known <- known_result[
@@ -388,13 +392,13 @@ for (term_name in terms) {
     beside = TRUE,
     las = 2,
     ylab = "Estimated depletion effect",
-    main = "Published validation genes",
-    col = c("#0072B2", "#D55E00")
+    main = "(D) Published validation genes",
+    col = unname(barcs_method_colours[c("BARCS", "MAGeCK")])
   )
   abline(h = 0, lty = 2)
   legend(
-    "topright", legend = colnames(effect_matrix),
-    fill = c("#0072B2", "#D55E00"),
+    "topright", legend = c("BARCS", "MAGeCK-MLE"),
+    fill = unname(barcs_method_colours[c("BARCS", "MAGeCK")]),
     bty = "n", cex = 0.7
   )
 }

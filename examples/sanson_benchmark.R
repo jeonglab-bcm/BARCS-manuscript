@@ -5,6 +5,7 @@
 # a better ranking should separate the two classes more accurately.
 
 source(file.path("R", "bbreg.R"))
+source(file.path("R", "method_palette.R"))
 load(file.path("CB2", "data", "Sanson_CRISPRn_A375.rda"))
 
 benchmark_dir <- file.path("results", "sanson_benchmark")
@@ -482,43 +483,51 @@ pr_mageck_cnv <- pr_points(score$label, score$mageck_cnv_score)
 pdf(file.path("figures", "sanson_gold_standard_benchmark.pdf"),
     width = 10, height = 8)
 old_par <- par(mfrow = c(2, 2), mar = c(4.3, 4.4, 2.2, 1))
+barcs_colour <- barcs_method_colours[["BARCS"]]
+mageck_colour <- barcs_method_colours[["MAGeCK"]]
+metric_labels <- c("BARCS", "BARCS + CNV", "MAGeCK-MLE", "MAGeCK-MLE + CNV")
 plot(
-  roc_bb$fpr, roc_bb$tpr, type = "l", lwd = 2, col = "#0072B2",
+  roc_bb$fpr, roc_bb$tpr, type = "l", lwd = 2, col = barcs_colour,
   xlab = "False-positive rate", ylab = "True-positive rate",
-  main = "Essential-gene ROC", xlim = c(0, 1), ylim = c(0, 1)
+  main = "(A) Essential-gene ROC", xlim = c(0, 1), ylim = c(0, 1)
 )
-lines(roc_bb_cnv$fpr, roc_bb_cnv$tpr, lwd = 2, col = "#0072B2")
-lines(roc_mageck$fpr, roc_mageck$tpr, lwd = 2, col = "#D55E00")
+lines(roc_bb_cnv$fpr, roc_bb_cnv$tpr, lwd = 2, col = barcs_colour)
+lines(roc_mageck$fpr, roc_mageck$tpr, lwd = 2, col = mageck_colour)
 lines(
-  roc_mageck_cnv$fpr, roc_mageck_cnv$tpr, lwd = 2, col = "#D55E00"
+  roc_mageck_cnv$fpr, roc_mageck_cnv$tpr, lwd = 2, col = mageck_colour
 )
-lines(roc_bb$fpr, roc_bb$tpr, lwd = 1.5, lty = 2, col = "#0072B2")
+lines(roc_bb$fpr, roc_bb$tpr, lwd = 1.5, lty = 2, col = barcs_colour)
 lines(
-  roc_mageck$fpr, roc_mageck$tpr, lwd = 1.5, lty = 2, col = "#D55E00"
+  roc_mageck$fpr, roc_mageck$tpr, lwd = 1.5, lty = 2,
+  col = mageck_colour
 )
 abline(0, 1, lty = 2, col = "grey50")
 legend(
   "bottomright",
-  legend = sprintf("%s (AUC %.3f)", metrics$method, metrics$AUROC),
-  col = c("#0072B2", "#0072B2", "#D55E00", "#D55E00"),
+  legend = sprintf("%s (AUC %.3f)", metric_labels, metrics$AUROC),
+  col = c(barcs_colour, barcs_colour, mageck_colour, mageck_colour),
   lty = c(2, 1, 2, 1), lwd = 2, bty = "n", cex = 0.55
 )
 plot(
-  pr_bb$recall, pr_bb$precision, type = "l", lwd = 2, col = "#0072B2",
+  pr_bb$recall, pr_bb$precision, type = "l", lwd = 2,
+  col = barcs_colour,
   xlab = "Recall", ylab = "Precision",
-  main = "Essential-gene precision-recall",
+  main = "(B) Essential-gene precision-recall",
   xlim = c(0, 1), ylim = c(0, 1)
 )
-lines(pr_bb_cnv$recall, pr_bb_cnv$precision, lwd = 2, col = "#0072B2")
-lines(pr_mageck$recall, pr_mageck$precision, lwd = 2, col = "#D55E00")
+lines(pr_bb_cnv$recall, pr_bb_cnv$precision, lwd = 2, col = barcs_colour)
+lines(pr_mageck$recall, pr_mageck$precision, lwd = 2, col = mageck_colour)
 lines(
   pr_mageck_cnv$recall, pr_mageck_cnv$precision,
-  lwd = 2, col = "#D55E00"
+  lwd = 2, col = mageck_colour
 )
-lines(pr_bb$recall, pr_bb$precision, lwd = 1.5, lty = 2, col = "#0072B2")
+lines(
+  pr_bb$recall, pr_bb$precision, lwd = 1.5, lty = 2,
+  col = barcs_colour
+)
 lines(
   pr_mageck$recall, pr_mageck$precision,
-  lwd = 1.5, lty = 2, col = "#D55E00"
+  lwd = 1.5, lty = 2, col = mageck_colour
 )
 abline(
   h = mean(score$label), lty = 2, col = "grey50"
@@ -526,9 +535,9 @@ abline(
 legend(
   "bottomleft",
   legend = sprintf(
-    "%s (AP %.3f)", metrics$method, metrics$average_precision
+    "%s (AP %.3f)", metric_labels, metrics$average_precision
   ),
-  col = c("#0072B2", "#0072B2", "#D55E00", "#D55E00"),
+  col = c(barcs_colour, barcs_colour, mageck_colour, mageck_colour),
   lty = c(2, 1, 2, 1), lwd = 2, bty = "n", cex = 0.55
 )
 bb_threshold <- threshold_metrics[
@@ -541,47 +550,65 @@ mageck_cnv_threshold <- threshold_metrics[
   threshold_metrics$method == "official MAGeCK-MLE + CNV", ]
 plot(
   bb_threshold$fdr_threshold, bb_threshold$F1,
-  type = "l", log = "x", lwd = 2, col = "#0072B2",
+  type = "l", log = "x", lwd = 2, col = barcs_colour,
   xlab = "Nominal FDR threshold", ylab = "Reference-gene F1",
-  main = "Thresholded discoveries",
+  main = "(C) Thresholded discoveries",
   xlim = range(fdr_threshold), ylim = range(threshold_metrics$F1)
 )
 lines(
   bb_cnv_threshold$fdr_threshold, bb_cnv_threshold$F1,
-  lwd = 2, col = "#0072B2"
+  lwd = 2, col = barcs_colour
 )
 lines(
   mageck_threshold$fdr_threshold, mageck_threshold$F1,
-  lwd = 1.5, lty = 2, col = "#D55E00"
+  lwd = 1.5, lty = 2, col = mageck_colour
 )
 lines(
   mageck_cnv_threshold$fdr_threshold, mageck_cnv_threshold$F1,
-  lwd = 2, col = "#D55E00"
+  lwd = 2, col = mageck_colour
 )
 lines(
   bb_threshold$fdr_threshold, bb_threshold$F1,
-  lwd = 1.5, lty = 2, col = "#0072B2"
+  lwd = 1.5, lty = 2, col = barcs_colour
 )
 abline(v = 0.05, lty = 2, col = "grey50")
 legend(
   "bottomright",
   legend = c(
-    "beta-binomial", "beta-binomial + CNV",
+    "BARCS", "BARCS + CNV",
     "official MAGeCK-MLE", "official MAGeCK-MLE + CNV"
   ),
-  col = c("#0072B2", "#0072B2", "#D55E00", "#D55E00"),
+  col = c(barcs_colour, barcs_colour, mageck_colour, mageck_colour),
   lty = c(2, 1, 2, 1), lwd = 2, bty = "n", cex = 0.58
 )
-barplot(
-  cnv_bias$spearman_effect_vs_cnv_nonessential,
-  names.arg = c("BB", "BB + CNV", "MAGeCK", "MAGeCK + CNV"),
-  col = c("#0072B2", "#56B4E9", "#D55E00", "#E69F00"),
-  las = 2,
-  ylim = c(-0.24, 0.04),
-  ylab = "Spearman(effect, CNV)",
-  main = "Residual CNV association\n(nonessential genes)"
+cnv_values <- abs(cnv_bias$spearman_effect_vs_cnv_nonessential)
+cnv_labels <- c("BARCS", "BARCS + CNV", "MAGeCK", "MAGeCK + CNV")
+cnv_colours <- c(
+  barcs_colour, barcs_colour, mageck_colour, mageck_colour
 )
-abline(h = 0, lty = 2, col = "grey50")
+cnv_pch <- c(16, 1, 16, 1)
+plot(
+  0, 0, type = "n",
+  xlim = c(0, max(cnv_values) * 1.08),
+  ylim = c(0.5, length(cnv_values) + 0.5),
+  xlab = "|Spearman(effect, copy number)| (closer to 0 is better)",
+  ylab = "", yaxt = "n",
+  main = "(D) Residual CNV association"
+)
+axis(
+  2, at = seq_along(cnv_values), labels = rev(cnv_labels),
+  las = 1, cex.axis = 0.78
+)
+abline(v = pretty(c(0, cnv_values)), col = "grey92", lwd = 0.8)
+segments(
+  x0 = 0, y0 = seq_along(cnv_values),
+  x1 = rev(cnv_values), y1 = seq_along(cnv_values),
+  col = rev(cnv_colours), lwd = 2
+)
+points(
+  rev(cnv_values), seq_along(cnv_values),
+  col = rev(cnv_colours), pch = rev(cnv_pch), cex = 1.15, lwd = 2
+)
 par(old_par)
 dev.off()
 

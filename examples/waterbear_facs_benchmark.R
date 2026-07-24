@@ -24,6 +24,7 @@
 # 87 minutes for one fit.
 
 options(stringsAsFactors = FALSE)
+source(file.path("R", "method_palette.R"))
 
 raw_dir <- file.path("data", "raw", "waterbear")
 result_dir <- file.path("results", "waterbear_facs")
@@ -598,8 +599,12 @@ write.csv(
 )
 
 method_colours <- c(
-  "#006D5B", "#1B9E77", "#7570B3", "#66C2A5", "#8DA0CB", "#D95F02",
-  "#E6AB02"
+  rep(barcs_method_colours[["BARCS"]], 2),
+  barcs_method_colours[["MAGeCK"]],
+  barcs_method_colours[["BARCS"]],
+  barcs_method_colours[["MAGeCK"]],
+  barcs_method_colours[["Waterbear"]],
+  barcs_method_colours[["MAUDE"]]
 )
 pdf(figure_path, width = 11, height = 8.5, useDingbats = FALSE)
 layout(matrix(1:4, nrow = 2, byrow = TRUE))
@@ -622,7 +627,7 @@ barplot(
   border = NA,
   xlim = c(0, 26),
   xlab = "Directionally validated genes recovered",
-  main = "A. Positive-control recovery at 0.10 threshold"
+  main = "(A) Positive-control recovery at 0.10 threshold"
 )
 abline(v = 26, lty = 3, col = "grey40")
 
@@ -636,7 +641,7 @@ barplot(
   border = NA,
   xlim = c(0, 1),
   xlab = "F1 in selected 33-gene validation panel",
-  main = "B. Restricted validation-panel classification"
+  main = "(B) Restricted validation-panel classification"
 )
 
 par(mar = c(5, 5, 3, 1))
@@ -649,7 +654,7 @@ plot(
   xlab = "MAGeCK-MLE marker-z effect",
   ylab = "BARCS marker-z effect",
   main = sprintf(
-    "C. All-bin effects (Spearman rho = %.3f)",
+    "(C) All-bin effects (Spearman rho = %.3f)",
     effect_correlation$spearman_effect
   )
 )
@@ -659,7 +664,8 @@ validated_index <- validated_index[!is.na(validated_index)]
 points(
   shared$estimate_mageck[validated_index],
   shared$estimate_bb[validated_index],
-  pch = 21, bg = "#E7298A", col = "white", cex = 0.9
+  pch = 21, bg = barcs_method_colours[["Validation"]],
+  col = "white", cex = 0.9
 )
 
 null_all <- sort(
@@ -685,18 +691,18 @@ plot(
   type = "n",
   xlab = "Nominal p-value",
   ylab = "Empirical cumulative fraction",
-  main = "D. Non-targeting-guide null calibration"
+  main = "(D) Non-targeting-guide null calibration"
 )
 abline(0, 1, lty = 3, col = "grey50")
 lines(null_all, seq_along(null_all) / length(null_all),
-      col = method_colours[2], lwd = 2)
+      col = method_colours[2], lwd = 2, lty = 2)
 lines(
   null_all_calibrated,
   seq_along(null_all_calibrated) / length(null_all_calibrated),
   col = method_colours[1], lwd = 2
 )
 lines(null_outer, seq_along(null_outer) / length(null_outer),
-      col = method_colours[4], lwd = 2)
+      col = method_colours[4], lwd = 2, lty = 3)
 legend(
   "bottomright",
   legend = c(
@@ -705,7 +711,7 @@ legend(
     "BARCS outer bins raw"
   ),
   col = method_colours[c(1, 2, 4)],
-  lwd = 2,
+  lty = c(1, 2, 3), lwd = 2,
   bty = "n"
 )
 dev.off()
