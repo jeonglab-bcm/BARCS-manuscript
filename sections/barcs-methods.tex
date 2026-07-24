@@ -252,6 +252,49 @@ gene-level summaries.  The exploratory DeWeirdt false-discovery audit used
 Fisher aggregation as stated in its Results description and is not pooled
 with these primary benchmark statistics.
 
+\subsubsection{CRISPulator FACS benchmark}
+
+We used CRISPulator 0.5.1's documented interfaces for library construction,
+transfection, FACS selection, and sequencing \citep{nagy2017crispulator}.
+The committed Julia environment pins the tagged source revision.  For each
+simulation seed, one CRISPRn guide library was constructed and reused across
+four independently seeded transfection, sorting, and sequencing replicates.
+The default CRISPulator phenotype mixture was retained: 75\% inactive, 5\%
+negative-control, 10\% phenotype-increasing, and 10\%
+phenotype-decreasing genes.  Screens contained 400 genes and five guides per
+gene.  Transfection representation was 500 cells per guide, multiplicity of
+infection was 0.25, Gaussian phenotype noise was 2, sorting representation was
+50 cells per guide, and sequencing depth was 50 reads per guide per sample.
+The five benchmark seeds were 20250724 through 20250728.
+
+CRISPulator's arbitrary percentile ranges were set to $(0,0.25)$ for low,
+$(0.75,1)$ for high, and $(0,1)$ for bulk.  Thus bulk deliberately overlaps
+the tails and is not a third component of a multinomial partition.  An input
+sample was generated as an independent sequencing draw from the same guide
+frequency vector as bulk.  Low and high received phenotype scores equal to
+the means of their corresponding standard-normal intervals,
+\[
+ d_{\mathrm{low}}=-1.271,\qquad
+ d_{\mathrm{high}}=1.271,
+\]
+while bulk received $d_{\mathrm{bulk}}=0$.  Both BARCS and MAGeCK-MLE fitted
+this score with replicate indicators.  Tail-only fits removed bulk without
+changing the low and high counts.  BARCS guide tests were scaled with the
+simulated negative-control guides before directional Stouffer aggregation;
+MAGeCK-MLE used its native gene-level Wald result.
+
+Genes from the increasing and decreasing classes were positives.  Ranking
+used the two-sided gene significance score.  AUROC and average precision
+measure active-gene discrimination.  Effect recovery is Spearman correlation
+between the inferred gene effect and CRISPulator's median theoretical guide
+phenotype among active genes.  Directional recall is the fraction of active
+genes with gene FDR below 0.10 and an effect sign matching the simulated
+class.  Realized FDP is the fraction of called genes that were inactive, and
+F1 uses active versus inactive status at the same FDR threshold.  The
+bulk-versus-input analysis intentionally applies the active labels to a
+contrast containing no sorted-phenotype information; AUROC 0.5 and zero effect
+correlation are therefore the expected result.
+
 \subsubsection{Legacy representation and local-equivalence result}
 
 We now separate an algebraic compatibility result from the substantive

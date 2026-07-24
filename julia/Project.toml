@@ -1,0 +1,19 @@
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Crispulator = "39046a72-5a6f-4d18-ae88-b64c04dba158"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[sources]
+Crispulator = {url = "https://github.com/tlnagy/Crispulator.jl.git", rev = "v0.5.1"}
+
+[compat]
+CSV = "0.10"
+Crispulator = "0.5.1"
+DataFrames = "1"
+DataStructures = "0.18"
+Distributions = "0.25"
+julia = "1"

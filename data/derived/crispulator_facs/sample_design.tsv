@@ -1,0 +1,17 @@
+sample	replicate	sample_type	lower_quantile	upper_quantile	directional_tail
+R01_input	R01	input			false
+R01_low	R01	low	0.0	0.25	true
+R01_bulk	R01	bulk	0.0	1.0	false
+R01_high	R01	high	0.75	1.0	true
+R02_input	R02	input			false
+R02_low	R02	low	0.0	0.25	true
+R02_bulk	R02	bulk	0.0	1.0	false
+R02_high	R02	high	0.75	1.0	true
+R03_input	R03	input			false
+R03_low	R03	low	0.0	0.25	true
+R03_bulk	R03	bulk	0.0	1.0	false
+R03_high	R03	high	0.75	1.0	true
+R04_input	R04	input			false
+R04_low	R04	low	0.0	0.25	true
+R04_bulk	R04	bulk	0.0	1.0	false
+R04_high	R04	high	0.75	1.0	true

@@ -284,80 +284,101 @@ all-bin inflation.}
 \end{figure}
 \clearpage
 
-\subsection{Simulation calibration: why the beta-binomial layer matters}
+\subsection{What does a 0--100\% bulk sample add to two FACS tails?}
 
-The script \texttt{examples/simulation.R} simulates 600 guides targeting 200
-genes in 27 independent samples.  The samples span nine standardized phenotype
-values in each of three batches, with library sizes between 40,000 and 120,000.
-Each gene has three guides; 160 genes have a zero phenotype coefficient, 20
-have coefficient $0.9$, and 20 have coefficient $-0.9$.  Counts are drawn from
-a beta-binomial model with $\rho=0.0015$.  All methods adjust for batch.
-Guide-level beta-binomial and naive-binomial results are summarized by the
-within-gene median effect and directional Stouffer evidence.  Official
-MAGeCK-MLE 0.5.9.5 receives the identical continuous design matrix and its Wald
-inference is reported.
+To isolate the requested FACS design question from the candidate-selected
+Waterbear validation set, we used CRISPulator 0.5.1
+\citep{nagy2017crispulator} to simulate CRISPR knockout screens with known
+gene effects.  Each of five prespecified seeds generated 400 genes, five
+guides per gene, and four independent screen replicates.  Twenty percent of
+genes changed the latent phenotype and 5\% were explicit negative controls.
+The stress-test setting used phenotype noise $\sigma=2$, 50 sorted cells per
+guide, and 50 reads per guide per sample.
+
+Each replicate produced a low 0--25\% tail, a high 75--100\% tail, and an
+unsorted 0--100\% bulk sample.  The two tails were assigned the conditional
+standard-normal locations $-1.271$ and $1.271$; bulk was assigned zero.
+Replicate indicators were included in both BARCS and official MAGeCK-MLE.
+We compared this three-sample fit with the two-tail ablation.  Importantly,
+``three sample'' does not mean three independent bins: the bulk sample
+contains the cell populations from both tails and costs 50\% more sequencing
+than the tail-only design.  A separate bulk-versus-input contrast used two
+independent sequencing draws from the same unsorted frequencies and therefore
+served as a required null reference.
 
 \begin{table}[ht]
 \centering
-\caption{Results from the simulation with random seed 20260723.  Type-I error
-and power use unadjusted $p<0.05$; discoveries and empirical FDR use
-Benjamini--Hochberg adjusted $p<0.05$.  Best means closest to 0.05 for Type I
-and empirical FDR, highest for power, lowest for RMSE, and closest to 0.95 for
-coverage; discoveries have no universal optimum.}
-\label{tab:simulation}
+\caption{CRISPulator FACS benchmark across five fixed simulation seeds
+(mean $\pm$ standard deviation).  Recall counts active genes called at
+gene FDR 0.10 with the correct direction.  FDP is the realized fraction of
+inactive genes among calls; values at or below the 0.10 target are calibrated
+but lower is not automatically better because recall differs.  Among sorted
+analyses, column maxima for ranking, effect recovery, recall, and F1 are
+highlighted.}
+\label{tab:crispulator}
 \small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrrr}
+\setlength{\tabcolsep}{3pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
 \toprule
-Method & Type I & Power & Discoveries & Empirical FDR & RMSE & 95\% coverage\\
+Method & Samples & AUROC & Avg.\ precision & Effect $\rho_s$ &
+Directional recall & FDP & F1\\
 \midrule
-\methodswatch{naivegray} Naive binomial $z$ &
-  0.844 & \textcolor{naivegray}{\textbf{1.000}} &
-  174 & 0.770 & 0.158 & 0.185\\
-\methodswatch{barcsblue} BARCS $t$ &
-  0.081 & \textcolor{barcsblue}{\textbf{1.000}} &
-  46 & 0.130 & 0.156 & \textcolor{barcsblue}{\textbf{0.935}}\\
-\methodswatch{mageckorange} Official MAGeCK-MLE Wald &
-  \textcolor{mageckorange}{\textbf{0.038}} & 0.975 & 41 &
-  \textcolor{mageckorange}{\textbf{0.049}} &
-  \textcolor{mageckorange}{\textbf{0.140}} & 0.970\\
+\methodswatch{barcsblue} BARCS & Low--bulk--high &
+0.955$\pm$.009 & 0.917$\pm$.021 & 0.924$\pm$.014 &
+\textcolor{barcsblue}{\textbf{0.764$\pm$.089}} &
+0.086$\pm$.044 &
+\textcolor{barcsblue}{\textbf{0.828$\pm$.037}}\\
+\methodswatch{mageckorange} MAGeCK-MLE & Low--bulk--high &
+\textcolor{mageckorange}{\textbf{0.964$\pm$.009}} &
+\textcolor{mageckorange}{\textbf{0.924$\pm$.018}} &
+\textcolor{mageckorange}{\textbf{0.932$\pm$.012}} &
+0.717$\pm$.045 & 0.048$\pm$.026 & 0.817$\pm$.031\\
+\methodswatch{barcsblue} BARCS & Low--high &
+0.950$\pm$.011 & 0.907$\pm$.026 & 0.923$\pm$.012 &
+0.664$\pm$.059 & 0.033$\pm$.023 & 0.786$\pm$.037\\
+\methodswatch{mageckorange} MAGeCK-MLE & Low--high &
+0.963$\pm$.009 & 0.921$\pm$.017 & 0.932$\pm$.011 &
+0.550$\pm$.039 & 0.012$\pm$.017 & 0.706$\pm$.033\\
+\midrule
+\methodswatch{naivegray} Bulk versus input & Unsorted &
+0.500$\pm$.018 & 0.214$\pm$.041 & 0.060$\pm$.070 &
+0 & 0 & 0\\
 \bottomrule
 \end{tabular}
+}
 \end{table}
 
-This simulation is a calibration experiment rather than a contest designed to
-make BARCS win.  The binomial-only test estimates the slopes reasonably well, but its standard
-errors treat reads as independent biological replicates.  Its null type-I error
-is therefore 0.844 rather than 0.05, and most reported discoveries are false.
-The beta-binomial model estimates almost the same effects while inflating
-uncertainty to reflect between-sample variation.  Its type-I error, empirical
-FDR, and confidence-interval coverage improve substantially while power remains
-1.00.  In this run, official MAGeCK-MLE is best calibrated: its type-I error is
-0.038, empirical FDR is 0.049, and coverage is 0.970, with power 0.975.
-Therefore the simulation does not support claiming that beta-binomial
-regression is uniformly better.  Monte Carlo variation is expected because
-only 160 null genes are used in this single reproducible run.
+The result is a tradeoff, not a universal victory.  MAGeCK-MLE has the best
+global ranking and effect correlation.  BARCS has higher directional recall
+and F1 at the prespecified 0.10 FDR threshold.  In the low--bulk--high design,
+its mean F1 is 0.828 versus 0.817 for MAGeCK-MLE; in the two-tail design, it is
+0.786 versus 0.706.  Negative-control $p<0.05$ frequencies averaged 0.061 and
+0.041 for the two BARCS designs, respectively.
 
-One simulated guide with true coefficient $0.9$ gives
-\[
-  \widehat{\beta}_d=1.159,\qquad
-  \operatorname{SE}=0.267,\qquad
-  t_{23}=4.341,\qquad
-  p=2.41\times10^{-4},
-\]
-with $\widehat{\rho}=5.58\times10^{-4}$.  MAGeCK-MLE gives a gene effect of
-0.851 with Wald standard error 0.184 and $p=3.81\times10^{-6}$.  The diagnostic plot in
-Figure~\ref{fig:simulation} shows the null calibration and this fitted dose
-response.
+Bulk does not supply a new directional contrast.  Across seeds, the
+low--bulk--high and tail-only gene effects have mean Spearman correlation
+0.9985 for BARCS and 0.9999 for MAGeCK-MLE.  Its practical contribution is
+instead to the fitted baseline, dispersion, and residual degrees of freedom:
+mean directional recall rises from 0.664 to 0.764 for BARCS and from 0.550 to
+0.717 for MAGeCK-MLE, accompanied by higher realized FDP and 50\% more reads.
+Because the bulk pool overlaps the tails, those inferential gains may partly
+reflect an independence approximation rather than new biological information.
+The bulk-versus-input reference confirms the scope boundary: its active-gene
+AUROC is 0.500, its effect correlation is 0.060, and it makes no FDR 0.10
+calls.
 
+\clearpage
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{figures/simulation_diagnostics.pdf}
-\caption{(A) Observed versus expected gene-level null $p$-values for the
-naive binomial, BARCS, and official MAGeCK-MLE fits.  (B) Observed guide
-abundance and the fitted batch-1 BARCS dose response for one truly associated
-guide.}
-\label{fig:simulation}
+\includegraphics[width=\textwidth]{figures/crispulator_facs_benchmark.pdf}
+\caption{CRISPulator FACS benchmark.  (A) The low and high 25\% tails are
+directional samples, whereas bulk overlaps the full cell population.
+(B) Mean average precision and directionally correct recall across five
+simulation seeds; error bars are one standard deviation, and hatching denotes
+directional recall.  (C) Bulk-versus-input AUROC remains
+near 0.5 and its effect correlation remains near zero.}
+\label{fig:crispulator}
 \end{figure}
 
 \subsection{Backward compatibility: GSE70038}

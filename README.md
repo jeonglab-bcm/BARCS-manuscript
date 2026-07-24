@@ -78,8 +78,13 @@ commits the updated submodule pointer. See
 
 - `R/bbreg.R`: dependency-free R implementation for one guide, contrasts, and
   guide-by-guide screens.
-- `examples/simulation.R`: reproducible beta-binomial simulation comparing the
-  beta-binomial t test, a misspecified binomial z test, and official MAGeCK-MLE.
+- `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
+  low 25%, high 25%, overlapping 0--100% bulk, and input samples.
+- `examples/crispulator_facs_benchmark.R`: one-seed BARCS/MAGeCK-MLE FACS
+  analysis with truth-based ranking, directional recovery, and null metrics.
+- `examples/crispulator_facs_repeated_benchmark.R`: five-seed manuscript
+  benchmark and aggregate figure. The older `examples/simulation.R` remains as
+  a beta-binomial calibration diagnostic but is no longer a main result.
 - `examples/cb2_generalization_proof.R`: numerical verification of the legacy
   GLS representation and a local-equivalence illustration for the logit
   statistic.
@@ -125,7 +130,9 @@ Rscript tests/run_tests.R
 Rscript examples/cb2_generalization_proof.R
 Rscript examples/cb2_generalization_walkthrough.R
 Rscript examples/barcs_input_output_examples.R
-Rscript examples/simulation.R
+julia --project=julia -e 'using Pkg; Pkg.instantiate()'
+julia --project=julia julia/simulate_crispulator_facs.jl
+Rscript examples/crispulator_facs_repeated_benchmark.R
 Rscript examples/gse70038_comparison.R
 Rscript examples/sanson_benchmark.R
 Rscript examples/chronos_tzelepis_benchmark.R
@@ -145,13 +152,15 @@ curl -L -o /tmp/mageck-0.5.9.5.tar.gz \
 .venv/bin/pip install /tmp/mageck-0.5.9.5.tar.gz
 ```
 
-The simulation writes its numeric results to `results/`, its plot to `figures/`,
-and prints the key operating characteristics. With the included seed, the
-beta-binomial t test has null type-I error 0.081, power 1.000, and empirical
-FDR 0.130. Official MAGeCK-MLE has type-I error 0.038, power 0.975, and
-empirical FDR 0.049. The read-level binomial z test has type-I error 0.844 and
-empirical FDR 0.770. Table 1 and Figure 1 in the manuscript show all three
-methods.
+The CRISPulator benchmark uses five fixed seeds, 400 genes, five guides per
+gene, and four independent screen replicates. In the low--bulk--high design,
+MAGeCK-MLE slightly leads global average precision (0.924 versus 0.917), while
+BARCS leads directionally correct recall at gene FDR 0.10 (0.764 versus 0.717)
+and F1 (0.828 versus 0.817). Low--bulk--high and tail-only effect ranks are
+nearly identical (mean Spearman 0.9985 for BARCS and 0.9999 for MAGeCK-MLE).
+Bulk versus input remains null (mean AUROC 0.500 and effect Spearman 0.060).
+Thus bulk can stabilize variance and degrees of freedom but adds no directional
+FACS contrast; it also overlaps the tails and uses 50% more sequencing.
 
 On GSE70038, beta-binomial versus official MAGeCK-MLE gene-effect Spearman
 correlations are 0.888-0.928 across the four terminal-condition coefficients;

@@ -1,0 +1,14 @@
+parameter	value
+crispulator_version	0.5.1
+seed	20250724
+replicates	4
+genes	400
+guides_per_gene	5
+cells_per_guide_at_transfection	500
+multiplicity_of_infection	0.25
+phenotype_noise_sd	2.0
+sorted_cells_per_guide	50
+reads_per_guide_per_sample	50
+low_interval	0-25%
+high_interval	75-100%
+bulk_interval	0-100%

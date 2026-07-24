@@ -39,19 +39,18 @@ for quantitative and covariate-adjusted CRISPR pooled screens}
 \maketitle
 
 \begin{abstract}
-Across complementary simulations and real CRISPR screens,
-BARCS was most useful when the experimental design carried
-information beyond one binary contrast.  In a longitudinal HT-29 screen, it
-achieved the highest recall at 90\% precision while remaining comparable with
-continuous-time MAGeCK-MLE and Chronos in global discrimination.  In an
-ordered-bin primary-T-cell screen, control-calibrated four-bin
-BARCS recovered 22 of 26 experimentally concordant IL2RA
-regulators versus 17 for all-bin MAGeCK-MLE.  Within the selected 33-gene
-follow-up panel, F1 was 0.863 versus 0.723, and the non-targeting-guide
-$p<0.05$ frequency decreased from 13.3\% to 4.9\%.  Endpoint, copy-number, and
-correlated-bin analyses showed that these gains are design dependent:
-Waterbear remains the preferable generative model for correlated FACS
-partitions, and no count model or normalization wins universally.
+BARCS was most useful when the experimental design carried information beyond
+one binary contrast.  In a longitudinal HT-29 screen, it achieved the highest
+recall at 90\% precision while matching continuous-time MAGeCK-MLE and Chronos
+in global discrimination.  In a primary-T-cell FACS screen,
+control-calibrated BARCS recovered 22 of 26 experimentally confirmed IL2RA
+regulators versus 17 for all-bin MAGeCK-MLE and reduced the non-targeting
+$p<0.05$ frequency from 13.3\% to 4.9\%.  Across five CRISPulator FACS
+simulations, MAGeCK-MLE slightly led global ranking, whereas BARCS led
+directional recall (0.764 versus 0.717) and F1 (0.828 versus 0.817).
+An overlapping 0--100\% bulk sample left low--high effect ranks almost
+unchanged and bulk-versus-input performance at chance, showing that bulk can
+stabilize inference but does not add directional phenotype information.
 
 BARCS extends the beta-binomial sampling principle of
 CB\textsuperscript{2} from two groups to a regression design matrix.  Guide
@@ -62,11 +61,10 @@ sample-level residual degrees of freedom.  The original statistic has an exact
 generalized-least-squares representation on its group-summary scale, while the
 default regression statistic is first-order locally equivalent under stated
 common-dispersion and independent-library asymptotics.  Parallel
-RcppArmadillo kernels analyzed 86,882 guides in 19.4 seconds.  Thus the
-method's strength is a fast, transparent, and diagnostically explicit path
-from pairwise CB\textsuperscript{2} screens to quantitative and
-covariate-adjusted designs, without claiming to replace specialist
-likelihoods.
+RcppArmadillo kernels analyzed 86,882 guides in 19.4 seconds.  The result is a
+fast, transparent path from pairwise CB\textsuperscript{2} screens to
+quantitative and covariate-adjusted designs, with diagnostics that identify
+when MAGeCK, Chronos, or a joint-bin model is the better fit.
 \end{abstract}
 
 \section{Introduction}
@@ -217,7 +215,9 @@ question is a coefficient rather than a group label.
   a compositional partition, not four independent biological replicates; the
   GSE242880 control calibration is a diagnostic sensitivity analysis, whereas
   a purpose-built joint model such as Waterbear represents that structure
-  directly.
+  directly.  Likewise, a 0--100\% bulk pool overlaps its sorted tails.  The
+  CRISPulator analysis includes that requested design to measure its empirical
+  behavior, not to redefine bulk as an independent third bin.
 
   \item \textbf{Enough sample-level degrees of freedom.}  Read depth cannot
   replace biological replication.  With very few samples, guide-wise
@@ -296,15 +296,22 @@ stress test, its continuous four-bin trend recovers substantially more
 validated biology than all-bin MAGeCK-MLE.  After control calibration it
 retains a 22/26 versus 17/26 recovery advantage, has the best F1 and Matthews
 correlation among the independently rerun methods in the selected validation
-panel, and returns the non-targeting tail to its nominal rate.  Backward-
+panel, and returns the non-targeting tail to its nominal rate.  The controlled
+CRISPulator benchmark clarifies the operating characteristic behind that
+result: BARCS favors directionally correct threshold recovery, while
+MAGeCK-MLE slightly favors global ranking.  Backward-
 compatibility analyses recover established biology and show strong agreement
 with MAGeCK, while the A375 benchmark demonstrates competitive endpoint
 performance.
 
-The same benchmarks prevent over-selling.  MAGeCK-MLE is better calibrated in
-the reported simulation; Chronos captures mechanistic viability dynamics that
-a single slope omits; and Waterbear remains the appropriate generative model
-for correlated FACS partitions.  MAUDE's 25/26 recovery comes with 406 calls
+The same benchmarks prevent over-selling.  In the CRISPulator study,
+MAGeCK-MLE slightly leads global ranking, whereas BARCS leads directional
+recall and F1 at the prespecified threshold.  The 0--100\% bulk sample changes
+low--high effect ranks negligibly and carries no directional signal by itself;
+its apparent inferential benefit must be weighed against overlapping cells and
+50\% more sequencing.  Chronos captures mechanistic viability dynamics that a
+single slope omits, and Waterbear remains the appropriate generative model for
+correlated FACS partitions.  MAUDE's 25/26 recovery comes with 406 calls
 and cannot be converted into a trustworthy precision or F1 estimate without
 complete labels.  Copy-number correction is likewise a diagnostic choice, not
 an automatic improvement: it removes nuisance association in A375 and
