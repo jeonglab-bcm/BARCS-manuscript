@@ -37,7 +37,8 @@ evaluated effects, following the deposited Chronos analysis.
 the precision--recall curve; Recall$_{90}$ is the maximum recall at least
 90\% precision.  Higher AUROC, PR AUC, and Recall$_{90}$ are better; more
 negative NNMD and fewer unexpressed false positives are better.  The best
-value in each column is shown in bold.}
+value in each column is shown in bold and in its method color; row swatches
+use the same colors as Figure~\ref{fig:chronos}.}
 \label{tab:chronos}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -45,11 +46,18 @@ value in each column is shown in bold.}
 \toprule
 Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{15\%}$\\
 \midrule
-BARCS time & 0.9786 & 0.9494 & $-12.35$ & \textbf{0.9037} & \textbf{74}\\
-Official MAGeCK time & \textbf{0.9789} & \textbf{0.9534} & $-13.14$ & 0.8972 & 76\\
-Chronos joint & 0.9747 & 0.9356 & $\mathbf{-18.88}$ & 0.8991 & 77\\
-Published MAGeCK average & 0.9742 & 0.9351 & $-10.62$ & 0.8602 & 100\\
-Published BAGEL2 average & 0.9725 & 0.9295 & $-7.28$ & 0.8148 & 133\\
+\methodswatch{barcsblue} BARCS time & 0.9786 & 0.9494 & $-12.35$ &
+  \textcolor{barcsblue}{\textbf{0.9037}} &
+  \textcolor{barcsblue}{\textbf{74}}\\
+\methodswatch{mageckorange} Official MAGeCK time &
+  \textcolor{mageckorange}{\textbf{0.9789}} &
+  \textcolor{mageckorange}{\textbf{0.9534}} & $-13.14$ & 0.8972 & 76\\
+\methodswatch{chronosgreen} Chronos joint & 0.9747 & 0.9356 &
+  \textcolor{chronosgreen}{$\mathbf{-18.88}$} & 0.8991 & 77\\
+\methodswatch{mageckpink} Published MAGeCK average &
+  0.9742 & 0.9351 & $-10.62$ & 0.8602 & 100\\
+\methodswatch{bagelgold} Published BAGEL2 average &
+  0.9725 & 0.9295 & $-7.28$ & 0.8148 & 133\\
 \bottomrule
 \end{tabular}
 \end{table}
