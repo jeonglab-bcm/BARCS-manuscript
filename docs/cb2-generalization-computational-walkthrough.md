@@ -233,12 +233,12 @@ code actually performs that algebra.
 For random problem $r$, the program records the largest of four discrepancies:
 
 $$
-\epsilon_r=\max\left\{
+\epsilon_r=\max\{
 \left|\widehat\beta_{0r}-\widehat p_{Ar}\right|,
 \left|\widehat\beta_{1r}-(\widehat p_{Br}-\widehat p_{Ar})\right|,
 \left|\widehat{\mathrm{Var}}(\widehat\beta_{1r})-(V_{Ar}+V_{Br})\right|,
 \left|T_{\mathrm{GLS},r}-T_{\mathrm{CB2},r}\right|
-\right\}.
+\}.
 $$
 
 The final check is $\max_{1\le r\le1000}\epsilon_r$, which is approximately
