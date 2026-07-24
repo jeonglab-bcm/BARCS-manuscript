@@ -28,47 +28,34 @@ for quantitative and covariate-adjusted CRISPR pooled screens}
 \maketitle
 
 \begin{abstract}
-CB\textsuperscript{2} was developed for a common but narrow pooled-screen
-question: does guide abundance differ between two experimental groups?  Modern
-screens increasingly measure trajectories, doses, ordered phenotypes, and
-multifactor designs that cannot be reduced to one pairwise contrast without
-discarding information.  We introduce CB\textsuperscript{2}-Reg, a
-design-matrix extension that preserves the original beta-binomial sampling
-logic while replacing the two-group comparison with regression coefficients
-and prespecified linear contrasts.  We show that the original
-CB\textsuperscript{2} statistic admits an algebraically exact
-generalized-least-squares representation on its group-summary scale.  This is
-a legacy-compatibility identity, not strict nesting of the default estimator.
-Under a common-dispersion model, local alternatives, and increasing numbers of
-independent libraries, the logit-scale regression statistic is first-order
-equivalent to the original statistic.  Guide counts remain the response; sample
-phenotypes and nuisance variables enter through a logit mean model; and a
-Student $t$ reference uses sample-level residual degrees of freedom rather than
-sequencing reads.  The implementation supports continuous and categorical
-predictors, batch and donor adjustment, interactions, contrasts, empirical-null
-scaling with prespecified controls, parallel screening, and RcppArmadillo
-linear algebra.
-
-Four complementary benchmarks define what this regression extension gains and where
-it should not be used.  In simulation, a read-level binomial test is severely
-anti-conservative, whereas beta-binomial inference restores uncertainty to the
-sample level.  In the longitudinal HT-29 screen, CB\textsuperscript{2}-Reg
-achieves the highest recall at 90\% precision while remaining comparable with
-continuous-time MAGeCK-MLE and Chronos in global discrimination.  In a
-primary-T-cell ordered-bin FACS stress test, control-calibrated four-bin
-CB\textsuperscript{2}-Reg recovers 22 of 26 experimentally concordant IL2RA
+Across complementary simulations and real CRISPR screens,
+CB\textsuperscript{2}-Reg was most useful when the experimental design carried
+information beyond one binary contrast.  In a longitudinal HT-29 screen, it
+achieved the highest recall at 90\% precision while remaining comparable with
+continuous-time MAGeCK-MLE and Chronos in global discrimination.  In an
+ordered-bin primary-T-cell screen, control-calibrated four-bin
+CB\textsuperscript{2}-Reg recovered 22 of 26 experimentally concordant IL2RA
 regulators versus 17 for all-bin MAGeCK-MLE.  Within the selected 33-gene
-follow-up panel, it has F1 0.863 and Matthews correlation 0.398, compared with
-0.723 and 0.070 for MAGeCK-MLE, while restoring the non-targeting-guide
-$p<0.05$ frequency from 13.3\% to 4.9\%.  The purpose-built Waterbear result
-remains the best calibrated modeling choice for correlated FACS partitions and
-recovers 24 of 26 controls.  Endpoint and copy-number analyses further show
-that no normalization or count model wins automatically in every design.
-CB\textsuperscript{2}-Reg is therefore best viewed as a design-matrix
-beta-binomial extension of the original sampling principle: a fast,
-transparent general-purpose method for
-independent libraries with quantitative or adjusted sample designs, accompanied
-by diagnostics that reveal when a specialist likelihood is required.
+follow-up panel, F1 was 0.863 versus 0.723, and the non-targeting-guide
+$p<0.05$ frequency decreased from 13.3\% to 4.9\%.  Endpoint, copy-number, and
+correlated-bin analyses showed that these gains are design dependent:
+Waterbear remains the preferable generative model for correlated FACS
+partitions, and no count model or normalization wins universally.
+
+CB\textsuperscript{2}-Reg extends the beta-binomial sampling principle of
+CB\textsuperscript{2} from two groups to a regression design matrix.  Guide
+counts are modeled against full-library totals; continuous or categorical
+phenotypes, covariates, interactions, and prespecified contrasts enter through
+a logit mean model; and inference uses guide-level dispersion with
+sample-level residual degrees of freedom.  The original statistic has an exact
+generalized-least-squares representation on its group-summary scale, while the
+default regression statistic is first-order locally equivalent under stated
+common-dispersion and independent-library asymptotics.  Parallel
+RcppArmadillo kernels analyzed 86,882 guides in 19.4 seconds.  Thus the
+method's strength is a fast, transparent, and diagnostically explicit path
+from pairwise CB\textsuperscript{2} screens to quantitative and
+covariate-adjusted designs, without claiming to replace specialist
+likelihoods.
 \end{abstract}
 
 \section{\texorpdfstring{The problem CB\textsuperscript{2}-Reg solves}
