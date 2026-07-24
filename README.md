@@ -12,6 +12,17 @@ response. Continuous phenotypes, donors, batches, interactions, and other
 sample variables are predictors. Coefficients and named contrasts use a
 Student t reference based on independent samples rather than reads.
 
+The mathematical relationship is stated narrowly and proved. Original CB² is
+exactly a binary-design generalized least-squares contrast when its weighted
+group proportions and group variances are used. The default logit-scale
+CB²-Reg statistic is first-order equivalent to that raw-proportion statistic
+under a correctly specified binary design and local alternatives. It is not an
+exact finite-sample reproduction: original CB² uses separate group weighting
+and Welch–Satterthwaite degrees of freedom, whereas CB²-Reg uses a common
+guide-wise dispersion across the design and residual degrees of freedom. See
+`examples/cb2_generalization_proof.R` for the machine-precision identity check
+and convergence illustration.
+
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
 
@@ -20,7 +31,10 @@ two-group workflow:
 | Primary question | Difference between two groups | Trend, adjusted association, interaction, or contrast |
 | Design | Reference/comparison labels | Arbitrary full-rank model matrix |
 | Effect | Group difference or fold change | Conditional log-odds coefficient |
-| Variance | Beta-binomial | Same beta-binomial principle |
+| Dispersion | Estimated separately within groups | One guide-wise rho across the fitted design |
+| Estimator | Weighted group proportions | Feasible logistic IRLS |
+| Degrees of freedom | Welch–Satterthwaite | Residual sample df |
+| Variance principle | Beta-binomial | Same beta-binomial principle |
 | Adjustment | Limited by pairwise design | Batch, donor, dose, time, splines, interactions |
 | API | Existing CB2 functions | `bbreg()`, `bb_contrast()`, `bb_screen()` |
 
@@ -51,6 +65,9 @@ commits the updated submodule pointer. See
   guide-by-guide screens.
 - `examples/simulation.R`: reproducible beta-binomial simulation comparing the
   beta-binomial t test, a misspecified binomial z test, and official MAGeCK-MLE.
+- `examples/cb2_generalization_proof.R`: exact numerical recovery of the
+  original CB² statistic as a binary-design GLS contrast and a local-equivalence
+  illustration for the logit statistic.
 - `examples/gse70038_comparison.R`: head-to-head analysis of all 64,747 guides
   in GSE70038 using a Table-5-style design and official MAGeCK-MLE 0.5.9.5.
 - `examples/sanson_benchmark.R`: independent essential-versus-nonessential-gene
@@ -84,6 +101,7 @@ From the repository root:
 
 ```sh
 Rscript tests/run_tests.R
+Rscript examples/cb2_generalization_proof.R
 Rscript examples/simulation.R
 Rscript examples/gse70038_comparison.R
 Rscript examples/sanson_benchmark.R

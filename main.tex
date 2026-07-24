@@ -2,7 +2,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage[margin=1in]{geometry}
@@ -14,6 +14,8 @@
 \newcommand{\E}{\operatorname{E}}
 \newcommand{\Var}{\operatorname{Var}}
 \newcommand{\logit}{\operatorname{logit}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
 
 \title{CB\textsuperscript{2}-Reg: design-matrix beta-binomial regression\\
 for quantitative and covariate-adjusted CRISPR pooled screens}
@@ -32,7 +34,10 @@ multifactor designs that cannot be reduced to one pairwise contrast without
 discarding information.  We introduce CB\textsuperscript{2}-Reg, a
 design-matrix extension that preserves the original beta-binomial sampling
 logic while replacing the two-group comparison with regression coefficients
-and prespecified linear contrasts.  Guide counts remain the response; sample
+and prespecified linear contrasts.  We prove that the original
+CB\textsuperscript{2} statistic is exactly a binary-design generalized
+least-squares contrast and that, under local alternatives, the logit-scale
+regression statistic is first-order equivalent to it.  Guide counts remain the response; sample
 phenotypes and nuisance variables enter through a logit mean model; and a
 Student $t$ reference uses sample-level residual degrees of freedom rather than
 sequencing reads.  The implementation supports continuous and categorical
@@ -94,8 +99,11 @@ CB\textsuperscript{2} adapts the beta-binomial weighted test of
 depth measures a guide proportion precisely, but it does not turn reads into
 independent biological replicates.  The original method applies this insight
 to a two-group contrast.  CB\textsuperscript{2}-Reg retains the same
-depth-aware, extra-binomial variance and changes the mean model from two group
-means to a design matrix.
+depth-aware, extra-binomial variance principle and changes the mean model from
+two group means to a design matrix.  ``Retains'' refers to the stochastic
+hierarchy and the sample-level information ceiling; it does not mean that the
+default logit fit reproduces the original finite-sample statistic.  The exact
+and asymptotic relationships are proved below.
 
 \begin{table}[ht]
 \centering
@@ -112,14 +120,18 @@ Primary question & Difference between two groups &
 Trend, adjusted association, interaction, or contrast\\
 Sample design & Reference and comparison labels &
 Arbitrary full-rank R model matrix\\
-Mean parameter & Group-specific guide proportions &
-Logit-linear guide proportion\\
+Mean model & Two unrelated group proportions &
+$\logit(\mu_i)=\mathbf{x}_i^\top\boldsymbol{\beta}$\\
 Effect & Difference or fold change between groups &
 Conditional log-odds coefficient or linear contrast\\
-Variance principle & \multicolumn{2}{c}{Binomial sampling plus
+Dispersion & Separate beta-binomial weighting within each group &
+One guide-specific $\rho$ shared across the fitted design\\
+Estimator & Weighted group proportions &
+Feasible logistic IRLS\\
+Variance principle & \multicolumn{2}{c}{Binomial sequencing plus
 between-library beta-binomial heterogeneity}\\
-Inference & Two-group weighted statistic &
-Coefficient $t$ statistic with $m-q$ sample-level degrees of freedom\\
+Reference df & Group-variance df formula &
+Residual $m-q$\\
 Adjustment & Pairwise stratification or preprocessing &
 Batch, donor, dose, time, interactions, splines, and other covariates\\
 Implementation & Existing CB\textsuperscript{2} workflow &
@@ -129,7 +141,7 @@ Additive \texttt{bbreg()}, \texttt{bb\_contrast()}, and
 \end{tabular}
 \end{table}
 
-The appropriate bridge was described by \citet{baggerly2004overdispersed} for
+The regression bridge was described by \citet{baggerly2004overdispersed} for
 sequencing count data with multiple groups and continuous covariates.  The
 method combines logistic regression with extra-binomial variation and retains
 a coefficient-based $t$ test.  Here we state that construction in CRISPR-screen
@@ -269,16 +281,173 @@ average slopes in interaction models, and other one-degree-of-freedom
 hypotheses.  Guide-wise two-sided $p$-values are adjusted using the
 Benjamini--Hochberg procedure \citep{benjamini1995controlling}.
 
-\subsection{Connection with the original two-group test}
+\subsection{Exact embedding and local-equivalence proof}
 
-If $d_i$ is replaced by a zero--one group indicator, Equation~\eqref{eq:mean}
-becomes a two-group beta-binomial regression.  Its coefficient tests a
-log-odds contrast rather than CB\textsuperscript{2}'s raw difference in
-proportions, so the two statistics are related but not algebraically identical.
-For rare guides and modest effects, the logit is approximately the log
-proportion and the conclusions should usually be similar.  Regression adds the
-ability to use all dose levels together and to adjust for batch or other
-covariates.
+We now state exactly in what sense CB\textsuperscript{2}-Reg generalizes
+CB\textsuperscript{2}.  For the original test, let
+\[
+ \widehat p_A=\sum_{i\in A}a_iY_i,\qquad
+ \widehat p_B=\sum_{i\in B}b_iY_i,
+ \qquad \sum_{i\in A}a_i=\sum_{i\in B}b_i=1,
+\]
+where the depth- and dispersion-dependent weights $a_i,b_i$ are those
+estimated by CB\textsuperscript{2}.  Let its estimated group variances be
+$V_A>0$ and $V_B>0$.  The original guide statistic and reference degrees of
+freedom are
+\begin{align}
+ T_{\mathrm{CB2}} &=
+ \frac{\widehat p_B-\widehat p_A}{\sqrt{V_A+V_B}}, \label{eq:legacyt}\\
+ \nu_{\mathrm{CB2}} &=
+ \frac{(V_A+V_B)^2}
+ {V_A^2/(n_A-1)+V_B^2/(n_B-1)}. \label{eq:legacydf}
+\end{align}
+
+\begin{proposition}[Exact binary-design representation]
+\label{prop:exact}
+Let $X$ have row $(1,0)$ for samples in group $A$ and row $(1,1)$
+for samples in group $B$.  Define the working precision matrix
+\[
+ \Omega=\operatorname{diag}\left(
+ \left\{\frac{a_i}{V_A}:i\in A\right\},
+ \left\{\frac{b_i}{V_B}:i\in B\right\}\right).
+\]
+Then the identity-link generalized least-squares estimator satisfies
+\[
+ \widehat{\boldsymbol\beta}_{\mathrm{GLS}}
+ =(X^\top\Omega X)^{-1}X^\top\Omega\mathbf{Y}
+ =
+ \begin{pmatrix}\widehat p_A\\ \widehat p_B-\widehat p_A\end{pmatrix},
+\]
+and
+\[
+ (X^\top\Omega X)^{-1}
+ =
+ \begin{pmatrix}
+ V_A & -V_A\\
+ -V_A & V_A+V_B
+ \end{pmatrix}.
+\]
+Consequently, the GLS $t$ statistic for the slope is exactly
+$T_{\mathrm{CB2}}$.
+\end{proposition}
+
+\begin{proof}
+Because the weights within each group sum to one, their groupwise total
+working precisions are
+\[
+ \sum_{i\in A}\frac{a_i}{V_A}=\frac{1}{V_A},
+ \qquad
+ \sum_{i\in B}\frac{b_i}{V_B}=\frac{1}{V_B}.
+\]
+Hence
+\[
+ X^\top\Omega X=
+ \begin{pmatrix}
+ V_A^{-1}+V_B^{-1} & V_B^{-1}\\
+ V_B^{-1} & V_B^{-1}
+ \end{pmatrix},
+\quad
+ X^\top\Omega\mathbf{Y}=
+ \begin{pmatrix}
+ \widehat p_A/V_A+\widehat p_B/V_B\\
+ \widehat p_B/V_B
+ \end{pmatrix}.
+\]
+Direct inversion gives the displayed covariance matrix and multiplication
+gives the displayed coefficient vector.  Its slope standard error is
+$\sqrt{V_A+V_B}$, proving the result.
+\end{proof}
+
+\begin{corollary}[Exact recovery of legacy inference]
+If the slope statistic in Proposition~\ref{prop:exact} is referred to
+$t_{\nu_{\mathrm{CB2}}}$ using Equation~\eqref{eq:legacydf}, its two-sided
+$p$-value is identical to the original CB\textsuperscript{2} $p$-value.
+Thus the original two-group test is an exact special case of
+design-matrix contrast inference on the identity-link, group-summary scale.
+\end{corollary}
+
+The default implementation uses the logit link because it respects the
+parameter space for arbitrary designs.  It is therefore important to prove a
+second, weaker relationship rather than claim finite-sample identity.
+
+\begin{proposition}[First-order equivalence of the logit contrast]
+\label{prop:local}
+Suppose the two groups are independent, their weighted proportion estimators
+are consistent, their groupwise and pooled precision estimators converge to a
+common $\kappa$, and under the null or a sequence of local alternatives
+$p_A,p_B\rightarrow p\in(0,1)$ with
+$\widehat p_B-\widehat p_A=O_p(n^{-1/2})$.  Let
+$h(p)=\logit(p)$ and define the delta-method statistic
+\[
+ T_{\logit}=
+ \frac{h(\widehat p_B)-h(\widehat p_A)}
+ {\sqrt{h'(\widehat p_A)^2V_A+h'(\widehat p_B)^2V_B}}.
+\]
+Then
+\[
+ T_{\logit}-T_{\mathrm{CB2}}\xrightarrow{p}0.
+\]
+Under a correctly specified common-dispersion beta-binomial model, the
+binary-design IRLS Wald statistic has the same first-order expansion.  If
+$n_A,n_B\rightarrow\infty$, both its residual degrees of freedom and
+Equation~\eqref{eq:legacydf} diverge, so their reference distributions also
+converge to the same standard normal limit.
+\end{proposition}
+
+\begin{proof}
+The mean-value theorem and consistency give
+\[
+ h(\widehat p_B)-h(\widehat p_A)
+ =h'(p)(\widehat p_B-\widehat p_A)+o_p(n^{-1/2}),
+\]
+where $h'(p)=\{p(1-p)\}^{-1}$.  Continuity of $h'$ gives
+\[
+ \sqrt{h'(\widehat p_A)^2V_A+h'(\widehat p_B)^2V_B}
+ =h'(p)\sqrt{V_A+V_B}\{1+o_p(1)\}.
+\]
+The common positive factor $h'(p)$ cancels, yielding
+$T_{\logit}=T_{\mathrm{CB2}}+o_p(1)$.  It remains to connect this transformed
+cell-mean statistic to IRLS.  Write $\rho=1/(\kappa+1)$.  Within a group having
+mean $\mu_g$, the beta-binomial quasi-score for its logit cell mean is
+proportional to
+\[
+ \sum_{i\in g}\frac{N_i}{\kappa+N_i}(Y_i-\mu_g).
+\]
+The original CB\textsuperscript{2} weight is
+\[
+ \left(\frac{1}{\kappa}+\frac{1}{N_i}\right)^{-1}
+ =\frac{\kappa N_i}{\kappa+N_i}.
+\]
+The factor $\kappa$ disappears on normalization, so for fixed common
+dispersion the two methods use identical within-group relative weights.
+Under the stated common-dispersion model, the separately estimated legacy
+precisions and the IRLS precision converge to the same $\kappa$; the resulting
+binary-design cell means therefore have the same first-order expansion.
+Finally, both $t$ distributions approach the standard normal as their degrees
+of freedom diverge.
+\end{proof}
+
+These results establish two deliberately separate claims.  The original
+statistic is \emph{exactly nested} in design-matrix contrast algebra, while
+the implemented logit statistic is \emph{locally asymptotically equivalent}
+in the unadjusted binary design.  In finite samples,
+\texttt{bbreg(\textasciitilde group)} need not equal
+\texttt{measure\_sgrna\_stats()}: the effect scale, dispersion pooling,
+working weights, and degrees of freedom differ.  What regression adds is an
+estimable coefficient for continuous predictors, adjustment variables, and
+interactions; what it changes must be assessed by calibration and benchmark
+data rather than hidden behind the word ``generalization.''  The executable
+example \texttt{examples/cb2\_generalization\_proof.R} verifies
+Proposition~\ref{prop:exact} to machine precision and illustrates the
+convergence in Proposition~\ref{prop:local}.  In its deterministic guide,
+original CB\textsuperscript{2} and the GLS contrast both give effect
+$9.059929\times10^{-4}$, standard error $1.113105\times10^{-4}$,
+$t=8.139330$, $\nu=5.647255$, and two-sided
+$p=2.512928\times10^{-4}$; the maximum numerical discrepancy is
+$1.78\times10^{-15}$.  In the link-scale illustration, shrinking the
+two-group proportion difference from $8\times10^{-4}$ to
+$2.5\times10^{-5}$ reduces the absolute gap between raw and logit statistics
+from $0.0583$ to $0.000151$.
 
 \section{Calibration: why the beta-binomial layer matters}
 
