@@ -1,5 +1,10 @@
 # Why CB²-Reg is a generalization of CB²
 
+If you prefer to learn by running code, use the
+[`computational walkthrough`](cb2-generalization-computational-walkthrough.md).
+It starts with a three-line calculation, runs 1,000 random stress tests, calls
+the original `fit_ab()`, and finishes with a continuous-dose example.
+
 ## The short answer
 
 Original CB² compares two groups. CB²-Reg can analyze two groups, but it can

@@ -25,6 +25,8 @@ and convergence illustration.
 
 For a version written without matrix algebra, start with
 [`docs/cb2-generalization-high-school-proof.md`](docs/cb2-generalization-high-school-proof.md).
+For a code-first version with six progressively richer examples, use
+[`docs/cb2-generalization-computational-walkthrough.md`](docs/cb2-generalization-computational-walkthrough.md).
 
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
@@ -71,6 +73,10 @@ commits the updated submodule pointer. See
 - `examples/cb2_generalization_proof.R`: exact numerical recovery of the
   original CB² statistic as a binary-design GLS contrast and a local-equivalence
   illustration for the logit statistic.
+- `examples/cb2_generalization_walkthrough.R`: six code-first examples,
+  including hand-checkable numbers, 1,000 randomized identity checks, original
+  `fit_ab()` counts, the finite-sample logit difference, local convergence, and
+  a continuous-dose fit.
 - `examples/gse70038_comparison.R`: head-to-head analysis of all 64,747 guides
   in GSE70038 using a Table-5-style design and official MAGeCK-MLE 0.5.9.5.
 - `examples/sanson_benchmark.R`: independent essential-versus-nonessential-gene
@@ -105,6 +111,7 @@ From the repository root:
 ```sh
 Rscript tests/run_tests.R
 Rscript examples/cb2_generalization_proof.R
+Rscript examples/cb2_generalization_walkthrough.R
 Rscript examples/simulation.R
 Rscript examples/gse70038_comparison.R
 Rscript examples/sanson_benchmark.R
