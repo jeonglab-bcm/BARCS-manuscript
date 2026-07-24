@@ -163,15 +163,13 @@ The regression intercept is the group-A proportion. The regression slope is
 In symbols, the computation has produced
 
 $$
-\widehat{\boldsymbol\beta}
-=
+\widehat{\boldsymbol\beta} =
 \begin{pmatrix}
 \widehat p_A\\
 \widehat p_B-\widehat p_A
 \end{pmatrix},
 \qquad
-\widehat{\mathrm{Cov}}(\widehat{\boldsymbol\beta})
-=
+\widehat{\mathrm{Cov}}(\widehat{\boldsymbol\beta}) =
 \begin{pmatrix}
 V_A&-V_A\\
 -V_A&V_A+V_B
@@ -182,8 +180,7 @@ Therefore,
 
 $$
 \frac{\widehat\beta_1}
-{\sqrt{\widehat{\mathrm{Var}}(\widehat\beta_1)}}
-=
+{\sqrt{\widehat{\mathrm{Var}}(\widehat\beta_1)}} =
 \frac{\widehat p_B-\widehat p_A}{\sqrt{V_A+V_B}}
 =T_{\mathrm{CB2}}.
 $$
@@ -286,8 +283,7 @@ this example are estimated from the read counts rather than typed by hand.
 Original CB² converts the shared t-statistic to a p-value with
 
 $$
-\nu_{\mathrm{CB2}}
-=
+\nu_{\mathrm{CB2}} =
 \frac{(V_A+V_B)^2}
 {V_A^2/(n_A-1)+V_B^2/(n_B-1)}
 $$
@@ -403,8 +399,7 @@ T_{\mathrm{raw}}
 $$
 
 $$
-T_{\logit}
-=
+T_{\logit} =
 \frac{\mathrm{logit}(p_B)-\mathrm{logit}(p_A)}
 {\sqrt{\{\mathrm{logit}'(p_A)\}^2V_A+
 \{\mathrm{logit}'(p_B)\}^2V_B}},
