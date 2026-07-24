@@ -62,7 +62,7 @@ $$
 \begin{aligned}
 \widehat\Delta
   &= 0.0023-0.0014=0.0009,\\
-\operatorname{SE}(\widehat\Delta)
+\mathrm{SE}(\widehat\Delta)
   &= \sqrt{4\times10^{-8}+5\times10^{-8}}
    =0.0003,\\
 T_{\mathrm{CB2}}
@@ -130,7 +130,7 @@ $$
 \widehat{\boldsymbol\beta}
   =(X^\top\Omega X)^{-1}X^\top\Omega\mathbf y,
 \qquad
-\widehat{\operatorname{Cov}}(\widehat{\boldsymbol\beta})
+\widehat{\mathrm{Cov}}(\widehat{\boldsymbol\beta})
   =(X^\top\Omega X)^{-1}.
 $$
 
@@ -170,7 +170,7 @@ $$
 \widehat p_B-\widehat p_A
 \end{pmatrix},
 \qquad
-\widehat{\operatorname{Cov}}(\widehat{\boldsymbol\beta})
+\widehat{\mathrm{Cov}}(\widehat{\boldsymbol\beta})
 =
 \begin{pmatrix}
 V_A&-V_A\\
@@ -182,7 +182,7 @@ Therefore,
 
 $$
 \frac{\widehat\beta_1}
-{\sqrt{\widehat{\operatorname{Var}}(\widehat\beta_1)}}
+{\sqrt{\widehat{\mathrm{Var}}(\widehat\beta_1)}}
 =
 \frac{\widehat p_B-\widehat p_A}{\sqrt{V_A+V_B}}
 =T_{\mathrm{CB2}}.
@@ -239,7 +239,7 @@ $$
 \epsilon_r=\max\left\{
 \left|\widehat\beta_{0r}-\widehat p_{Ar}\right|,
 \left|\widehat\beta_{1r}-(\widehat p_{Br}-\widehat p_{Ar})\right|,
-\left|\widehat{\operatorname{Var}}(\widehat\beta_{1r})-(V_{Ar}+V_{Br})\right|,
+\left|\widehat{\mathrm{Var}}(\widehat\beta_{1r})-(V_{Ar}+V_{Br})\right|,
 \left|T_{\mathrm{GLS},r}-T_{\mathrm{CB2},r}\right|
 \right\}.
 $$
@@ -341,7 +341,7 @@ and
 
 $$
 \beta_{\mathrm{group}}
-  =\operatorname{logit}(\mu_B)-\operatorname{logit}(\mu_A)
+  =\mathrm{logit}(\mu_B)-\mathrm{logit}(\mu_A)
   =\log\left(\frac{\mu_B/(1-\mu_B)}
   {\mu_A/(1-\mu_A)}\right).
 $$
@@ -405,11 +405,11 @@ $$
 $$
 T_{\logit}
 =
-\frac{\operatorname{logit}(p_B)-\operatorname{logit}(p_A)}
-{\sqrt{\{\operatorname{logit}'(p_A)\}^2V_A+
-\{\operatorname{logit}'(p_B)\}^2V_B}},
+\frac{\mathrm{logit}(p_B)-\mathrm{logit}(p_A)}
+{\sqrt{\{\mathrm{logit}'(p_A)\}^2V_A+
+\{\mathrm{logit}'(p_B)\}^2V_B}},
 \qquad
-\operatorname{logit}'(p)=\frac{1}{p(1-p)}.
+\mathrm{logit}'(p)=\frac{1}{p(1-p)}.
 $$
 
 | B − A | Raw t | Logit t | Logit/raw | Absolute gap |
@@ -433,12 +433,12 @@ $$
 The reason is the first-order Taylor approximation
 
 $$
-\operatorname{logit}(p_B)-\operatorname{logit}(p_A)
-=\operatorname{logit}'(p_0)(p_B-p_A)+o(\delta).
+\mathrm{logit}(p_B)-\mathrm{logit}(p_A)
+=\mathrm{logit}'(p_0)(p_B-p_A)+o(\delta).
 $$
 
 The standard error is multiplied by the same
-$\operatorname{logit}'(p_0)$, so that factor
+$\mathrm{logit}'(p_0)$, so that factor
 cancels from the t-statistic.
 
 This is the computational illustration of the local-equivalence result.
@@ -458,7 +458,7 @@ That column only asks whether B differs from A.
 The corresponding mean model is
 
 $$
-\operatorname{logit}(\mu_i)=\beta_0+\beta_1G_i,
+\mathrm{logit}(\mu_i)=\beta_0+\beta_1G_i,
 \qquad G_i\in\{0,1\}.
 $$
 
@@ -492,14 +492,14 @@ model.matrix(~ dose)
 The new mean model is
 
 $$
-\operatorname{logit}(\mu_i)=\beta_0+\beta_{\mathrm{dose}}d_i,
+\mathrm{logit}(\mu_i)=\beta_0+\beta_{\mathrm{dose}}d_i,
 \qquad d_i\in\{0,1,2,3,4\}.
 $$
 
 More generally, CB²-Reg uses
 
 $$
-\operatorname{logit}(\mu_i)=\mathbf x_i^\top\boldsymbol\beta,
+\mathrm{logit}(\mu_i)=\mathbf x_i^\top\boldsymbol\beta,
 $$
 
 where $\mathbf x_i$ can also contain batch, donor, CNV, interaction, or spline
