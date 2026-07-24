@@ -14,13 +14,17 @@ The complete runnable file is
 
 Original CB² calculates
 
-```text
-effect = weighted proportion in B - weighted proportion in A
+$$
+\widehat{\Delta}_{\mathrm{CB2}}
+  = \widehat p_B-\widehat p_A,
+\qquad
+T_{\mathrm{CB2}}
+  = \frac{\widehat p_B-\widehat p_A}
+  {\sqrt{V_A+V_B}}.
+$$
 
-                     effect
-t = -----------------------------------------
-    sqrt(variance of A + variance of B)
-```
+Here, $\widehat p_A$ and $\widehat p_B$ are the weighted guide proportions, and
+$V_A$ and $V_B$ are their estimated variances.
 
 We want to check three claims:
 
@@ -40,7 +44,28 @@ p <- c(A = 0.0014, B = 0.0023)
 v <- c(A = 4e-8, B = 5e-8)
 ```
 
+In mathematical notation, the inputs are
+
+$$
+\widehat p_A=0.0014,\quad
+\widehat p_B=0.0023,\quad
+V_A=4\times10^{-8},\quad
+V_B=5\times10^{-8}.
+$$
+
 The direct CB² calculation is:
+
+$$
+\begin{aligned}
+\widehat\Delta
+  &= 0.0023-0.0014=0.0009,\\
+\operatorname{SE}(\widehat\Delta)
+  &= \sqrt{4\times10^{-8}+5\times10^{-8}}
+   =0.0003,\\
+T_{\mathrm{CB2}}
+  &=\frac{0.0009}{0.0003}=3.
+\end{aligned}
+$$
 
 ```r
 effect <- p["B"] - p["A"]
@@ -76,6 +101,36 @@ x
 The first row represents group A, and the second represents group B. Give the
 two rows precision weights `1 / VA` and `1 / VB`:
 
+$$
+X=
+\begin{pmatrix}
+1&0\\
+1&1
+\end{pmatrix},
+\qquad
+\mathbf y=
+\begin{pmatrix}
+\widehat p_A\\
+\widehat p_B
+\end{pmatrix},
+\qquad
+\Omega=
+\begin{pmatrix}
+1/V_A&0\\
+0&1/V_B
+\end{pmatrix}.
+$$
+
+The weighted-regression calculation is
+
+$$
+\widehat{\boldsymbol\beta}
+  =(X^\top\Omega X)^{-1}X^\top\Omega\mathbf y,
+\qquad
+\widehat{\operatorname{Cov}}(\widehat{\boldsymbol\beta})
+  =(X^\top\Omega X)^{-1}.
+$$
+
 ```r
 precision <- 1 / v
 information <- crossprod(x, precision * x)
@@ -101,6 +156,34 @@ t-statistic               = 3
 
 The regression intercept is the group-A proportion. The regression slope is
 `B - A`. Its standard error and t-statistic are exactly the direct CB² values.
+
+In symbols, the computation has produced
+
+$$
+\widehat{\boldsymbol\beta}
+=
+\begin{pmatrix}
+\widehat p_A\\
+\widehat p_B-\widehat p_A
+\end{pmatrix},
+\qquad
+\widehat{\operatorname{Cov}}(\widehat{\boldsymbol\beta})
+=
+\begin{pmatrix}
+V_A&-V_A\\
+-V_A&V_A+V_B
+\end{pmatrix}.
+$$
+
+Therefore,
+
+$$
+\frac{\widehat\beta_1}
+{\sqrt{\widehat{\operatorname{Var}}(\widehat\beta_1)}}
+=
+\frac{\widehat p_B-\widehat p_A}{\sqrt{V_A+V_B}}
+=T_{\mathrm{CB2}}.
+$$
 
 This is the entire exact proof in one small computation.
 
@@ -145,6 +228,20 @@ maximum discrepancy is at floating-point rounding level. The formal algebraic
 proof covers every positive variance; this randomized check shows that the
 code actually performs that algebra.
 
+For random problem $r$, the program records the largest of four discrepancies:
+
+$$
+\epsilon_r=\max\left\{
+\left|\widehat\beta_{0r}-\widehat p_{Ar}\right|,
+\left|\widehat\beta_{1r}-(\widehat p_{Br}-\widehat p_{Ar})\right|,
+\left|\widehat{\operatorname{Var}}(\widehat\beta_{1r})-(V_{Ar}+V_{Br})\right|,
+\left|T_{\mathrm{GLS},r}-T_{\mathrm{CB2},r}\right|
+\right\}.
+$$
+
+The final check is $\max_{1\le r\le1000}\epsilon_r$, which is approximately
+$1.02\times10^{-12}$ on the recorded run.
+
 ## Example 3: start from read counts and run original CB²
 
 Now use four samples in each group:
@@ -162,6 +259,44 @@ fit_b <- CB2::fit_ab(count_b, total_b)
 phat <- c(A = fit_a$phat, B = fit_b$phat)
 vhat <- c(A = fit_a$vhat, B = fit_b$vhat)
 ```
+
+For sample $i$, original CB² first forms
+
+$$
+Y_i=\frac{K_i}{N_i}.
+$$
+
+Within group $g$, `fit_ab()` estimates normalized weights $w_{gi}$ and then
+computes
+
+$$
+\widehat p_g=\sum_{i\in g}w_{gi}Y_i,
+\qquad
+\sum_{i\in g}w_{gi}=1,
+$$
+
+together with the group variance $V_g$. Thus the inputs to the regression in
+this example are estimated from the read counts rather than typed by hand.
+
+Original CB² converts the shared t-statistic to a p-value with
+
+$$
+\nu_{\mathrm{CB2}}
+=
+\frac{(V_A+V_B)^2}
+{V_A^2/(n_A-1)+V_B^2/(n_B-1)}
+$$
+
+degrees of freedom and
+
+$$
+p_{\text{two-sided}}
+=2\,\Pr\!\left(t_{\nu_{\mathrm{CB2}}}
+\geq\left|T_{\mathrm{CB2}}\right|\right).
+$$
+
+Using these same degrees of freedom for the regression slope therefore makes
+the p-values identical as well.
 
 The walkthrough feeds those original CB² estimates into the same two-row
 weighted regression. The result is:
@@ -189,6 +324,23 @@ regression. The default `bbreg()` function makes additional modeling choices:
 - logit effect instead of raw proportion difference;
 - one guide-level dispersion across the design instead of separate group fits;
 - residual degrees of freedom instead of the original group-variance formula.
+
+The two effect parameters are
+
+$$
+\Delta_{\mathrm{CB2}}=p_B-p_A
+$$
+
+and
+
+$$
+\beta_{\mathrm{group}}
+  =\operatorname{logit}(\mu_B)-\operatorname{logit}(\mu_A)
+  =\log\left(\frac{\mu_B/(1-\mu_B)}
+  {\mu_A/(1-\mu_A)}\right).
+$$
+
+They answer the same directional question but use different units.
 
 Run:
 
@@ -224,6 +376,13 @@ is why the manuscript does **not** claim that `bbreg(~ group)` reproduces
 Set a common guide proportion of `0.002`, then place groups A and B equally
 around it. Repeatedly reduce the distance between them:
 
+$$
+p_A=p_0-\frac{\delta}{2},
+\qquad
+p_B=p_0+\frac{\delta}{2},
+\qquad p_0=0.002.
+$$
+
 ```r
 p0 <- 0.002
 delta <- c(8e-4, 4e-4, 2e-4, 1e-4, 5e-5, 2.5e-5)
@@ -231,6 +390,21 @@ delta <- c(8e-4, 4e-4, 2e-4, 1e-4, 5e-5, 2.5e-5)
 
 The walkthrough compares the raw-proportion t-statistic with its delta-method
 logit version:
+
+$$
+T_{\mathrm{raw}}
+=\frac{p_B-p_A}{\sqrt{V_A+V_B}},
+$$
+
+$$
+T_{\logit}
+=
+\frac{\operatorname{logit}(p_B)-\operatorname{logit}(p_A)}
+{\sqrt{\{\operatorname{logit}'(p_A)\}^2V_A+
+\{\operatorname{logit}'(p_B)\}^2V_B}},
+\qquad
+\operatorname{logit}'(p)=\frac{1}{p(1-p)}.
+$$
 
 | B − A | Raw t | Logit t | Logit/raw | Absolute gap |
 |---:|---:|---:|---:|---:|
@@ -243,10 +417,22 @@ logit version:
 
 As the group difference approaches zero:
 
-```text
-logit t / raw t  approaches 1
-absolute gap     approaches 0
-```
+$$
+\frac{T_{\logit}}{T_{\mathrm{raw}}}\longrightarrow1,
+\qquad
+\left|T_{\logit}-T_{\mathrm{raw}}\right|\longrightarrow0.
+$$
+
+The reason is the first-order Taylor approximation
+
+$$
+\operatorname{logit}(p_B)-\operatorname{logit}(p_A)
+=\operatorname{logit}'(p_0)(p_B-p_A)+o(\delta).
+$$
+
+The standard error is multiplied by the same
+$\operatorname{logit}'(p_0)$, so that factor
+cancels from the t-statistic.
 
 This is the computational version of the local-equivalence proof.
 
@@ -259,6 +445,13 @@ In the original two-group problem, the second design-matrix column is:
 ```
 
 That column only asks whether B differs from A.
+
+The corresponding mean model is
+
+$$
+\operatorname{logit}(\mu_i)=\beta_0+\beta_1G_i,
+\qquad G_i\in\{0,1\}.
+$$
 
 For a dose experiment, replace it with:
 
@@ -286,6 +479,22 @@ model.matrix(~ dose)
  [9,]           1    4
 [10,]           1    4
 ```
+
+The new mean model is
+
+$$
+\operatorname{logit}(\mu_i)=\beta_0+\beta_{\mathrm{dose}}d_i,
+\qquad d_i\in\{0,1,2,3,4\}.
+$$
+
+More generally, CB²-Reg uses
+
+$$
+\operatorname{logit}(\mu_i)=\mathbf x_i^\top\boldsymbol\beta,
+$$
+
+where $\mathbf x_i$ can also contain batch, donor, CNV, interaction, or spline
+columns.
 
 The example creates counts with a true logit slope of `0.35` and fits:
 
