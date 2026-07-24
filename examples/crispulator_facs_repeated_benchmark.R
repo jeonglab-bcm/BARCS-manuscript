@@ -14,7 +14,25 @@ if (!is.finite(n_seeds) || n_seeds < 2L) {
   stop("`CRISPULATOR_N_SEEDS` must be an integer of at least two.")
 }
 seeds <- 20250724L + seq.int(0L, n_seeds - 1L)
-root <- file.path("results", "crispulator_facs", "repeated")
+moi <- as.numeric(Sys.getenv("CRISPULATOR_MOI", "0.25"))
+high_quality_fraction <- as.numeric(Sys.getenv(
+  "CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION", "0.90"
+))
+if (!is.finite(moi) || moi <= 0 || moi >= 0.5) {
+  stop("`CRISPULATOR_MOI` must be greater than zero and below 0.5.")
+}
+if (!is.finite(high_quality_fraction) ||
+    high_quality_fraction < 0 || high_quality_fraction > 1) {
+  stop(
+    "`CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION` must be between zero and one."
+  )
+}
+scenario <- sprintf(
+  "moi_%s_quality_%s",
+  format(moi, trim = TRUE, scientific = FALSE),
+  format(high_quality_fraction, trim = TRUE, scientific = FALSE)
+)
+root <- file.path("results", "crispulator_facs", "repeated", scenario)
 dir.create(root, recursive = TRUE, showWarnings = FALSE)
 
 all_metrics <- lapply(seeds, function(seed) {
@@ -34,7 +52,9 @@ all_metrics <- lapply(seeds, function(seed) {
         file.path("julia", "simulate_crispulator_facs.jl"),
         data_dir,
         "4",
-        as.character(seed)
+        as.character(seed),
+        as.character(moi),
+        as.character(high_quality_fraction)
       ),
       stdout = FALSE,
       stderr = FALSE
@@ -60,6 +80,8 @@ all_metrics <- lapply(seeds, function(seed) {
   }
   metrics <- read.csv(metric_file)
   metrics$seed <- seed
+  metrics$moi <- moi
+  metrics$high_quality_guide_fraction <- high_quality_fraction
   metrics
 })
 all_metrics <- do.call(rbind, all_metrics)
@@ -91,6 +113,8 @@ design_concordance <- do.call(rbind, lapply(seeds, function(seed) {
     data.frame(
       seed = seed,
       method = method,
+      moi = moi,
+      high_quality_guide_fraction = high_quality_fraction,
       effect_spearman = cor(
         shared$estimate_three,
         shared$estimate_tails,
@@ -135,7 +159,9 @@ summary_rows <- do.call(rbind, lapply(
     result <- data.frame(
       method = group$method[1L],
       design = group$design[1L],
-      simulations = nrow(group)
+      simulations = nrow(group),
+      moi = moi,
+      high_quality_guide_fraction = high_quality_fraction
     )
     for (metric in metric_columns) {
       result[[paste0(metric, "_mean")]] <- mean(group[[metric]])
@@ -249,11 +275,12 @@ positions <- barplot(
   main = sprintf("B  Recovery across %d seeds", n_seeds)
 )
 error_sd <- rbind(means$ap_sd, means$recall_sd)
+has_error <- is.finite(error_sd) & error_sd > 0
 arrows(
-  positions,
-  values - error_sd,
-  positions,
-  values + error_sd,
+  positions[has_error],
+  (values - error_sd)[has_error],
+  positions[has_error],
+  (values + error_sd)[has_error],
   angle = 90,
   code = 3,
   length = 0.035

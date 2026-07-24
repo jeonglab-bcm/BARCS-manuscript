@@ -141,6 +141,24 @@ Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
 
+CRISPulator MOI and guide quality are configurable. Quality is the fraction
+of high-quality CRISPRn guides: high-quality guides have complete knockout in
+the simulator, whereas low-quality guide activity follows CRISPulator's
+truncated low-activity distribution. The manuscript defaults are MOI 0.25 and
+90% high-quality guides.
+
+```sh
+# Environment-variable interface used by the repeated benchmark.
+CRISPULATOR_MOI=0.40 \
+CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION=0.60 \
+Rscript examples/crispulator_facs_repeated_benchmark.R
+
+# Equivalent direct Julia arguments:
+# output directory, replicates, seed, MOI, high-quality-guide fraction
+julia --project=julia julia/simulate_crispulator_facs.jl \
+  results/custom_facs 4 20250729 0.40 0.60
+```
+
 The GSE70038 script expects official MAGeCK 0.5.9.5 at
 `.venv/bin/mageck`. A project-local installation can be prepared with:
 

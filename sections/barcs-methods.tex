@@ -262,9 +262,12 @@ four independently seeded transfection, sorting, and sequencing replicates.
 The default CRISPulator phenotype mixture was retained: 75\% inactive, 5\%
 negative-control, 10\% phenotype-increasing, and 10\%
 phenotype-decreasing genes.  Screens contained 400 genes and five guides per
-gene.  Transfection representation was 500 cells per guide, multiplicity of
-infection was 0.25, Gaussian phenotype noise was 2, sorting representation was
-50 cells per guide, and sequencing depth was 50 reads per guide per sample.
+gene.  The default guide-quality mixture---90\% complete-knockout guides and
+10\% low-activity guides---was retained.  Transfection representation was 500
+cells per guide, multiplicity of infection was 0.25, Gaussian phenotype noise
+was 2, sorting representation was 50 cells per guide, and sequencing depth was
+50 reads per guide per sample.  Both multiplicity of infection and the
+high-quality-guide fraction are exposed as simulation parameters.
 The five benchmark seeds were 20250724 through 20250728.
 
 CRISPulator's arbitrary percentile ranges were set to $(0,0.25)$ for low,

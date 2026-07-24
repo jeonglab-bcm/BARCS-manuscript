@@ -6,6 +6,7 @@ genes	400
 guides_per_gene	5
 cells_per_guide_at_transfection	500
 multiplicity_of_infection	0.25
+high_quality_guide_fraction	0.9
 phenotype_noise_sd	2.0
 sorted_cells_per_guide	50
 reads_per_guide_per_sample	50

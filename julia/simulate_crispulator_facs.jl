@@ -11,6 +11,11 @@
 # Low, bulk, and high are the requested three samples. Bulk overlaps both
 # tails, so it is not an independent third FACS bin. Input and bulk deliberately
 # carry no sorting direction and provide a negative-reference comparison.
+#
+# Optional positional arguments:
+#   output_dir  replicates  seed  MOI  high_quality_guide_fraction
+# MOI and guide quality can instead be supplied through CRISPULATOR_MOI and
+# CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION.
 
 using CSV
 using Crispulator
@@ -28,6 +33,13 @@ function parse_integer(index::Int, default::Int)
     length(ARGS) < index && return default
     value = tryparse(Int, ARGS[index])
     isnothing(value) && error("Argument $index must be an integer")
+    value
+end
+
+function parse_float(index::Int, default::Float64)
+    length(ARGS) < index && return default
+    value = tryparse(Float64, ARGS[index])
+    isnothing(value) && error("Argument $index must be numeric")
     value
 end
 
@@ -52,8 +64,18 @@ n_replicates = parse_integer(
     2, environment_integer("CRISPULATOR_REPLICATES", 4)
 )
 seed = parse_integer(3, 20250724)
+moi = parse_float(4, environment_float("CRISPULATOR_MOI", 0.25))
+high_quality_fraction = parse_float(
+    5,
+    environment_float(
+        "CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION", 0.90
+    ),
+)
 
 n_replicates >= 3 || error("At least three replicates are required")
+0 < moi < 0.5 || error("MOI must be greater than zero and below 0.5")
+0 <= high_quality_fraction <= 1 ||
+    error("High-quality guide fraction must be between zero and one")
 mkpath(output_dir)
 
 setup = FacsScreen()
@@ -62,7 +84,7 @@ setup.coverage = environment_integer("CRISPULATOR_GUIDES_PER_GENE", 5)
 setup.representation = environment_integer(
     "CRISPULATOR_TRANSFECTION_REPRESENTATION", 500
 )
-setup.moi = environment_float("CRISPULATOR_MOI", 0.25)
+setup.moi = moi
 setup.σ = environment_float("CRISPULATOR_PHENOTYPE_SD", 2.0)
 setup.bottleneck_representation = environment_integer(
     "CRISPULATOR_SORT_REPRESENTATION", 50
@@ -75,7 +97,34 @@ setup.bin_info = OrderedDict(
 )
 
 Random.seed!(seed)
-library = Library(CRISPRn())
+phenotype_distributions =
+    Dict{Symbol, Tuple{Float64, Distributions.Sampleable}}(
+        :inactive => (0.75, Delta(0.0)),
+        :negcontrol => (0.05, Delta(0.0)),
+        :increasing => (
+            0.10, truncated(Normal(0.55, 0.20), 0.10, 1.0)
+        ),
+        :decreasing => (
+            0.10, truncated(Normal(-0.55, 0.20), -1.0, -0.10)
+        ),
+    )
+knockdown_distributions =
+    Dict{Symbol, Tuple{Float64, Distributions.Sampleable}}(
+        :high => (high_quality_fraction, Delta(1.0)),
+        :low => (
+            1 - high_quality_fraction,
+            truncated(Normal(0.05, 0.07), 0.0, 1.0),
+        ),
+    )
+library = if high_quality_fraction == 0.90
+    # Preserve CRISPulator's exact default construction and random-number
+    # sequence for the manuscript benchmark.
+    Library(CRISPRn())
+else
+    Library(
+        phenotype_distributions, knockdown_distributions, CRISPRn()
+    )
+end
 guides, guide_frequency_distribution = construct_library(setup, library)
 n_guides = length(guides)
 
@@ -170,6 +219,7 @@ parameters = DataFrame(
         "guides_per_gene",
         "cells_per_guide_at_transfection",
         "multiplicity_of_infection",
+        "high_quality_guide_fraction",
         "phenotype_noise_sd",
         "sorted_cells_per_guide",
         "reads_per_guide_per_sample",
@@ -185,6 +235,7 @@ parameters = DataFrame(
         setup.coverage,
         setup.representation,
         setup.moi,
+        high_quality_fraction,
         setup.σ,
         setup.bottleneck_representation,
         setup.seq_depth,
