@@ -23,6 +23,9 @@ guide-wise dispersion across the design and residual degrees of freedom. See
 `examples/cb2_generalization_proof.R` for the machine-precision identity check
 and convergence illustration.
 
+For a version written without matrix algebra, start with
+[`docs/cb2-generalization-high-school-proof.md`](docs/cb2-generalization-high-school-proof.md).
+
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
 
