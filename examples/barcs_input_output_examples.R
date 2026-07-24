@@ -9,7 +9,7 @@ if (file.exists(file.path("CB2", "DESCRIPTION")) &&
     requireNamespace("devtools", quietly = TRUE)) {
   devtools::load_all("CB2", quiet = TRUE)
 } else if (!requireNamespace("CB2", quietly = TRUE)) {
-  stop("Install CB2, or run this script from the CB2-Reg repository root.")
+  stop("Install CB2, or run this script from the BARCS repository root.")
 }
 
 section("Example 1 input: two experimental groups")
@@ -56,7 +56,7 @@ group_fit <- bbreg(
   data = two_group
 )
 
-section("Example 1B output: default CB2-Reg logit model")
+section("Example 1B output: default BARCS logit model")
 print(group_fit$coefficient_table, digits = 12)
 cat(
   "The groupB effect is in log-odds units, not raw-proportion units.\n"

@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Executable verification of two connections between original CB2 and CB2-Reg.
+# Executable verification of two connections between original CB2 and BARCS.
 # The first is an exact legacy summary-scale representation, not strict nesting
 # of the default estimator. The second is a local/asymptotic statement.
 
@@ -8,7 +8,7 @@ if (file.exists(file.path("CB2", "DESCRIPTION")) &&
     requireNamespace("devtools", quietly = TRUE)) {
   devtools::load_all("CB2", quiet = TRUE)
 } else if (!requireNamespace("CB2", quietly = TRUE)) {
-  stop("Install CB2, or run this script from the CB2-Reg repository root.")
+  stop("Install CB2, or run this script from the BARCS repository root.")
 }
 
 count_a <- matrix(c(74, 112, 91, 139), nrow = 1)

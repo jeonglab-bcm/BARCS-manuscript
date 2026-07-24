@@ -2,7 +2,7 @@
 
 This repository has two coordinated histories:
 
-- `jeonglab-bcm/CB2-Reg` contains the manuscript, benchmark code, compact
+- `jeonglab-bcm/BARCS` contains the manuscript, benchmark code, compact
   result summaries, and figures.
 - `jeonglab-bcm/CB2` contains the R package. It is checked out here as the
   `CB2/` Git submodule.
@@ -10,8 +10,8 @@ This repository has two coordinated histories:
 ## Clone both repositories
 
 ```sh
-git clone --recurse-submodules https://github.com/jeonglab-bcm/CB2-Reg.git
-cd CB2-Reg
+git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS.git
+cd BARCS
 ```
 
 For a clone created without `--recurse-submodules`:
@@ -22,11 +22,11 @@ git submodule update --init --recursive
 
 ## Change the CB2 package
 
-The parent project currently follows the `feature/cb2-reg` package branch.
+The parent project currently follows the `feature/barcs` package branch.
 
 ```sh
 cd CB2
-git switch feature/cb2-reg
+git switch feature/barcs
 
 # Edit and test the package.
 Rscript -e 'devtools::test()'

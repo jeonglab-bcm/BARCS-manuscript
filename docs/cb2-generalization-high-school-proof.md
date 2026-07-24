@@ -1,4 +1,4 @@
-# How original CB² connects to CB²-Reg
+# How original CB² connects to BARCS
 
 If you prefer to learn by running code, use the
 [`computational walkthrough`](cb2-generalization-computational-walkthrough.md).
@@ -7,7 +7,7 @@ the original `fit_ab()`, and finishes with a continuous-dose example.
 
 ## The short answer
 
-Original CB² compares two groups. CB²-Reg can analyze two groups, but it can
+Original CB² compares two groups. BARCS can analyze two groups, but it can
 also analyze dose, time, batch, donor, and other variables together.
 
 For the simple two-group problem, the completed old CB² group summaries can be
@@ -16,7 +16,7 @@ error, t-statistic, and p-value are then exactly the same. This is a useful
 compatibility representation, but it does not prove that the default
 `bbreg()` estimator is literally the old estimator with extra columns.
 
-The default CB²-Reg model uses a logit transformation, so its answer is not
+The default BARCS model uses a logit transformation, so its answer is not
 always numerically identical to old CB² in a small dataset. However, when the
 two groups are close—the situation considered by the null hypothesis—the two
 test statistics approach each other.
@@ -26,7 +26,7 @@ That gives us two different conclusions:
 1. **Legacy representation:** after old CB² has computed its weighted group
    proportions and variances, a two-cell weighted regression reproduces its
    statistic exactly.
-2. **Local-equivalence result:** the default logit version of CB²-Reg
+2. **Local-equivalence result:** the default logit version of BARCS
    approaches the old CB² test for small group differences as the number of
    independent biological libraries grows.
 
@@ -169,7 +169,7 @@ prove that default `bbreg()` strictly contains the old estimator.
 ## Step 4: Why the default logit model is slightly different
 
 A proportion must stay between 0 and 1. A straight-line regression can
-sometimes predict impossible values such as `-0.01` or `1.04`. CB²-Reg avoids
+sometimes predict impossible values such as `-0.01` or `1.04`. BARCS avoids
 this problem by using a curved transformation called the logit.
 
 The important high-school-calculus idea is that a smooth curve looks almost
@@ -230,7 +230,7 @@ kappa × N
 kappa + N
 ```
 
-The CB²-Reg relative weight has the form
+The BARCS relative weight has the form
 
 ```text
     N
@@ -291,7 +291,7 @@ logit t-statistics shrinks from `0.0583` to `0.000151`.
   weighted-regression representation.
 - Its standard error and p-value are exactly recovered when we use its original
   group variances and degrees of freedom.
-- Under a common beta-binomial dispersion, old CB² and CB²-Reg use the same
+- Under a common beta-binomial dispersion, old CB² and BARCS use the same
   relative depth-aware weights.
 - The default logit statistic approaches the original statistic for local,
   small group differences.
@@ -304,22 +304,22 @@ logit t-statistics shrinks from `0.0583` to `0.000151`.
   `bbreg()` estimator.
 - `bbreg(~ group)` is not guaranteed to return exactly the same finite-sample
   number as `measure_sgrna_stats()`.
-- Original CB² estimates the two groups separately, while CB²-Reg estimates one
+- Original CB² estimates the two groups separately, while BARCS estimates one
   guide-level dispersion across the entire design.
-- Original CB² uses a group-variance degrees-of-freedom formula, while CB²-Reg
+- Original CB² uses a group-variance degrees-of-freedom formula, while BARCS
   normally uses residual sample degrees of freedom.
-- The model-based CB²-Reg covariance does not propagate uncertainty in the
+- The model-based BARCS covariance does not propagate uncertainty in the
   per-guide dispersion estimate. Student t degrees of freedom are not a formal
   correction for that uncertainty.
 - Greater read depth cannot replace additional independent biological
   libraries in the local-equivalence argument.
-- Neither proof says CB²-Reg must outperform MAGeCK, Waterbear, MAUDE, Chronos,
+- Neither proof says BARCS must outperform MAGeCK, Waterbear, MAUDE, Chronos,
   or another specialized method on every dataset.
 
 ## The one-sentence conclusion
 
 Original CB² has a compatible two-cell regression representation, while
-CB²-Reg extends the beta-binomial weighting principle to coefficient-based
+BARCS extends the beta-binomial weighting principle to coefficient-based
 questions; under explicit common-dispersion and replication assumptions, its
 two-group logit test agrees with CB² to first order near the null hypothesis.
 

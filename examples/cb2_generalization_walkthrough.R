@@ -9,7 +9,7 @@ if (file.exists(file.path("CB2", "DESCRIPTION")) &&
     requireNamespace("devtools", quietly = TRUE)) {
   devtools::load_all("CB2", quiet = TRUE)
 } else if (!requireNamespace("CB2", quietly = TRUE)) {
-  stop("Install CB2, or run this script from the CB2-Reg repository root.")
+  stop("Install CB2, or run this script from the BARCS repository root.")
 }
 
 section("Example 1: a legacy representation that can be checked by hand")
@@ -142,7 +142,7 @@ logit_fit <- bbreg(
 )
 
 finite_sample <- data.frame(
-  method = c("Original CB2", "Default CB2-Reg"),
+  method = c("Original CB2", "Default BARCS"),
   effect = c(diff(phat), coef(logit_fit)[["groupB"]]),
   effect_scale = c("raw proportion difference", "log-odds difference"),
   t_value = c(legacy_t, logit_fit$coefficient_table["groupB", "t_value"]),

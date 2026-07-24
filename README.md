@@ -1,9 +1,9 @@
-# CB²-Reg: beta-binomial regression for quantitative CRISPR screens
+# BARCS: Beta-binomial Analysis and Regression for CRISPR Screens
 
 CB² answers a two-condition question: does guide abundance differ between two
-groups? CB²-Reg answers the more general coefficient question: does guide
-abundance follow dose, time, an ordered phenotype, or an adjusted treatment
-effect?
+groups? BARCS (Beta-binomial Analysis and Regression for CRISPR Screens)
+answers the more general coefficient question: does guide abundance follow
+dose, time, an ordered phenotype, or an adjusted treatment effect?
 
 The extension preserves CB²'s central sampling idea—binomial sequencing
 variation plus between-library beta-binomial heterogeneity—but replaces the
@@ -18,7 +18,7 @@ reproduces original CB² after its weighted group proportions and variances have
 already been computed. This is an algebraic compatibility identity, not proof
 that default `bbreg()` strictly nests the original estimator. Under a correctly
 specified common-dispersion binary design, local alternatives, and increasing
-numbers of independent libraries, the logit-scale CB²-Reg statistic is
+numbers of independent libraries, the logit-scale BARCS statistic is
 first-order equivalent to the raw-proportion statistic. Increasing read depth
 at fixed biological replication is not sufficient. See
 `examples/cb2_generalization_proof.R` for the machine-precision representation
@@ -36,12 +36,12 @@ For a version written without matrix algebra, start with
 For a code-first version with six progressively richer examples, use
 [`docs/cb2-generalization-computational-walkthrough.md`](docs/cb2-generalization-computational-walkthrough.md).
 For compact input-table → function-call → output-table examples, use
-[`docs/cb2-reg-input-output-examples.md`](docs/cb2-reg-input-output-examples.md).
+[`docs/barcs-input-output-examples.md`](docs/barcs-input-output-examples.md).
 
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
 
-| Feature | Original CB² | CB²-Reg |
+| Feature | Original CB² | BARCS |
 |---|---|---|
 | Primary question | Difference between two groups | Trend, adjusted association, interaction, or contrast |
 | Design | Reference/comparison labels | Arbitrary full-rank model matrix |
@@ -66,8 +66,8 @@ used for every manuscript and benchmark revision.
 Clone both histories together:
 
 ```sh
-git clone --recurse-submodules https://github.com/jeonglab-bcm/CB2-Reg.git
-cd CB2-Reg
+git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS.git
+cd BARCS
 ```
 
 Package changes are committed and pushed from inside `CB2/`; the parent then
@@ -87,7 +87,7 @@ commits the updated submodule pointer. See
   including hand-checkable numbers, 1,000 randomized identity checks, original
   `fit_ab()` counts, the finite-sample logit difference, local convergence, and
   a continuous-dose fit.
-- `examples/cb2_reg_input_output_examples.R`: printable two-group,
+- `examples/barcs_input_output_examples.R`: printable two-group,
   continuous-dose, and dose-plus-batch inputs with their exact model outputs.
 - `examples/gse70038_comparison.R`: head-to-head analysis of all 64,747 guides
   in GSE70038 using a Table-5-style design and official MAGeCK-MLE 0.5.9.5.
@@ -124,7 +124,7 @@ From the repository root:
 Rscript tests/run_tests.R
 Rscript examples/cb2_generalization_proof.R
 Rscript examples/cb2_generalization_walkthrough.R
-Rscript examples/cb2_reg_input_output_examples.R
+Rscript examples/barcs_input_output_examples.R
 Rscript examples/simulation.R
 Rscript examples/gse70038_comparison.R
 Rscript examples/sanson_benchmark.R
@@ -208,7 +208,7 @@ metrics, rank correlations, and CNV audit are under
 The GSE242880 benchmark uses the low-coverage, high-MOI primary-T-cell arm:
 four ordered IL2RA FACS bins for each of three donors. The 26 evaluation genes
 were validated by individual knockout and flow cytometry. Raw all-bin
-CB²-Reg recovers 23/26 at gene FDR 0.10 but calls 127 genes
+BARCS recovers 23/26 at gene FDR 0.10 but calls 127 genes
 and is inflated among 593 non-targeting guides (13.3% have nominal
 guide-level p < 0.05). The new `bb_calibrate_controls()` tail-scale diagnostic
 restores that frequency to 4.9%; the calibrated result recovers 22/26 with 49
@@ -219,15 +219,15 @@ MAUDE's is 25/26 with 406 calls.
 
 The deposited follow-up table also contains seven candidates that did not
 validate experimentally. In this selected 33-gene panel, calibrated all-bin
-CB²-Reg has F1 0.863, Matthews correlation 0.398, balanced accuracy 0.709,
+BARCS has F1 0.863, Matthews correlation 0.398, balanced accuracy 0.709,
 AUROC 0.808, and average precision 0.945. All-bin MAGeCK-MLE has 0.723, 0.070,
 0.541, 0.626, and 0.872, respectively. These are supporting metrics from a
 small candidate-selected panel, not unbiased genome-wide accuracy estimates.
-They nevertheless show why the calibrated result is preferable to raw CB²-Reg:
+They nevertheless show why the calibrated result is preferable to raw BARCS:
 the continuous-bin signal is retained while the null tail is repaired.
 
 FACS bins are correlated partitions. Waterbear models that joint structure and
-remains the best-fitting method for this experimental design; CB²-Reg provides
+remains the best-fitting method for this experimental design; BARCS provides
 a fast, transparent trend analysis and a useful sensitivity check. Full tables
 are under `results/waterbear_facs/`, including
 `validation_panel_metrics.csv`.
@@ -240,12 +240,12 @@ seconds with four workers on the same machine.
 
 ## Important scope note
 
-Use original CB² for a direct two-condition comparison. Use CB²-Reg when each
+Use original CB² for a direct two-condition comparison. Use BARCS when each
 independently sequenced library has a quantitative or multivariable
 sample-level design. Use a specialist joint model such as Waterbear when
 several bins are correlated partitions of the same biological pool.
 
-CB²-Reg is not a model for a continuous phenotype measured per cell when guide
+BARCS is not a model for a continuous phenotype measured per cell when guide
 identity and phenotype are not jointly observed. The current regression layer
 is a transparent research implementation; the manuscript lists the
 dispersion-shrinkage, gene-level hierarchy, and repeated-measure work still

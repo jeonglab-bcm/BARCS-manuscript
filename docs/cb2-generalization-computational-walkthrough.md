@@ -1,4 +1,4 @@
-# CB² to CB²-Reg: a computational walkthrough
+# CB² to BARCS: a computational walkthrough
 
 This version demonstrates the relationship with small examples. Computational
 checks verify the code paths; the manuscript supplies the algebra and
@@ -366,7 +366,7 @@ For these data:
 | Method | Effect | Effect scale | t | df | p |
 |---|---:|---|---:|---:|---:|
 | Original CB² | 0.000905993 | Raw proportion | 8.13933 | 5.64726 | 0.000251293 |
-| Default CB²-Reg | 0.502399 | Log odds | 8.06432 | 6 | 0.000194616 |
+| Default BARCS | 0.502399 | Log odds | 8.06432 | 6 | 0.000194616 |
 
 The effect numbers should not be compared directly because they have different
 units. The test statistics are close but not identical. This is expected and
@@ -491,7 +491,7 @@ $$
 \qquad d_i\in\{0,1,2,3,4\}.
 $$
 
-More generally, CB²-Reg uses
+More generally, BARCS uses
 
 $$
 \mathrm{logit}(\mu_i)=\mathbf x_i^\top\boldsymbol\beta,

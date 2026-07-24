@@ -1,13 +1,15 @@
-# CB²-Reg input and output examples
+# BARCS input and output examples
+
+BARCS stands for Beta-binomial Analysis and Regression for CRISPR Screens.
 
 Run every example from the repository root with:
 
 ```sh
-Rscript examples/cb2_reg_input_output_examples.R
+Rscript examples/barcs_input_output_examples.R
 ```
 
 The runnable source is
-[`examples/cb2_reg_input_output_examples.R`](../examples/cb2_reg_input_output_examples.R).
+[`examples/barcs_input_output_examples.R`](../examples/barcs_input_output_examples.R).
 
 The original-CB² calculation below is a legacy compatibility example. It
 shows that saturated GLS reproduces completed CB² group summaries; it does not
@@ -85,7 +87,7 @@ $$
 |---:|---:|---:|---:|---:|---:|---:|
 | 0.001391304 | 0.002297297 | 0.000905993 | 0.000111311 | 8.139330 | 5.647255 | 0.000251293 |
 
-### Input to default CB²-Reg
+### Input to default BARCS
 
 ```r
 group_fit <- bbreg(
@@ -103,14 +105,14 @@ $$
 =\beta_0+\beta_{\mathrm{group}}I(\mathrm{group}_i=B).
 $$
 
-### Default CB²-Reg output
+### Default BARCS output
 
 | Coefficient | Estimate | SE | t | df | p |
 |---|---:|---:|---:|---:|---:|
 | Intercept | -6.576121319 | 0.049063177 | -134.033745 | 6 | $1.16\times10^{-11}$ |
 | Group B | 0.502399324 | 0.062299034 | 8.064320 | 6 | 0.000194616 |
 
-The original effect is a raw-proportion difference. The CB²-Reg effect is a
+The original effect is a raw-proportion difference. The BARCS effect is a
 log-odds difference:
 
 $$
@@ -122,7 +124,7 @@ $$
 Consequently, the effect numbers have different units. Their t-statistics are
 close, but finite-sample identity is not claimed.
 
-The model-based CB²-Reg standard errors shown below treat the guide-wise
+The model-based BARCS standard errors shown below treat the guide-wise
 dispersion estimate as a fixed plug-in value. Residual Student t degrees of
 freedom do not formally account for dispersion-estimation uncertainty.
 

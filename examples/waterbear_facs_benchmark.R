@@ -414,12 +414,12 @@ evaluate_method <- function(method, gene_result) {
 
 benchmark <- rbind(
   evaluate_method(
-    "Beta-binomial all bins + control calibration",
+    "BARCS all bins + control calibration",
     bb_all_calibrated$gene
   ),
-  evaluate_method("Beta-binomial all bins", bb_all$gene),
+  evaluate_method("BARCS all bins", bb_all$gene),
   evaluate_method("MAGeCK-MLE all bins", mageck_mle),
-  evaluate_method("Beta-binomial outer bins", bb_outer$gene),
+  evaluate_method("BARCS outer bins", bb_outer$gene),
   evaluate_method("MAGeCK test outer bins", mageck_test),
   data.frame(
     method = "Waterbear published",
@@ -526,12 +526,12 @@ evaluate_validation_panel <- function(method, gene_result) {
 
 validation_metrics <- rbind(
   evaluate_validation_panel(
-    "Beta-binomial all bins + control calibration",
+    "BARCS all bins + control calibration",
     bb_all_calibrated$gene
   ),
-  evaluate_validation_panel("Beta-binomial all bins", bb_all$gene),
+  evaluate_validation_panel("BARCS all bins", bb_all$gene),
   evaluate_validation_panel("MAGeCK-MLE all bins", mageck_mle),
-  evaluate_validation_panel("Beta-binomial outer bins", bb_outer$gene),
+  evaluate_validation_panel("BARCS outer bins", bb_outer$gene),
   evaluate_validation_panel("MAGeCK test outer bins", mageck_test)
 )
 write.csv(
@@ -560,11 +560,11 @@ null_diagnostic <- function(method, guide_result) {
 }
 null_metrics <- rbind(
   null_diagnostic(
-    "Beta-binomial all bins + control calibration",
+    "BARCS all bins + control calibration",
     bb_all_calibrated$guide
   ),
-  null_diagnostic("Beta-binomial all bins", bb_all$guide),
-  null_diagnostic("Beta-binomial outer bins", bb_outer$guide)
+  null_diagnostic("BARCS all bins", bb_all$guide),
+  null_diagnostic("BARCS outer bins", bb_outer$guide)
 )
 write.csv(
   null_metrics,
@@ -579,7 +579,7 @@ shared <- merge(
   suffixes = c("_bb", "_mageck")
 )
 effect_correlation <- data.frame(
-  comparison = "Beta-binomial all bins vs MAGeCK-MLE all bins",
+  comparison = "BARCS all bins vs MAGeCK-MLE all bins",
   n_genes = nrow(shared),
   spearman_effect = cor(
     shared$estimate_bb, shared$estimate_mageck,
@@ -604,10 +604,10 @@ method_colours <- c(
 pdf(figure_path, width = 11, height = 8.5, useDingbats = FALSE)
 layout(matrix(1:4, nrow = 2, byrow = TRUE))
 short_method <- c(
-  "CB2-Reg 4-bin + ctrl",
-  "CB2-Reg 4-bin raw",
+  "BARCS 4-bin + ctrl",
+  "BARCS 4-bin raw",
   "MAGeCK-MLE 4-bin",
-  "CB2-Reg outer-bin",
+  "BARCS outer-bin",
   "MAGeCK test outer",
   "Waterbear (reported)",
   "MAUDE (reported)"
@@ -647,7 +647,7 @@ plot(
   cex = 0.45,
   col = adjustcolor("grey25", alpha.f = 0.25),
   xlab = "MAGeCK-MLE marker-z effect",
-  ylab = "CB2-Reg marker-z effect",
+  ylab = "BARCS marker-z effect",
   main = sprintf(
     "C. All-bin effects (Spearman rho = %.3f)",
     effect_correlation$spearman_effect
@@ -700,9 +700,9 @@ lines(null_outer, seq_along(null_outer) / length(null_outer),
 legend(
   "bottomright",
   legend = c(
-    "CB2-Reg all bins + controls",
-    "CB2-Reg all bins raw",
-    "CB2-Reg outer bins raw"
+    "BARCS all bins + controls",
+    "BARCS all bins raw",
+    "BARCS outer bins raw"
   ),
   col = method_colours[c(1, 2, 4)],
   lwd = 2,
