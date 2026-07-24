@@ -141,23 +141,25 @@ Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
 
-CRISPulator MOI, guide quality, and library size are configurable. Quality is
-the fraction of high-quality CRISPRn guides: high-quality guides have complete
-knockout in the simulator, whereas low-quality guide activity follows
-CRISPulator's truncated low-activity distribution. The manuscript baseline is
-MOI 0.25, 90% high-quality guides, and 400 genes.
+CRISPulator MOI, guide quality, library size, and replicate count are
+configurable. Quality is the fraction of high-quality CRISPRn guides:
+high-quality guides have complete knockout in the simulator, whereas
+low-quality guide activity follows CRISPulator's truncated low-activity
+distribution. The manuscript baseline is MOI 0.25, 90% high-quality guides,
+400 genes, and four independent screen replicates.
 
 ```sh
-# The default sensitivity analysis is seven scenarios x five seeds:
-# three MOIs, three guide-quality fractions, and three gene counts are varied
-# one at a time around the baseline (35 simulations, including the baseline).
+# The default sensitivity analysis is nine scenarios x five seeds:
+# three MOIs, guide-quality fractions, gene counts, and replicate counts are
+# varied one at a time (45 simulations, including the baseline).
 Rscript examples/crispulator_facs_repeated_benchmark.R
 
-# Optional full 3 x 3 x 3 factorial (135 simulations across five seeds).
+# Optional full 3^4 factorial (405 simulations across five seeds).
 CRISPULATOR_GRID_MODE=full_factorial \
 CRISPULATOR_MOI_VALUES=0.10,0.25,0.40 \
 CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION_VALUES=0.60,0.75,0.90 \
 CRISPULATOR_GENE_VALUES=100,400,1000 \
+CRISPULATOR_REPLICATE_VALUES=3,4,6 \
 Rscript examples/crispulator_facs_repeated_benchmark.R
 
 # Run one custom scenario across five seeds.
@@ -165,12 +167,20 @@ CRISPULATOR_GRID_MODE=single \
 CRISPULATOR_MOI=0.40 \
 CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION=0.60 \
 CRISPULATOR_GENES=1000 \
+CRISPULATOR_REPLICATES=6 \
 Rscript examples/crispulator_facs_repeated_benchmark.R
 
 # Equivalent direct Julia arguments:
 # output directory, replicates, seed, MOI, high-quality-guide fraction, genes
 julia --project=julia julia/simulate_crispulator_facs.jl \
   results/custom_facs 4 20250729 0.40 0.60 1000
+```
+
+The multimethod benchmark requires the Bioconductor packages `edgeR`,
+`DESeq2`, and `limma` in addition to the official MAGeCK executable:
+
+```r
+BiocManager::install(c("edgeR", "DESeq2", "limma"))
 ```
 
 The GSE70038 script expects official MAGeCK 0.5.9.5 at
@@ -193,10 +203,15 @@ nearly identical (mean Spearman 0.9985 for BARCS and 0.9999 for MAGeCK-MLE).
 Bulk versus input remains null (mean AUROC 0.500 and effect Spearman 0.060).
 Thus bulk can stabilize variance and degrees of freedom but adds no directional
 FACS contrast; it also overlaps the tails and uses 50% more sequencing.
-Across the seven-scenario sensitivity grid, BARCS-minus-MAGeCK average
+The same continuous design is fitted with BARCS, MAGeCK-MLE, edgeR-QL,
+DESeq2, and limma-voom. The latter three use a common directional Stouffer
+guide-to-gene summary, whereas MAGeCK-MLE retains its native gene model.
+Across the nine-scenario sensitivity grid, BARCS-minus-MAGeCK average
 precision ranges from -0.015 to 0.022, showing no universal ranking advantage.
-The directional-recall difference is positive in six of seven scenarios and
-ranges from -0.018 to 0.119; the F1 difference ranges from -0.022 to 0.076.
+The directional-recall difference is positive in seven of nine scenarios and
+ranges from -0.018 to 0.136; the F1 difference ranges from -0.022 to 0.080.
+Across all scenarios, realized FDP averages 0.094 for BARCS and 0.064 for
+MAGeCK-MLE, versus 0.230-0.250 for the three general count-model pipelines.
 
 On GSE70038, beta-binomial versus official MAGeCK-MLE gene-effect Spearman
 correlations are 0.888-0.928 across the four terminal-condition coefficients;

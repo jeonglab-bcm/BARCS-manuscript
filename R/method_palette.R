@@ -6,6 +6,9 @@
 barcs_method_colours <- c(
   BARCS = "#0072B2",
   MAGeCK = "#D55E00",
+  edgeR = "#009E73",
+  DESeq2 = "#CC79A7",
+  `limma-voom` = "#E69F00",
   Chronos = "#009E73",
   `Published MAGeCK` = "#CC79A7",
   BAGEL2 = "#E69F00",

@@ -313,8 +313,8 @@ served as a required null reference.
 gene FDR 0.10 with the correct direction.  FDP is the realized fraction of
 inactive genes among calls; values at or below the 0.10 target are calibrated
 but lower is not automatically better because recall differs.  Among sorted
-analyses, column maxima for ranking, effect recovery, recall, and F1 are
-highlighted.}
+low--bulk--high analyses, column maxima for ranking, effect recovery, recall,
+and F1 are highlighted.}
 \label{tab:crispulator}
 \small
 \setlength{\tabcolsep}{3pt}
@@ -326,21 +326,31 @@ Directional recall & FDP & F1\\
 \midrule
 \methodswatch{barcsblue} BARCS & Low--bulk--high &
 0.955$\pm$.009 & 0.917$\pm$.021 & 0.924$\pm$.014 &
-\textcolor{barcsblue}{\textbf{0.764$\pm$.089}} &
-0.086$\pm$.044 &
-\textcolor{barcsblue}{\textbf{0.828$\pm$.037}}\\
+0.764$\pm$.089 & 0.086$\pm$.044 & 0.828$\pm$.037\\
 \methodswatch{mageckorange} MAGeCK-MLE & Low--bulk--high &
-\textcolor{mageckorange}{\textbf{0.964$\pm$.009}} &
-\textcolor{mageckorange}{\textbf{0.924$\pm$.018}} &
+0.964$\pm$.009 & 0.924$\pm$.018 &
 \textcolor{mageckorange}{\textbf{0.932$\pm$.012}} &
 0.717$\pm$.045 & 0.048$\pm$.026 & 0.817$\pm$.031\\
+\methodswatch{chronosgreen} edgeR-QL + Stouffer & Low--bulk--high &
+\textcolor{chronosgreen}{\textbf{0.965$\pm$.006}} &
+\textcolor{chronosgreen}{\textbf{0.932$\pm$.015}} &
+0.924$\pm$.013 & 0.886$\pm$.021 & 0.232$\pm$.053 &
+0.822$\pm$.034\\
+\methodswatch{mageckpink} DESeq2 + Stouffer & Low--bulk--high &
+0.963$\pm$.009 & 0.930$\pm$.016 & 0.921$\pm$.013 &
+0.884$\pm$.021 & 0.240$\pm$.047 & 0.817$\pm$.031\\
+\methodswatch{bagelgold} limma-voom + Stouffer & Low--bulk--high &
+0.965$\pm$.005 & 0.932$\pm$.016 & 0.925$\pm$.012 &
+\textcolor{bagelgold}{\textbf{0.890$\pm$.017}} &
+0.218$\pm$.053 &
+\textcolor{bagelgold}{\textbf{0.832$\pm$.036}}\\
+\midrule
 \methodswatch{barcsblue} BARCS & Low--high &
 0.950$\pm$.011 & 0.907$\pm$.026 & 0.923$\pm$.012 &
 0.664$\pm$.059 & 0.033$\pm$.023 & 0.786$\pm$.037\\
 \methodswatch{mageckorange} MAGeCK-MLE & Low--high &
 0.963$\pm$.009 & 0.921$\pm$.017 & 0.932$\pm$.011 &
 0.550$\pm$.039 & 0.012$\pm$.017 & 0.706$\pm$.033\\
-\midrule
 \methodswatch{naivegray} Bulk versus input & Unsorted &
 0.500$\pm$.018 & 0.214$\pm$.041 & 0.060$\pm$.070 &
 0 & 0 & 0\\
@@ -349,11 +359,16 @@ Directional recall & FDP & F1\\
 }
 \end{table}
 
-The result is a tradeoff, not a universal victory.  MAGeCK-MLE has the best
-global ranking and effect correlation.  BARCS has higher directional recall
-and F1 at the prespecified 0.10 FDR threshold.  In the low--bulk--high design,
-its mean F1 is 0.828 versus 0.817 for MAGeCK-MLE; in the two-tail design, it is
-0.786 versus 0.706.  Negative-control $p<0.05$ frequencies averaged 0.061 and
+The result is a tradeoff, not a universal victory.  In the low--bulk--high
+design, edgeR-QL and limma-voom have the highest global ranking metrics, and
+MAGeCK-MLE has the highest effect correlation.  The three general count
+models also have directional recall of 0.884--0.890, but their realized FDP is
+0.218--0.240: more than twice the nominal 0.10 target after the common
+Stouffer gene summary.  Their high recall is therefore not a calibrated win.
+BARCS and MAGeCK-MLE have lower realized FDP, 0.086 and 0.048, respectively.
+BARCS has higher directional recall than MAGeCK-MLE and similar F1: 0.828
+versus 0.817 in the low--bulk--high design and 0.786 versus 0.706 in the
+two-tail design.  Negative-control $p<0.05$ frequencies averaged 0.061 and
 0.041 for the two BARCS designs, respectively.
 
 Bulk does not supply a new directional contrast.  Across seeds, the
@@ -381,17 +396,18 @@ near 0.5 and its effect correlation remains near zero.}
 \label{fig:crispulator}
 \end{figure}
 
-\paragraph{Sensitivity to MOI, guide quality, and library size.}
+\paragraph{Sensitivity to MOI, guide quality, library size, and replication.}
 The baseline result was not presented as a single favorable simulation.  We
-varied MOI, the high-quality-guide fraction, and the number of genes one at a
-time, using five paired seeds at every setting (seven unique settings and 35
-simulations in total).  In the primary low--bulk--high comparison,
+varied MOI, the high-quality-guide fraction, the number of genes, and the
+number of independent screen replicates one at a time, using five paired seeds
+at every setting (nine unique settings and 45 simulations in total).  In the
+primary low--bulk--high comparison,
 BARCS-minus-MAGeCK-MLE average precision ranged only from $-0.015$ to $0.022$
 and changed sign across settings.  Thus this experiment does not support a
 general ranking advantage for BARCS.  Its more consistent strength was
 directional recovery at the prespecified FDR threshold: the directional-recall
-difference was positive in six of seven settings and ranged from $-0.018$ to
-$0.119$, while the F1 difference ranged from $-0.022$ to $0.076$.
+difference was positive in seven of nine settings and ranged from $-0.018$ to
+$0.136$, while the F1 difference ranged from $-0.022$ to $0.080$.
 
 The largest directional-recall differences occurred at MOI 0.10
 ($+0.107$) and a high-quality-guide fraction of 0.75 ($+0.119$).  At MOI
@@ -407,6 +423,16 @@ results sharpen the claim: BARCS can improve directionally correct thresholded
 recovery under some noisy or low-MOI conditions, but neither method dominates
 every metric or simulation regime.
 
+Replication changed that comparison.  With three replicates, BARCS exceeded
+MAGeCK-MLE in directional recall by 0.136 and F1 by 0.080; with four
+replicates the differences were 0.047 and 0.011.  At six replicates the signs
+reversed slightly, to $-0.012$ for directional recall and $-0.014$ for F1.
+The practical interpretation is not that fewer replicates are desirable:
+average precision, recall, and F1 increased for both methods as replication
+increased.  Rather, BARCS's relative sensitivity is largest in the
+low-replication regime, whereas MAGeCK-MLE catches up when information is
+abundant.
+
 \clearpage
 \begin{figure}[!t]
 \centering
@@ -414,11 +440,45 @@ every metric or simulation regime.
 \caption{Paired parameter sensitivity across five seeds per setting.
 Points show mean BARCS-minus-MAGeCK-MLE differences in the low--bulk--high
 design, with standard-error bars.  Positive values favor BARCS.  Each panel
-varies (A) MOI, (B) high-quality-guide fraction, or (C) number of genes while
-holding the other two parameters at their baseline values.  Ranking
-differences remain close to zero, whereas directional-recall differences are
-usually positive but reverse at MOI 0.40.}
+varies (A) MOI, (B) high-quality-guide fraction, (C) number of genes, or
+(D) independent screen replicates while holding the other parameters at their
+baseline values.  Ranking differences remain close to zero, whereas
+directional-recall differences are usually positive but reverse at MOI 0.40
+and six replicates.}
 \label{fig:crispulator-sensitivity}
+\end{figure}
+
+\paragraph{Multiple count models expose the calibration--power tradeoff.}
+Across the nine scenarios, mean realized FDP was 0.094 for BARCS and 0.064 for
+MAGeCK-MLE, compared with 0.250 for edgeR-QL plus Stouffer, 0.243 for DESeq2
+plus Stouffer, and 0.230 for limma-voom plus Stouffer.  Figure~
+\ref{fig:crispulator-multimethod} makes the consequence visible.  The general
+count models attain excellent average precision and raw directional recall,
+but their apparent recall advantage is coupled to FDP near 0.20--0.25.  At six
+replicates, BARCS and MAGeCK-MLE reach F1 of 0.893 and 0.907 while keeping mean
+FDP at 0.079 and 0.064; edgeR-QL, DESeq2, and limma-voom reach F1 of
+0.840--0.862 with FDP of 0.196--0.235.  This is evidence for the value of a
+CRISPR-aware gene-testing and calibration pipeline, not evidence that the
+general count models rank genes poorly.
+
+At the four-replicate baseline, mean core fitting times were 0.35 seconds for
+BARCS, 4.34 seconds for MAGeCK-MLE, 0.24 seconds for edgeR-QL, 0.92 seconds for
+DESeq2, and 0.06 seconds for limma-voom.  These measurements exclude
+simulation, file input/output, and guide-to-gene aggregation; they show that
+the broader comparison is computationally practical but should not be read as
+an end-to-end software benchmark.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_multimethod_replicates.pdf}
+\caption{Five-method sensitivity to independent screen replication in the
+low--bulk--high design.  Points are five-seed means and error bars are standard
+errors.  (A) Average precision, (B) directionally correct recall at nominal
+gene FDR 0.10, (C) F1 at the same threshold, and (D) realized FDP; the dotted
+line is the nominal 0.10 target.  edgeR-QL, DESeq2, and limma-voom use the
+common directional Stouffer gene summary.  Their higher raw recall is
+accompanied by substantial FDP inflation.}
+\label{fig:crispulator-multimethod}
 \end{figure}
 
 \clearpage

@@ -48,8 +48,12 @@ stopifnot(
   identical(count_table$guide, guide_truth$guide),
   identical(count_table$gene, guide_truth$gene),
   all(colSums(counts) > 0),
-  all(table(sample_data$replicate) == 4L)
+  all(table(sample_data$replicate) == length(unique(sample_data$sample_type)))
 )
+n_replicates <- length(unique(sample_data$replicate))
+if (n_replicates < 3L) {
+  stop("At least three screen replicates are required.")
+}
 
 # Load the RcppArmadillo weighted-crossproduct kernels when available.
 cpp_library <- file.path("CB2", "src", paste0("CB2", .Platform$dynlib.ext))
@@ -161,6 +165,143 @@ run_barcs <- function(label, sample_index, term = "phenotype_z") {
   gene_result
 }
 
+make_guide_result <- function(estimate, standard_error, statistic, p_value) {
+  converged <- is.finite(estimate) & is.finite(p_value)
+  data.frame(
+    gene = guide_truth$gene,
+    guide = guide_truth$guide,
+    estimate = estimate,
+    std_error = standard_error,
+    t_value = statistic,
+    df = Inf,
+    p_value = p_value,
+    rho = NA_real_,
+    mean_cpm = rowMeans(
+      counts / rep(colSums(counts), each = nrow(counts)) * 1e6
+    ),
+    converged = converged,
+    fdr = p.adjust(p_value, method = "BH")
+  )
+}
+
+write_count_method <- function(label, guide_result, elapsed) {
+  gene_result <- combine_guides(guide_result)
+  write.csv(
+    guide_result,
+    gzfile(file.path(result_dir, paste0(label, "_guide_results.csv.gz"))),
+    row.names = FALSE
+  )
+  write.csv(
+    gene_result,
+    file.path(result_dir, paste0(label, "_gene_results.csv")),
+    row.names = FALSE
+  )
+  write.csv(
+    data.frame(
+      method = label,
+      elapsed_seconds = elapsed,
+      guides_per_second = nrow(guide_result) / elapsed
+    ),
+    file.path(result_dir, paste0(label, "_runtime.csv")),
+    row.names = FALSE
+  )
+  gene_result
+}
+
+run_edger <- function(label, sample_index) {
+  if (!requireNamespace("edgeR", quietly = TRUE)) {
+    stop("The Bioconductor package `edgeR` is required.")
+  }
+  design_data <- droplevels(sample_data[sample_index, , drop = FALSE])
+  design <- model.matrix(~ phenotype_z + replicate, data = design_data)
+  count_subset <- counts[, sample_index, drop = FALSE]
+  start <- proc.time()
+  dge <- edgeR::DGEList(counts = count_subset)
+  dge <- edgeR::calcNormFactors(dge)
+  dge <- edgeR::estimateDisp(dge, design, robust = TRUE)
+  fit <- edgeR::glmQLFit(dge, design, robust = TRUE)
+  test <- edgeR::glmQLFTest(
+    fit, coef = match("phenotype_z", colnames(design))
+  )
+  elapsed <- unname((proc.time() - start)[["elapsed"]])
+  table <- test$table
+  guide_result <- make_guide_result(
+    estimate = table$logFC,
+    standard_error = rep(NA_real_, nrow(table)),
+    statistic = sqrt(pmax(table$F, 0)) * sign(table$logFC),
+    p_value = table$PValue
+  )
+  write_count_method(label, guide_result, elapsed)
+}
+
+run_deseq2 <- function(label, sample_index) {
+  if (!requireNamespace("DESeq2", quietly = TRUE)) {
+    stop("The Bioconductor package `DESeq2` is required.")
+  }
+  design_data <- droplevels(sample_data[sample_index, , drop = FALSE])
+  count_subset <- counts[, sample_index, drop = FALSE]
+  start <- proc.time()
+  dds <- DESeq2::DESeqDataSetFromMatrix(
+    countData = round(count_subset),
+    colData = design_data,
+    design = ~ replicate + phenotype_z
+  )
+  dds <- DESeq2::estimateSizeFactors(dds, type = "poscounts")
+  dds <- suppressMessages(DESeq2::DESeq(
+    dds,
+    test = "Wald",
+    quiet = TRUE,
+    minReplicatesForReplace = Inf
+  ))
+  result <- DESeq2::results(
+    dds,
+    name = "phenotype_z",
+    independentFiltering = FALSE,
+    cooksCutoff = FALSE
+  )
+  elapsed <- unname((proc.time() - start)[["elapsed"]])
+  guide_result <- make_guide_result(
+    estimate = result$log2FoldChange,
+    standard_error = result$lfcSE,
+    statistic = result$stat,
+    p_value = result$pvalue
+  )
+  write_count_method(label, guide_result, elapsed)
+}
+
+run_limma_voom <- function(label, sample_index) {
+  if (!requireNamespace("limma", quietly = TRUE) ||
+      !requireNamespace("edgeR", quietly = TRUE)) {
+    stop("The Bioconductor packages `limma` and `edgeR` are required.")
+  }
+  design_data <- droplevels(sample_data[sample_index, , drop = FALSE])
+  design <- model.matrix(~ phenotype_z + replicate, data = design_data)
+  count_subset <- counts[, sample_index, drop = FALSE]
+  start <- proc.time()
+  dge <- edgeR::DGEList(counts = count_subset)
+  dge <- edgeR::calcNormFactors(dge)
+  transformed <- limma::voom(dge, design, plot = FALSE)
+  fit <- limma::eBayes(
+    limma::lmFit(transformed, design),
+    robust = TRUE
+  )
+  coefficient <- match("phenotype_z", colnames(design))
+  table <- limma::topTable(
+    fit,
+    coef = coefficient,
+    number = Inf,
+    sort.by = "none"
+  )
+  elapsed <- unname((proc.time() - start)[["elapsed"]])
+  guide_result <- make_guide_result(
+    estimate = table$logFC,
+    standard_error = abs(table$logFC / table$t),
+    statistic = table$t,
+    p_value = table$P.Value
+  )
+  write_count_method(label, guide_result, elapsed)
+}
+
 three_sample_index <- sample_data$sample_type %in% c("low", "bulk", "high")
 tail_index <- sample_data$sample_type %in% c("low", "high")
 bulk_index <- sample_data$sample_type %in% c("input", "bulk")
@@ -266,6 +407,15 @@ mageck_three <- run_mageck_mle(
 )
 mageck_tails <- run_mageck_mle("mageck_mle_two_tails", tail_index)
 
+edger_three <- run_edger("edger_ql_low_bulk_high", three_sample_index)
+edger_tails <- run_edger("edger_ql_two_tails", tail_index)
+deseq2_three <- run_deseq2("deseq2_low_bulk_high", three_sample_index)
+deseq2_tails <- run_deseq2("deseq2_two_tails", tail_index)
+limma_three <- run_limma_voom(
+  "limma_voom_low_bulk_high", three_sample_index
+)
+limma_tails <- run_limma_voom("limma_voom_two_tails", tail_index)
+
 auroc <- function(truth, score) {
   score_rank <- rank(score, ties.method = "average")
   n_positive <- sum(truth)
@@ -338,8 +488,14 @@ evaluate <- function(method, gene_result, design) {
 metrics <- rbind(
   evaluate("BARCS", barcs_three, "Low + bulk + high"),
   evaluate("MAGeCK-MLE", mageck_three, "Low + bulk + high"),
+  evaluate("edgeR-QL", edger_three, "Low + bulk + high"),
+  evaluate("DESeq2", deseq2_three, "Low + bulk + high"),
+  evaluate("limma-voom", limma_three, "Low + bulk + high"),
   evaluate("BARCS", barcs_tails, "Two 25% tails"),
   evaluate("MAGeCK-MLE", mageck_tails, "Two 25% tails"),
+  evaluate("edgeR-QL", edger_tails, "Two 25% tails"),
+  evaluate("DESeq2", deseq2_tails, "Two 25% tails"),
+  evaluate("limma-voom", limma_tails, "Two 25% tails"),
   evaluate("Bulk vs input", barcs_bulk, "Unsorted 0-100%")
 )
 write.csv(
@@ -351,8 +507,14 @@ write.csv(
 all_results <- list(
   `BARCS / low + bulk + high` = barcs_three,
   `MAGeCK-MLE / low + bulk + high` = mageck_three,
+  `edgeR-QL / low + bulk + high` = edger_three,
+  `DESeq2 / low + bulk + high` = deseq2_three,
+  `limma-voom / low + bulk + high` = limma_three,
   `BARCS / two tails` = barcs_tails,
   `MAGeCK-MLE / two tails` = mageck_tails,
+  `edgeR-QL / two tails` = edger_tails,
+  `DESeq2 / two tails` = deseq2_tails,
+  `limma-voom / two tails` = limma_tails,
   `Bulk vs input` = barcs_bulk
 )
 effect_table <- do.call(rbind, lapply(names(all_results), function(label) {
@@ -402,17 +564,22 @@ text(
 arrows(-3.25, 0.31, 3.25, 0.31, code = 3, length = 0.05)
 text(0, 0.335, "Bulk 0-100% (overlapping)", cex = 0.76)
 
-performance <- metrics[metrics$method != "Bulk vs input", ]
+performance <- metrics[metrics$design == "Low + bulk + high", ]
 metric_matrix <- rbind(
   AUROC = performance$auroc,
   `Average precision` = performance$average_precision,
   `Directional recall` = performance$directional_recall_fdr_0_10
 )
-method_labels <- paste(performance$method, performance$design, sep = "\n")
-method_colours <- ifelse(
-  performance$method == "BARCS",
-  barcs_method_colours[["BARCS"]],
-  barcs_method_colours[["MAGeCK"]]
+method_labels <- performance$method
+method_colour_keys <- c(
+  BARCS = "BARCS",
+  `MAGeCK-MLE` = "MAGeCK",
+  `edgeR-QL` = "edgeR",
+  DESeq2 = "DESeq2",
+  `limma-voom` = "limma-voom"
+)
+method_colours <- unname(
+  barcs_method_colours[method_colour_keys[performance$method]]
 )
 par(mar = c(7.2, 4.2, 2.3, 0.8))
 positions <- barplot(

@@ -245,12 +245,16 @@ give equal weight to valid guides and use the independence reference
 $\sqrt{m_g}$; shared sequence artifacts or other correlation can therefore
 make the gene statistic anti-conservative.  A production extension should
 estimate guide reliability and within-gene dependence or use a hierarchical
-effect model.  In the head-to-head benchmarks, this Stouffer--median procedure
-is used only for BARCS (and for the deliberately naive binomial comparator).
-MAGeCK, Chronos, BAGEL2, Waterbear, and MAUDE retain their native or deposited
-gene-level summaries.  The exploratory DeWeirdt false-discovery audit used
-Fisher aggregation as stated in its Results description and is not pooled
-with these primary benchmark statistics.
+effect model.  In the biological head-to-head benchmarks, this
+Stouffer--median procedure is used only for BARCS (and for the deliberately
+naive binomial comparator).  MAGeCK, Chronos, BAGEL2, Waterbear, and MAUDE
+retain their native or deposited gene-level summaries.  In the CRISPulator
+simulation sensitivity analysis, the same transparent rule is additionally
+applied to edgeR-QL, DESeq2, and limma-voom guide tests, as stated below, to
+make the absence of a native CRISPR gene model explicit.  The exploratory
+DeWeirdt false-discovery audit used Fisher aggregation as stated in its
+Results description and is not pooled with these primary benchmark
+statistics.
 
 \subsubsection{CRISPulator FACS benchmark}
 
@@ -268,20 +272,22 @@ cells per guide, multiplicity of infection was 0.25, Gaussian phenotype noise
 was 2, sorting representation was 50 cells per guide, and sequencing depth was
 50 reads per guide per sample.  Both multiplicity of infection and the
 high-quality-guide fraction are exposed as simulation parameters, as is the
-number of genes.
+number of genes and the number of independent screen replicates.
 The five benchmark seeds were 20250724 through 20250728.
 
 We additionally performed a one-factor-at-a-time sensitivity analysis around
-the baseline $(\mathrm{MOI},q,G)=(0.25,0.90,400)$, where $q$ is the
-high-quality-guide fraction and $G$ is the number of genes.  The evaluated
-levels were $\mathrm{MOI}\in\{0.10,0.25,0.40\}$,
-$q\in\{0.60,0.75,0.90\}$, and $G\in\{100,400,1000\}$.  After removing
-duplicate baseline settings, this yielded seven scenarios; each used the same
-five prespecified seeds, for 35 simulations.  One parameter changed at a time,
-so its main sensitivity remained interpretable.  For each seed and scenario,
-we paired BARCS and MAGeCK-MLE results from the low--bulk--high design and
-reported differences as BARCS minus MAGeCK-MLE.  The executable benchmark
-also supports the complete $3\times3\times3$ factorial when interaction
+the baseline $(\mathrm{MOI},q,G,R)=(0.25,0.90,400,4)$, where $q$ is the
+high-quality-guide fraction, $G$ is the number of genes, and $R$ is the number
+of independent screen replicates.  The evaluated levels were
+$\mathrm{MOI}\in\{0.10,0.25,0.40\}$,
+$q\in\{0.60,0.75,0.90\}$, $G\in\{100,400,1000\}$, and
+$R\in\{3,4,6\}$.  After removing duplicate baseline settings, this yielded
+nine scenarios; each used the same five prespecified seeds, for 45
+simulations.  One parameter changed at a time, so its main sensitivity
+remained interpretable.  For each seed and scenario, we paired BARCS and
+MAGeCK-MLE results from the low--bulk--high design and reported differences as
+BARCS minus MAGeCK-MLE.  The executable benchmark also supports the complete
+$3^4$ factorial (81 scenarios and 405 five-seed simulations) when interaction
 effects are the target.
 
 CRISPulator's arbitrary percentile ranges were set to $(0,0.25)$ for low,
@@ -294,11 +300,21 @@ the means of their corresponding standard-normal intervals,
  d_{\mathrm{low}}=-1.271,\qquad
  d_{\mathrm{high}}=1.271,
 \]
-while bulk received $d_{\mathrm{bulk}}=0$.  Both BARCS and MAGeCK-MLE fitted
-this score with replicate indicators.  Tail-only fits removed bulk without
-changing the low and high counts.  BARCS guide tests were scaled with the
-simulated negative-control guides before directional Stouffer aggregation;
-MAGeCK-MLE used its native gene-level Wald result.
+while bulk received $d_{\mathrm{bulk}}=0$.  BARCS, MAGeCK-MLE, edgeR
+quasi-likelihood, DESeq2 Wald, and limma-voom fitted this score with replicate
+indicators \citep{li2015mageckvispr,lun2016edger,love2014deseq2,law2014voom}.
+Tail-only fits removed bulk without changing the low and high counts.  BARCS
+guide tests were scaled with the simulated negative-control guides before
+directional Stouffer aggregation; MAGeCK-MLE used its native gene-level Wald
+result.  edgeR-QL, DESeq2, and limma-voom are general count-regression
+comparators rather than CRISPR gene models.  Their native guide-level
+two-sided $p$-values and coefficients were therefore passed through the same
+unscaled directional Stouffer and median-effect summaries.  This explicit
+hybrid comparison tests whether a strong general count model plus a common
+guide-to-gene rule is sufficient; it does not relabel that rule as a native
+gene statistic of those packages.  Reported runtimes cover the primary
+low--bulk--high model fit and exclude simulation, file input/output, and
+guide-to-gene aggregation.
 
 Genes from the increasing and decreasing classes were positives.  Ranking
 used the two-sided gene significance score.  AUROC and average precision

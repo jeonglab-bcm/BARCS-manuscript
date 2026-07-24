@@ -5,8 +5,9 @@
 #
 # The per-seed count matrices and MAGeCK intermediates stay under `results/`
 # (git-ignored). Compact cross-seed metrics and figures are versioned. The
-# default one-at-a-time grid varies MOI, high-quality-guide fraction, and gene
-# count around the manuscript baseline without confounding their effects.
+# default one-at-a-time grid varies MOI, high-quality-guide fraction, gene
+# count, and replicate count around the manuscript baseline without
+# confounding their effects.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
@@ -24,7 +25,7 @@ format_parameter <- function(value) {
   format(value, trim = TRUE, scientific = FALSE)
 }
 
-cache_scenario_name <- function(moi, quality, genes) {
+cache_scenario_name <- function(moi, quality, genes, replicates) {
   name <- sprintf(
     "moi_%s_quality_%s",
     format_parameter(moi),
@@ -32,6 +33,9 @@ cache_scenario_name <- function(moi, quality, genes) {
   )
   if (genes != 400L) {
     name <- paste0(name, "_genes_", genes)
+  }
+  if (replicates != 4L) {
+    name <- paste0(name, "_replicates_", replicates)
   }
   name
 }
@@ -46,6 +50,7 @@ baseline_quality <- as.numeric(Sys.getenv(
   "CRISPULATOR_HIGH_QUALITY_GUIDE_FRACTION", "0.90"
 ))
 baseline_genes <- as.integer(Sys.getenv("CRISPULATOR_GENES", "400"))
+baseline_replicates <- as.integer(Sys.getenv("CRISPULATOR_REPLICATES", "4"))
 moi_values <- parse_numeric_values(
   "CRISPULATOR_MOI_VALUES", c(0.10, 0.25, 0.40)
 )
@@ -54,6 +59,9 @@ quality_values <- parse_numeric_values(
 )
 gene_values <- as.integer(parse_numeric_values(
   "CRISPULATOR_GENE_VALUES", c(100, 400, 1000)
+))
+replicate_values <- as.integer(parse_numeric_values(
+  "CRISPULATOR_REPLICATE_VALUES", c(3, 4, 6)
 ))
 grid_mode <- Sys.getenv("CRISPULATOR_GRID_MODE", "one_at_a_time")
 
@@ -73,6 +81,10 @@ if (!is.finite(baseline_genes) || baseline_genes < 20L ||
     any(gene_values < 20L)) {
   stop("Gene counts must be integers of at least 20.")
 }
+if (!is.finite(baseline_replicates) || baseline_replicates < 3L ||
+    any(replicate_values < 3L)) {
+  stop("Replicate counts must be integers of at least three.")
+}
 if (!grid_mode %in% c("single", "one_at_a_time", "full_factorial")) {
   stop(
     "`CRISPULATOR_GRID_MODE` must be single, one_at_a_time, or full_factorial."
@@ -82,7 +94,8 @@ if (!grid_mode %in% c("single", "one_at_a_time", "full_factorial")) {
 baseline <- data.frame(
   moi = baseline_moi,
   high_quality_guide_fraction = baseline_quality,
-  genes = baseline_genes
+  genes = baseline_genes,
+  replicates = baseline_replicates
 )
 scenarios <- switch(
   grid_mode,
@@ -92,45 +105,58 @@ scenarios <- switch(
     data.frame(
       moi = moi_values,
       high_quality_guide_fraction = baseline_quality,
-      genes = baseline_genes
+      genes = baseline_genes,
+      replicates = baseline_replicates
     ),
     data.frame(
       moi = baseline_moi,
       high_quality_guide_fraction = quality_values,
-      genes = baseline_genes
+      genes = baseline_genes,
+      replicates = baseline_replicates
     ),
     data.frame(
       moi = baseline_moi,
       high_quality_guide_fraction = baseline_quality,
-      genes = gene_values
+      genes = gene_values,
+      replicates = baseline_replicates
+    ),
+    data.frame(
+      moi = baseline_moi,
+      high_quality_guide_fraction = baseline_quality,
+      genes = baseline_genes,
+      replicates = replicate_values
     )
   )),
   full_factorial = expand.grid(
     moi = moi_values,
     high_quality_guide_fraction = quality_values,
     genes = gene_values,
+    replicates = replicate_values,
     KEEP.OUT.ATTRS = FALSE
   )
 )
 scenarios$scenario_id <- sprintf(
-  "moi_%s_quality_%s_genes_%d",
+  "moi_%s_quality_%s_genes_%d_replicates_%d",
   vapply(scenarios$moi, format_parameter, character(1L)),
   vapply(
     scenarios$high_quality_guide_fraction,
     format_parameter,
     character(1L)
   ),
-  scenarios$genes
+  scenarios$genes,
+  scenarios$replicates
 )
 scenarios$is_baseline <- with(
   scenarios,
   moi == baseline_moi &
     high_quality_guide_fraction == baseline_quality &
-    genes == baseline_genes
+    genes == baseline_genes &
+    replicates == baseline_replicates
 )
 scenarios <- scenarios[
   order(
     !scenarios$is_baseline,
+    scenarios$replicates,
     scenarios$genes,
     scenarios$high_quality_guide_fraction,
     scenarios$moi
@@ -168,7 +194,24 @@ cache_matches <- function(parameter_file, run) {
       run$high_quality_guide_fraction
     )) &&
     identical(as.integer(values[["genes"]]), as.integer(run$genes)) &&
+    identical(
+      as.integer(values[["replicates"]]),
+      as.integer(run$replicates)
+    ) &&
     identical(as.integer(values[["seed"]]), as.integer(run$seed))
+}
+
+required_methods <- c(
+  "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom",
+  "Bulk vs input"
+)
+
+analysis_matches <- function(metric_file) {
+  if (!file.exists(metric_file)) {
+    return(FALSE)
+  }
+  metrics <- tryCatch(read.csv(metric_file), error = function(error) NULL)
+  !is.null(metrics) && all(required_methods %in% metrics$method)
 }
 
 all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
@@ -178,7 +221,8 @@ all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
   cache_scenario <- cache_scenario_name(
     run$moi,
     run$high_quality_guide_fraction,
-    run$genes
+    run$genes,
+    run$replicates
   )
   run_dir <- file.path(
     root, cache_scenario, paste0("seed_", run$seed)
@@ -190,27 +234,36 @@ all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
   parameter_file <- file.path(data_dir, "parameters.tsv")
   dir.create(run_dir, recursive = TRUE, showWarnings = FALSE)
 
-  if (!file.exists(metric_file) ||
-      !cache_matches(parameter_file, run) ||
-      identical(Sys.getenv("RERUN_CRISPULATOR"), "1")) {
+  rerun <- identical(Sys.getenv("RERUN_CRISPULATOR"), "1")
+  simulation_needed <- !cache_matches(parameter_file, run) || rerun
+  analysis_needed <- simulation_needed ||
+    !analysis_matches(metric_file) || rerun
+
+  if (simulation_needed || analysis_needed) {
     message(
       sprintf(
-        "[%d/%d] MOI=%s, quality=%s, genes=%d, seed=%d",
+        paste0(
+          "[%d/%d] MOI=%s, quality=%s, genes=%d, ",
+          "replicates=%d, seed=%d"
+        ),
         index,
         nrow(runs),
         format_parameter(run$moi),
         format_parameter(run$high_quality_guide_fraction),
         run$genes,
+        run$replicates,
         run$seed
       )
     )
+  }
+  if (simulation_needed) {
     simulation_status <- system2(
       "julia",
       c(
         "--project=julia",
         file.path("julia", "simulate_crispulator_facs.jl"),
         data_dir,
-        "4",
+        as.character(run$replicates),
         as.character(run$seed),
         as.character(run$moi),
         as.character(run$high_quality_guide_fraction),
@@ -222,7 +275,9 @@ all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
     if (simulation_status != 0) {
       stop("Crispulator simulation failed for ", run$scenario_id, ".")
     }
+  }
 
+  if (analysis_needed) {
     analysis_status <- system2(
       "Rscript",
       file.path("examples", "crispulator_facs_benchmark.R"),
@@ -235,7 +290,7 @@ all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
       stderr = FALSE
     )
     if (analysis_status != 0) {
-      stop("BARCS/MAGeCK analysis failed for ", run$scenario_id, ".")
+      stop("Multimethod analysis failed for ", run$scenario_id, ".")
     }
   }
   metrics <- read.csv(metric_file)
@@ -244,10 +299,85 @@ all_metrics <- lapply(seq_len(nrow(runs)), function(index) {
   metrics$moi <- run$moi
   metrics$high_quality_guide_fraction <- run$high_quality_guide_fraction
   metrics$genes <- run$genes
+  metrics$replicates <- run$replicates
   metrics$is_baseline <- run$is_baseline
   metrics
 })
 all_metrics <- do.call(rbind, all_metrics)
+
+runtime_files <- c(
+  BARCS = "barcs_low_bulk_high_runtime.csv",
+  `MAGeCK-MLE` = "mageck_mle_low_bulk_high_runtime.csv",
+  `edgeR-QL` = "edger_ql_low_bulk_high_runtime.csv",
+  DESeq2 = "deseq2_low_bulk_high_runtime.csv",
+  `limma-voom` = "limma_voom_low_bulk_high_runtime.csv"
+)
+runtime_rows <- do.call(rbind, lapply(seq_len(nrow(runs)), function(index) {
+  run <- runs[index, ]
+  cache_scenario <- cache_scenario_name(
+    run$moi,
+    run$high_quality_guide_fraction,
+    run$genes,
+    run$replicates
+  )
+  result_dir <- file.path(
+    root, cache_scenario, paste0("seed_", run$seed), "analysis"
+  )
+  do.call(rbind, lapply(names(runtime_files), function(method) {
+    runtime <- read.csv(file.path(result_dir, runtime_files[[method]]))
+    data.frame(
+      scenario_id = run$scenario_id,
+      seed = run$seed,
+      method = method,
+      moi = run$moi,
+      high_quality_guide_fraction = run$high_quality_guide_fraction,
+      genes = run$genes,
+      replicates = run$replicates,
+      is_baseline = run$is_baseline,
+      elapsed_seconds = runtime$elapsed_seconds[1L]
+    )
+  }))
+}))
+write.csv(
+  runtime_rows,
+  file.path(
+    "data", "derived", "crispulator_facs_multimethod_runtime.csv"
+  ),
+  row.names = FALSE
+)
+runtime_summary <- do.call(rbind, lapply(
+  split(
+    runtime_rows,
+    interaction(
+      runtime_rows$scenario_id,
+      runtime_rows$method,
+      drop = TRUE
+    )
+  ),
+  function(group) {
+    data.frame(
+      scenario_id = group$scenario_id[1L],
+      method = group$method[1L],
+      simulations = nrow(group),
+      moi = group$moi[1L],
+      high_quality_guide_fraction =
+        group$high_quality_guide_fraction[1L],
+      genes = group$genes[1L],
+      replicates = group$replicates[1L],
+      is_baseline = group$is_baseline[1L],
+      elapsed_seconds_mean = mean(group$elapsed_seconds),
+      elapsed_seconds_sd = sd(group$elapsed_seconds)
+    )
+  }
+))
+rownames(runtime_summary) <- NULL
+write.csv(
+  runtime_summary,
+  file.path(
+    "data", "derived", "crispulator_facs_multimethod_runtime_summary.csv"
+  ),
+  row.names = FALSE
+)
 
 design_concordance <- do.call(rbind, lapply(seq_len(nrow(runs)), function(
     index) {
@@ -255,7 +385,8 @@ design_concordance <- do.call(rbind, lapply(seq_len(nrow(runs)), function(
   cache_scenario <- cache_scenario_name(
     run$moi,
     run$high_quality_guide_fraction,
-    run$genes
+    run$genes,
+    run$replicates
   )
   result_dir <- file.path(
     root, cache_scenario, paste0("seed_", run$seed), "analysis"
@@ -268,6 +399,18 @@ design_concordance <- do.call(rbind, lapply(seq_len(nrow(runs)), function(
     `MAGeCK-MLE` = c(
       "mageck_mle_low_bulk_high_gene_results.csv",
       "mageck_mle_two_tails_gene_results.csv"
+    ),
+    `edgeR-QL` = c(
+      "edger_ql_low_bulk_high_gene_results.csv",
+      "edger_ql_two_tails_gene_results.csv"
+    ),
+    DESeq2 = c(
+      "deseq2_low_bulk_high_gene_results.csv",
+      "deseq2_two_tails_gene_results.csv"
+    ),
+    `limma-voom` = c(
+      "limma_voom_low_bulk_high_gene_results.csv",
+      "limma_voom_two_tails_gene_results.csv"
     )
   )
   do.call(rbind, lapply(names(comparisons), function(method) {
@@ -287,6 +430,7 @@ design_concordance <- do.call(rbind, lapply(seq_len(nrow(runs)), function(
       moi = run$moi,
       high_quality_guide_fraction = run$high_quality_guide_fraction,
       genes = run$genes,
+      replicates = run$replicates,
       is_baseline = run$is_baseline,
       effect_spearman = cor(
         shared$estimate_three,
@@ -343,6 +487,7 @@ summary_rows <- do.call(rbind, lapply(
       high_quality_guide_fraction =
         group$high_quality_guide_fraction[1L],
       genes = group$genes[1L],
+      replicates = group$replicates[1L],
       is_baseline = group$is_baseline[1L]
     )
     for (metric in metric_columns) {
@@ -550,7 +695,7 @@ primary <- all_metrics[
 ]
 comparison_keys <- c(
   "scenario_id", "seed", "moi", "high_quality_guide_fraction",
-  "genes", "is_baseline"
+  "genes", "replicates", "is_baseline"
 )
 comparison_metrics <- c(
   "average_precision",
@@ -586,7 +731,7 @@ write.csv(
 )
 
 # Positive values favor BARCS and negative values favor MAGeCK-MLE. A full
-# factorial plot marginalizes over the other two parameters; the default
+# factorial plot marginalizes over the other parameters; the default
 # one-at-a-time plot holds them at their baseline values.
 parameter_specs <- list(
   list(column = "moi", label = "MOI", panel = "A"),
@@ -595,7 +740,8 @@ parameter_specs <- list(
     label = "High-quality guide fraction",
     panel = "B"
   ),
-  list(column = "genes", label = "Number of genes", panel = "C")
+  list(column = "genes", label = "Number of genes", panel = "C"),
+  list(column = "replicates", label = "Replicates", panel = "D")
 )
 difference_specs <- list(
   list(
@@ -625,13 +771,14 @@ summarize_sweep <- function(parameter) {
   data <- method_differences
   if (grid_mode == "one_at_a_time") {
     fixed <- setdiff(
-      c("moi", "high_quality_guide_fraction", "genes"),
+      c("moi", "high_quality_guide_fraction", "genes", "replicates"),
       parameter
     )
     baseline_values <- c(
       moi = baseline_moi,
       high_quality_guide_fraction = baseline_quality,
-      genes = baseline_genes
+      genes = baseline_genes,
+      replicates = baseline_replicates
     )
     keep <- rep(TRUE, nrow(data))
     for (column in fixed) {
@@ -671,11 +818,11 @@ y_limit <- y_limit + c(-y_padding, y_padding)
 
 pdf(
   file.path("figures", "crispulator_facs_parameter_sensitivity.pdf"),
-  width = 9,
+  width = 11.5,
   height = 3.4,
   useDingbats = FALSE
 )
-par(mfrow = c(1, 3), mar = c(4.3, 4.3, 2.4, 0.8))
+par(mfrow = c(1, 4), mar = c(4.3, 4.3, 2.4, 0.8))
 for (index in seq_along(parameter_specs)) {
   parameter <- parameter_specs[[index]]
   summary <- sweep_summaries[[index]]
@@ -728,6 +875,165 @@ for (index in seq_along(parameter_specs)) {
       lty = vapply(difference_specs, `[[`, numeric(1L), "lty"),
       bty = "n",
       cex = 0.72
+    )
+  }
+}
+dev.off()
+
+# Multimethod replicate sensitivity at the remaining baseline parameters.
+replicate_metrics <- all_metrics[
+  all_metrics$design == "Low + bulk + high" &
+    all_metrics$method %in%
+      c("BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom") &
+    all_metrics$moi == baseline_moi &
+    all_metrics$high_quality_guide_fraction == baseline_quality &
+    all_metrics$genes == baseline_genes,
+]
+replicate_metric_columns <- c(
+  comparison_metrics,
+  "empirical_fdp_fdr_0_10"
+)
+replicate_summary <- do.call(rbind, lapply(
+  split(
+    replicate_metrics,
+    interaction(
+      replicate_metrics$method,
+      replicate_metrics$replicates,
+      drop = TRUE
+    )
+  ),
+  function(group) {
+    row <- data.frame(
+      method = group$method[1L],
+      replicates = group$replicates[1L],
+      simulations = nrow(group)
+    )
+    for (metric in replicate_metric_columns) {
+      row[[paste0(metric, "_mean")]] <- mean(group[[metric]])
+      row[[paste0(metric, "_se")]] <-
+        sd(group[[metric]]) / sqrt(nrow(group))
+    }
+    row
+  }
+))
+rownames(replicate_summary) <- NULL
+write.csv(
+  replicate_summary,
+  file.path(
+    "data", "derived",
+    "crispulator_facs_multimethod_replicate_summary.csv"
+  ),
+  row.names = FALSE
+)
+
+method_order <- c(
+  "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
+)
+method_colour_keys <- c(
+  BARCS = "BARCS",
+  `MAGeCK-MLE` = "MAGeCK",
+  `edgeR-QL` = "edgeR",
+  DESeq2 = "DESeq2",
+  `limma-voom` = "limma-voom"
+)
+method_colours <- unname(
+  barcs_method_colours[method_colour_keys[method_order]]
+)
+method_pch <- c(16, 17, 15, 18, 8)
+method_lty <- seq_along(method_order)
+replicate_figure_metrics <- list(
+  list(
+    column = "average_precision",
+    label = "Average precision",
+    panel = "A"
+  ),
+  list(
+    column = "directional_recall_fdr_0_10",
+    label = "Directional recall",
+    panel = "B"
+  ),
+  list(column = "f1_fdr_0_10", label = "F1", panel = "C"),
+  list(
+    column = "empirical_fdp_fdr_0_10",
+    label = "Realized FDP",
+    panel = "D"
+  )
+)
+pdf(
+  file.path("figures", "crispulator_facs_multimethod_replicates.pdf"),
+  width = 11.5,
+  height = 3.5,
+  useDingbats = FALSE
+)
+par(mfrow = c(1, 4), mar = c(4.3, 4.3, 2.4, 0.8))
+for (metric_index in seq_along(replicate_figure_metrics)) {
+  metric <- replicate_figure_metrics[[metric_index]]
+  mean_column <- paste0(metric$column, "_mean")
+  se_column <- paste0(metric$column, "_se")
+  limits <- range(
+    c(
+      replicate_summary[[mean_column]] - replicate_summary[[se_column]],
+      replicate_summary[[mean_column]] + replicate_summary[[se_column]]
+    ),
+    finite = TRUE
+  )
+  if (metric$column == "empirical_fdp_fdr_0_10") {
+    limits <- range(c(0.10, limits))
+  }
+  padding <- max(0.02, diff(limits) * 0.12)
+  limits <- pmax(0, pmin(1, limits + c(-padding, padding)))
+  plot(
+    range(replicate_values),
+    limits,
+    type = "n",
+    xlab = "Independent screen replicates",
+    ylab = metric$label,
+    main = paste(metric$panel, metric$label),
+    xaxt = "n",
+    bty = "l"
+  )
+  axis(1, at = sort(unique(replicate_values)))
+  if (metric$column == "empirical_fdp_fdr_0_10") {
+    abline(h = 0.10, lty = 3, col = "#555555")
+  }
+  for (method_index in seq_along(method_order)) {
+    method <- method_order[method_index]
+    rows <- replicate_summary[replicate_summary$method == method, ]
+    rows <- rows[order(rows$replicates), ]
+    lines(
+      rows$replicates,
+      rows[[mean_column]],
+      col = method_colours[method_index],
+      lty = method_lty[method_index],
+      lwd = 1.5
+    )
+    points(
+      rows$replicates,
+      rows[[mean_column]],
+      col = method_colours[method_index],
+      pch = method_pch[method_index]
+    )
+    has_error <- is.finite(rows[[se_column]]) & rows[[se_column]] > 0
+    arrows(
+      rows$replicates[has_error],
+      (rows[[mean_column]] - rows[[se_column]])[has_error],
+      rows$replicates[has_error],
+      (rows[[mean_column]] + rows[[se_column]])[has_error],
+      angle = 90,
+      code = 3,
+      length = 0.03,
+      col = method_colours[method_index]
+    )
+  }
+  if (metric_index == 1L) {
+    legend(
+      "bottomright",
+      legend = method_order,
+      col = method_colours,
+      pch = method_pch,
+      lty = method_lty,
+      bty = "n",
+      cex = 0.68
     )
   }
 }
