@@ -12,7 +12,7 @@ biological units and therefore must not add residual degrees of freedom.
 Following the Chronos preprocessing, guides with fewer than 30 pDNA reads were
 removed, leaving 86,882 guides targeting 17,995 genes.
 
-The beta-binomial and official MAGeCK-MLE 0.5.9.5 fits received the same
+The BARCS and official MAGeCK-MLE 0.5.9.5 fits received the same
 eight-column count matrix and the same numeric design, with an intercept and
 $d_i/25$.  This is a direct continuous-time comparison.  We also downloaded
 the all-seven-time-point Chronos joint result and the deposited per-endpoint
@@ -34,9 +34,10 @@ evaluated effects, following the deposited Chronos analysis.
 \begin{table}[ht]
 \centering
 \caption{Longitudinal HT-29 control-gene benchmark.  PR AUC is the area under
-the precision--recall curve; Recall$_{90}$ is the maximum recall at at least
-90\% precision.  More negative NNMD and fewer unexpressed false positives are
-better.}
+the precision--recall curve; Recall$_{90}$ is the maximum recall at least
+90\% precision.  Higher AUROC, PR AUC, and Recall$_{90}$ are better; more
+negative NNMD and fewer unexpressed false positives are better.  The best
+value in each column is shown in bold.}
 \label{tab:chronos}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -44,9 +45,9 @@ better.}
 \toprule
 Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{15\%}$\\
 \midrule
-Beta-binomial time & 0.9786 & 0.9494 & $-12.35$ & 0.9037 & 74\\
-Official MAGeCK time & 0.9789 & 0.9534 & $-13.14$ & 0.8972 & 76\\
-Chronos joint & 0.9747 & 0.9356 & $-18.88$ & 0.8991 & 77\\
+BARCS time & 0.9786 & 0.9494 & $-12.35$ & \textbf{0.9037} & \textbf{74}\\
+Official MAGeCK time & \textbf{0.9789} & \textbf{0.9534} & $-13.14$ & 0.8972 & 76\\
+Chronos joint & 0.9747 & 0.9356 & $\mathbf{-18.88}$ & 0.8991 & 77\\
 Published MAGeCK average & 0.9742 & 0.9351 & $-10.62$ & 0.8602 & 100\\
 Published BAGEL2 average & 0.9725 & 0.9295 & $-7.28$ & 0.8148 & 133\\
 \bottomrule
@@ -55,26 +56,27 @@ Published BAGEL2 average & 0.9725 & 0.9295 & $-7.28$ & 0.8148 & 133\\
 
 Table~\ref{tab:chronos} gives a more useful answer than declaring one universal
 winner.  Official continuous-time MAGeCK has the highest AUROC and PR AUC,
-although its AUROC advantage over beta-binomial is only 0.0004.
-Beta-binomial regression has the highest high-precision recall and two fewer
+although its AUROC advantage over BARCS is only 0.0004.
+BARCS has the highest high-precision recall and two fewer
 unexpressed false positives.  Chronos has by far the strongest distributional
 separation by NNMD, consistent with its mechanistic treatment of knockout
-efficiency and saturation.  The beta-binomial and official continuous-time
+efficiency and saturation.  The BARCS and official continuous-time
 MAGeCK effects have Spearman correlation 0.926; correlations with Chronos
 joint and the deposited MAGeCK average are 0.815 and 0.812.  These are again effect
 agreement statistics, not comparable likelihoods: the methods estimate
 differently scaled quantities and do not expose a common predictive
 likelihood in the deposited outputs.
 
-\begin{figure}[p]
+\begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/chronos_tzelepis_benchmark.pdf}
-\caption{Longitudinal HT-29 benchmark.  The upper panels compare control-gene
-ROC and precision--recall curves.  The lower-left panel shows recall at at
-least 90\% precision.  The lower-right panel shows residual effect--copy-number
-association among unexpressed genes before and after official MAGeCK
-piecewise correction; the more negative corrected bars demonstrate
-over-correction in this single-cell-line screen.}
+\caption{Longitudinal HT-29 benchmark.  (A) ROC and (B) precision--recall
+curves compare essential-gene recovery against unexpressed genes.  (C) Recall
+at at least 90\% precision.  (D) Absolute residual effect--copy-number
+association among unexpressed genes; values closer to zero are better.
+Filled points are uncorrected results and open points are results after
+official MAGeCK piecewise correction.  A method has the same color in every
+panel.}
 \label{fig:chronos}
 \end{figure}
 \clearpage
@@ -84,10 +86,15 @@ over-correction in this single-cell-line screen.}
 We extracted the HT-29 profile (ACH-000552) from DepMap Public 20Q2
 \citep{depmap20q2} and repeated the same copy-number audit used for A375.
 Before correction, effect--copy-number Spearman correlation among unexpressed
-genes is already small: $-0.072$ for beta-binomial, $-0.075$ for official
-continuous-time MAGeCK, and $-0.048$ for deposited Chronos joint effects.
+genes is already small: $-0.072$ for BARCS, $-0.075$ for official
+continuous-time MAGeCK, $-0.048$ for deposited Chronos joint effects,
+$-0.046$ for the published MAGeCK average, and $-0.002$ for the published
+BAGEL2 average.  The near-zero BAGEL2 association is a focused robustness
+diagnostic, not evidence that BAGEL2 is the best classifier: Table
+\ref{tab:chronos} shows that it has the lowest discrimination and
+high-precision recovery on the same control-gene universe.
 Applying MAGeCK 0.5.9.5's official piecewise normalizer makes the association
-larger rather than smaller: $-0.145$ for beta-binomial and $-0.149$ for
+larger in absolute value rather than smaller: $-0.145$ for BARCS and $-0.149$ for
 MAGeCK.  Thus the A375 result does not generalize automatically.
 
 This failure mode is informative.  The piecewise correction estimates one

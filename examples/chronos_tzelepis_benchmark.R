@@ -294,7 +294,7 @@ named_effect <- function(gene, effect) {
   setNames(as.numeric(effect), gene)
 }
 effects <- list(
-  `Beta-binomial time` = named_effect(bb_gene$gene, bb_gene$estimate),
+  `BARCS time` = named_effect(bb_gene$gene, bb_gene$estimate),
   `Official MAGeCK time` = named_effect(
     mageck_time$Gene, mageck_time[["time_25|beta"]]
   ),
@@ -303,16 +303,18 @@ effects <- list(
   `Published BAGEL2 average` = bagel_average
 )
 cnv_effects <- list(
-  `Beta-binomial time` = effects[["Beta-binomial time"]],
-  `Beta-binomial + CNV` = named_effect(
+  `BARCS time` = effects[["BARCS time"]],
+  `BARCS time + CNV` = named_effect(
     bb_cnv$gene, bb_cnv$cnv_corrected_estimate
   ),
   `Official MAGeCK time` = effects[["Official MAGeCK time"]],
-  `Official MAGeCK + CNV` = named_effect(
+  `Official MAGeCK time + CNV` = named_effect(
     mageck_time_cnv$Gene,
     mageck_time_cnv[["time_25|beta"]]
   ),
-  `Chronos joint (uncorrected)` = chronos_joint
+  `Chronos joint` = chronos_joint,
+  `Published MAGeCK average` = mageck_average,
+  `Published BAGEL2 average` = bagel_average
 )
 
 read_reference <- function(filename) {
@@ -429,16 +431,16 @@ correlation <- cor(
   method = "spearman", use = "pairwise.complete.obs"
 )
 correlation_table <- do.call(rbind, lapply(
-  setdiff(names(effects), "Beta-binomial time"),
+  setdiff(names(effects), "BARCS time"),
   function(method) {
     data.frame(
-      method_1 = "Beta-binomial time",
+      method_1 = "BARCS time",
       method_2 = method,
       n_genes = sum(
-        is.finite(effect_table[["Beta-binomial time"]]) &
+        is.finite(effect_table[["BARCS time"]]) &
           is.finite(effect_table[[method]])
       ),
-      spearman = correlation["Beta-binomial time", method]
+      spearman = correlation["BARCS time", method]
     )
   }
 ))
@@ -491,7 +493,7 @@ old_par <- par(
 plot(
   0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1),
   xlab = "False-positive rate", ylab = "True-positive rate",
-  main = "Reference-essential discrimination"
+  main = "(A) Reference-essential discrimination"
 )
 abline(0, 1, col = "grey80", lty = 3)
 for (method in names(evaluations)) {
@@ -508,7 +510,7 @@ legend(
 plot(
   0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1),
   xlab = "Recall", ylab = "Precision",
-  main = "Essential vs unexpressed genes"
+  main = "(B) Essential vs unexpressed genes"
 )
 abline(h = metrics$n_essential[1] /
   (metrics$n_essential[1] + metrics$n_unexpressed[1]),
@@ -522,31 +524,54 @@ for (method in names(evaluations)) {
 
 barplot(
   metrics$recall_at_90_precision,
-  names.arg = c("BB time", "MAGeCK\ntime", "Chronos\njoint",
+  names.arg = c("BARCS", "MAGeCK\ntime", "Chronos\njoint",
                 "MAGeCK\naverage", "BAGEL2\naverage"),
   col = unname(colors[metrics$method]), border = NA,
   ylim = c(0, 1), ylab = "Recall at >= 90% precision",
-  main = "High-precision recovery", las = 2, cex.names = 0.72
+  main = "(C) High-precision recovery", las = 2, cex.names = 0.72
 )
 abline(h = seq(0, 1, 0.2), col = "white", lwd = 0.7)
 
 cnv_plot_methods <- c(
-  "Beta-binomial time", "Beta-binomial + CNV",
-  "Official MAGeCK time", "Official MAGeCK + CNV",
-  "Chronos joint (uncorrected)"
+  "BARCS time", "BARCS time + CNV",
+  "Official MAGeCK time", "Official MAGeCK time + CNV",
+  "Chronos joint", "Published MAGeCK average",
+  "Published BAGEL2 average"
 )
-cnv_values <- cnv_bias$spearman_unexpressed[
+cnv_values <- abs(cnv_bias$spearman_unexpressed[
   match(cnv_plot_methods, cnv_bias$method)
-]
-barplot(
-  cnv_values,
-  names.arg = c("BB", "BB + CNV", "MAGeCK", "MAGeCK + CNV", "Chronos"),
-  col = c("#0072B2", "#56B4E9", "#D55E00", "#F0A37A", "#009E73"),
-  border = NA, ylab = "Spearman(effect, copy number)",
-  main = "Residual CNV association\n(unexpressed genes)",
-  las = 2, cex.names = 0.72
+])
+cnv_labels <- c(
+  "BARCS", "BARCS + CNV", "MAGeCK time", "MAGeCK time + CNV",
+  "Chronos joint", "MAGeCK average", "BAGEL2 average"
 )
-abline(h = 0, col = "grey35")
+cnv_colors <- c(
+  colors[["BARCS time"]], colors[["BARCS time"]],
+  colors[["Official MAGeCK time"]], colors[["Official MAGeCK time"]],
+  colors[["Chronos joint"]], colors[["Published MAGeCK average"]],
+  colors[["Published BAGEL2 average"]]
+)
+cnv_pch <- c(16, 1, 16, 1, 16, 16, 16)
+plot(
+  0, 0, type = "n",
+  xlim = c(0, max(cnv_values) * 1.08),
+  ylim = c(0.5, length(cnv_values) + 0.5),
+  xlab = "|Spearman(effect, copy number)| (closer to 0 is better)",
+  ylab = "", yaxt = "n",
+  main = "(D) Residual CNV association"
+)
+axis(2, at = seq_along(cnv_values), labels = rev(cnv_labels),
+     las = 1, cex.axis = 0.68)
+abline(v = pretty(c(0, cnv_values)), col = "grey92", lwd = 0.8)
+segments(
+  x0 = 0, y0 = seq_along(cnv_values),
+  x1 = rev(cnv_values), y1 = seq_along(cnv_values),
+  col = rev(cnv_colors), lwd = 2
+)
+points(
+  rev(cnv_values), seq_along(cnv_values),
+  col = rev(cnv_colors), pch = rev(cnv_pch), cex = 1.15, lwd = 2
+)
 
 par(old_par)
 dev.off()
@@ -557,7 +582,7 @@ cat(
   ncol(counts), "aggregated time points\n"
 )
 print(metrics, row.names = FALSE)
-cat("\nEffect-rank correlation with beta-binomial time slope\n")
+cat("\nEffect-rank correlation with BARCS time slope\n")
 print(correlation_table, row.names = FALSE)
 cat("\nCNV diagnostic\n")
 print(cnv_bias, row.names = FALSE)
