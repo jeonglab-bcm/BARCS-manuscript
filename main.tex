@@ -48,9 +48,10 @@ regulators versus 17 for all-bin MAGeCK-MLE and reduced the non-targeting
 $p<0.05$ frequency from 13.3\% to 4.9\%.  Across five CRISPulator FACS
 simulations, MAGeCK-MLE slightly led global ranking, whereas BARCS led
 directional recall (0.764 versus 0.717) and F1 (0.828 versus 0.817).
-An overlapping 0--100\% bulk sample left low--high effect ranks almost
-unchanged and bulk-versus-input performance at chance, showing that bulk can
-stabilize inference but does not add directional phenotype information.
+Conversely, Liang's published RRA led the five-cell-line Cas13
+processed-count benchmark (average precision 0.891 versus 0.776 for BARCS),
+exposing BARCS's power boundary when the day-effect test has only one residual
+degree of freedom.
 
 BARCS extends the beta-binomial sampling principle of
 CB\textsuperscript{2} from two groups to a regression design matrix.  Guide
@@ -270,9 +271,13 @@ question is a coefficient rather than a group label.
   normalized negative-binomial model and asymptotic Wald inference must also be
   diagnosed.  Head-to-head results should be stratified by replication,
   phenotype type, signal strength, and composition shift rather than treating
-  either method as a universal reference.  Likewise, post-fit CNV correction
-  should be accepted only after a null-gene diagnostic: it succeeds in A375
-  and over-corrects the longitudinal HT-29 screen.
+  either method as a universal reference.  The Liang benchmark illustrates
+  the converse limitation for BARCS: with one residual degree of freedom and
+  preprocessed pseudo-counts, the study-specific rank aggregation is more
+  powerful and better calibrated than either regression likelihood.
+  Likewise, post-fit CNV correction should be accepted only after a null-gene
+  diagnostic: it succeeds in A375 and over-corrects the longitudinal HT-29
+  screen.
 \end{enumerate}
 
 \section{Conclusion}
@@ -313,14 +318,18 @@ its apparent inferential benefit must be weighed against overlapping cells and
 single slope omits, and Waterbear remains the appropriate generative model for
 correlated FACS partitions.  MAUDE's 25/26 recovery comes with 406 calls
 and cannot be converted into a trustworthy precision or F1 estimate without
-complete labels.  Copy-number correction is likewise a diagnostic choice, not
+complete labels.  On Liang's deposited normalized Cas13 data, the published
+RRA leads all four compared methods, while BARCS's one-degree-of-freedom
+$t$ inference sacrifices threshold power despite retaining substantial effect
+rank agreement.  Copy-number correction is likewise a diagnostic choice, not
 an automatic improvement: it removes nuisance association in A375 and
 increases it in HT-29.  The external Chronos hit-calling audit reinforces the
 same boundary.  Preserving full-library totals removes the headline 152
 CB\textsuperscript{2} null-only discoveries, and pooled regression gives a
 well-behaved PSN1 null, but the DeWeirdt rerun remains weak and sensitive to a
-treatment-associated screen-quality shift.  Design-matrix generalization and
-empirical-null hit calling are complementary advances, not substitutes.
+treatment-associated screen-quality shift.  Design-matrix generalization,
+rank aggregation, and empirical-null hit calling are complementary advances,
+not substitutes.
 
 The resulting story is not ``CB\textsuperscript{2} versus a replacement.''
 Original CB\textsuperscript{2} answers the two-condition question;

@@ -6,6 +6,8 @@
 barcs_method_colours <- c(
   BARCS = "#0072B2",
   MAGeCK = "#D55E00",
+  `MAGeCK-RRA` = "#D55E00",
+  `Liang RRA` = "#CC79A7",
   edgeR = "#009E73",
   DESeq2 = "#CC79A7",
   `limma-voom` = "#E69F00",

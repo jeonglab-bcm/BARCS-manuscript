@@ -106,6 +106,15 @@ commits the updated submodule pointer. See
 - `examples/waterbear_facs_benchmark.R`: ordered four-bin GSE242880 IL2RA
   FACS stress test against official all-bin MAGeCK-MLE, paper-matched
   outer-bin MAGeCK, and the published Waterbear and MAUDE validation results.
+- `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
+  processed-count sensitivity analysis using Liang's deposited
+  RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
+  BARCS on the same normalized day-0/day-14 values.
+- `scripts/prepare_liang_cas13.R`,
+  `scripts/count_liang_cas13_run.sh`, and
+  `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
+  tables, stream the 20 endpoint FASTQs through the published anchor/Bowtie
+  rules without retaining reads, and submit restartable counting jobs.
 - `data/derived/A375_DepMap19Q3_CNV.tsv`: gene-level A375 copy-number profile
   extracted from DepMap Public 19Q3 (ACH-000219).
 - `data/derived/HT29_DepMap20Q2_CNV.tsv`: gene-level HT-29 copy-number profile
@@ -137,8 +146,43 @@ Rscript examples/gse70038_comparison.R
 Rscript examples/sanson_benchmark.R
 Rscript examples/chronos_tzelepis_benchmark.R
 Rscript examples/waterbear_facs_benchmark.R
+Rscript scripts/prepare_liang_cas13.R
+Rscript examples/liang_cas13_benchmark.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+```
+
+The primary Liang comparison deliberately uses the deposited normalized
+guide-count values, as they make the processed-data comparison quick and fully
+reproducible. Liang's published “RRA” is `RobustRankAggreg` 1.2.1, not
+MAGeCK-RRA, so the benchmark keeps those as separate methods. The deposited
+values are fractional after median-ratio normalization, ComBat correction,
+and outlier processing. Because BARCS enforces integer counts, the script
+explicitly rounds them to nearest pseudo-counts and gives that identical
+matrix to the three newly fitted methods--BARCS, MAGeCK-RRA, and MAGeCK-MLE;
+it also records the rounding error. Consequently, this is labelled a
+processed-count sensitivity analysis:
+neither BARCS nor MAGeCK has its literal raw-count sampling likelihood.
+Known-essential protein-coding controls are positives
+and cell-line-specific non-expressed lncRNAs are null controls. Published RRA
+calls are a comparator, not a circular definition of truth.
+
+The processed-count result is intentionally not a BARCS win. Macro-averaged
+over the five cell lines, Liang RRA has the highest AUROC (0.970), average
+precision (0.891), essential recall at 5% null FPR (0.917), and directional
+essential recall at FDR 0.10 (0.823). BARCS reaches 0.939, 0.776, 0.823, and
+0.487, respectively. Every BARCS day-effect fit has only one residual degree
+of freedom after the available replicate block, so its main limitation is
+threshold power rather than a complete loss of biological ranking. Mean
+BARCS--MAGeCK-MLE effect-rank correlation is 0.875 across cell lines. The
+versioned metrics and rounding audit are under `data/derived/`.
+
+An optional raw-read confirmation remains available. It streams approximately
+14 GB of compressed endpoints without retaining FASTQs:
+
+```sh
+bash scripts/queue_liang_cas13_counts.sh 2
+pueue wait --group liang-cas13
 ```
 
 CRISPulator MOI, guide quality, library size, and replicate count are

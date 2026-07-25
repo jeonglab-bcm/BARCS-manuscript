@@ -117,6 +117,104 @@ was explicitly not applied to this single-line experiment
 the original screen, so cell-line drift is an additional limitation; the
 result supports diagnosing correction rather than applying it by default.
 
+\subsection{Processed-count boundary: Liang Cas13 fitness screens}
+
+The five-cell-line Cas13 fitness study of \citet{liang2026lncrna} provides a
+useful head-to-head boundary because it contains a specialist published
+analysis, known-essential protein-coding controls, and cell-line-specific
+non-expressed lncRNA null controls.  We used the deposited normalized Table S2
+values requested for this comparison.  They are fractional after
+median-of-ratios normalization, ComBat correction, and replicate-outlier
+processing.  We rounded them once to the nearest pseudo-count and supplied
+the identical matrix, with no additional normalization, to BARCS, official
+MAGeCK-RRA, and official MAGeCK-MLE.  Liang RRA denotes the authors'
+deposited \texttt{RobustRankAggreg} result and is not MAGeCK-RRA.
+
+\begin{table}[ht]
+\centering
+\caption{Liang Cas13 processed-count sensitivity analysis, macro-averaged
+over five cell lines.  Recall$_{5\%}$ fixes the empirical false-positive rate
+among non-expressed lncRNA null controls at 5\%.  Calibration error is the
+absolute difference between the observed null $p<0.05$ fraction and 0.05, so
+lower is better.  The other four metrics are higher-is-better.  The best value
+in each column is shown in bold and in its method color.}
+\label{tab:liang}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Method & AUROC & Avg. precision & Recall$_{5\%}$ &
+Calibration error & FDR$_{0.10}$ recall\\
+\midrule
+\methodswatch{mageckpink} Liang RRA &
+  \textcolor{mageckpink}{\textbf{0.9703}} &
+  \textcolor{mageckpink}{\textbf{0.8908}} &
+  \textcolor{mageckpink}{\textbf{0.9167}} &
+  \textcolor{mageckpink}{\textbf{0.0174}} &
+  \textcolor{mageckpink}{\textbf{0.8233}}\\
+\methodswatch{mageckorange} Official MAGeCK-RRA &
+  0.9522 & 0.8425 & 0.8733 & 0.0181 & 0.7400\\
+\methodswatch{mageckorange} Official MAGeCK-MLE &
+  0.9508 & 0.8356 & 0.8600 & 0.0710 & 0.6800\\
+\methodswatch{barcsblue} BARCS &
+  0.9386 & 0.7756 & 0.8233 & 0.0274 & 0.4867\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Liang RRA leads every macro-averaged metric in
+Table~\ref{tab:liang}; BARCS does not beat it.  At a common empirical 5\% null
+false-positive rate, Liang RRA recovers 91.7\% of essential controls versus
+82.3\% for BARCS.  At the 0.10 gene-FDR threshold, the gap widens
+to 82.3\% versus 48.7\%.  The latter difference is consistent with
+finite-sample conservatism: every cell line supplies only three or four
+libraries, and the fitted day effect has one residual degree of freedom after
+the intercept and available replicate block.  K562 is the sharpest example:
+BARCS retains AUROC 0.911 but calls none of the essential controls at FDR
+0.10.  More sequencing depth cannot replace the missing independent
+libraries in a sample-level $t$ reference.
+
+Official MAGeCK-RRA also modestly outperforms MAGeCK-MLE here.  Its null
+calibration error is 0.018 compared with 0.071 for MLE, while its average
+precision is 0.843 compared with 0.836.  This pattern supports a
+design-specific interpretation: guide-rank aggregation is well matched to a
+two-endpoint study with few replicates and already normalized inputs, whereas
+a regression likelihood has little sample-level information from which to
+estimate uncertainty.  It is not evidence that RRA is universally superior
+to count regression.
+
+Effect agreement remains substantial despite the threshold differences.
+Within each cell line we computed Spearman correlation across all genes with
+finite effects, then averaged the five correlations.  BARCS correlates 0.875
+with MAGeCK-MLE, 0.864 with MAGeCK-RRA, and 0.784 with Liang RRA.  Thus the
+principal BARCS deficit in this benchmark is not a reversal of the biological
+ranking; it is reduced resolution and power under one residual degree of
+freedom.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/liang_cas13_benchmark.pdf}
+\caption{Liang Cas13 processed-count sensitivity analysis, macro-averaged
+over five cell lines.  (A) Average precision for ranking essential controls
+above non-expressed lncRNA nulls.  (B) Essential-control recall at a common
+empirical 5\% null false-positive rate.  (C) Absolute error from the nominal
+5\% null $p$-value rate; lower is better.  (D) Directional
+essential-control recall at gene FDR 0.10.  A black
+outline marks the best method in each panel.}
+\label{fig:liang}
+\end{figure}
+\clearpage
+
+This comparison has an important limit.  Rounding changes each deposited
+value by only 0.25 on average and by less than 0.5 at most, but the values
+were transformed before deposition.  Consequently, neither the
+beta-binomial nor negative-binomial likelihood has its literal raw-count
+sampling interpretation, and the nominal calibration panels are sensitivity
+diagnostics rather than raw-count likelihood validation.  The reproducible
+streaming pipeline supplied with BARCS makes a future raw-read confirmation
+possible; until that is complete, the defensible conclusion is that the
+published Liang RRA is the best fit to the deposited processed data.
+
 \subsection{Stress test and model boundary: ordered-bin FACS}
 
 The Waterbear study supplies a complementary continuous-phenotype benchmark
