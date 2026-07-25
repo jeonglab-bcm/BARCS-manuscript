@@ -20,6 +20,15 @@ copyFileSync(
   join(project, "..", "data", "derived", "GSE70038_mageck_counts.tsv"),
   join(client, "manuscript-gse70038-counts.tsv"),
 );
+const publicOrigin = process.env.PUBLIC_ORIGIN?.replace(/\/+$/, "");
+if (publicOrigin) {
+  const indexPath = join(client, "index.html");
+  writeFileSync(
+    indexPath,
+    readFileSync(indexPath, "utf8").replaceAll("__BARCS_ORIGIN__", publicOrigin),
+  );
+}
+writeFileSync(join(client, ".nojekyll"), "");
 mkdirSync(join(dist, "server"), { recursive: true });
 mkdirSync(join(dist, ".openai"), { recursive: true });
 
