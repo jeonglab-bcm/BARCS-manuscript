@@ -202,7 +202,7 @@ cache_matches <- function(parameter_file, run) {
     identical(as.integer(values[["seed"]]), as.integer(run$seed))
 }
 
-required_methods <- c(
+supported_methods <- c(
   "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom",
   "Bulk vs input"
 )
@@ -213,9 +213,9 @@ analysis_matches <- function(metric_file, replicates) {
   }
   metrics <- tryCatch(read.csv(metric_file), error = function(error) NULL)
   expected_methods <- if (replicates >= 2L) {
-    required_methods
+    supported_methods
   } else {
-    setdiff(required_methods, "Bulk vs input")
+    c(setdiff(supported_methods, "Bulk vs input"), "BARCS-GC")
   }
   !is.null(metrics) &&
     all(expected_methods %in% metrics$method) &&
@@ -910,7 +910,10 @@ dev.off()
 replicate_metrics <- all_metrics[
   all_metrics$design == "Low + bulk + high" &
     all_metrics$method %in%
-      c("BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom") &
+      c(
+        "BARCS", "BARCS-GC", "MAGeCK-MLE", "edgeR-QL", "DESeq2",
+        "limma-voom"
+      ) &
     all_metrics$moi == baseline_moi &
     all_metrics$high_quality_guide_fraction == baseline_quality &
     all_metrics$genes == baseline_genes,
@@ -953,10 +956,12 @@ write.csv(
 )
 
 method_order <- c(
-  "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
+  "BARCS", "BARCS-GC", "MAGeCK-MLE", "edgeR-QL", "DESeq2",
+  "limma-voom"
 )
 method_colour_keys <- c(
   BARCS = "BARCS",
+  `BARCS-GC` = "BARCS",
   `MAGeCK-MLE` = "MAGeCK",
   `edgeR-QL` = "edgeR",
   DESeq2 = "DESeq2",
@@ -965,8 +970,8 @@ method_colour_keys <- c(
 method_colours <- unname(
   barcs_method_colours[method_colour_keys[method_order]]
 )
-method_pch <- c(16, 17, 15, 18, 8)
-method_lty <- seq_along(method_order)
+method_pch <- c(16, 1, 17, 15, 18, 8)
+method_lty <- c(1, 0, 2, 3, 4, 5)
 replicate_figure_metrics <- list(
   list(
     column = "average_precision",

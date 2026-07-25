@@ -144,6 +144,57 @@ stopifnot(
   abs(mean(calibrated$p_value[seq_len(100)] < 0.05) - 0.05) <= 0.02
 )
 
+# Guide-consistency aggregation retains the signed guide t information when
+# sample-level degrees of freedom are too small for useful guide p-values.
+# These are guide-reproducibility statistics, not biological-replicate tests.
+set.seed(406)
+consistency_input <- data.frame(
+  gene = rep(c("control_a", "control_b", "null", "signal"), each = 5),
+  estimate = c(
+    rnorm(5, 0, 0.10),
+    rnorm(5, 0, 0.10),
+    rnorm(5, 0, 0.10),
+    rnorm(5, 0.65, 0.08)
+  ),
+  std_error = rep(0.10, 20),
+  converged = TRUE
+)
+consistency_control <- consistency_input$gene %in%
+  c("control_a", "control_b")
+consistency <- bb_gene_consistency(
+  consistency_input,
+  control = consistency_control,
+  min_control_genes = 2
+)
+stopifnot(
+  nrow(consistency) == 4L,
+  all(c("raw_statistic", "statistic", "guide_direction_agreement",
+        "control_gene", "p_value", "fdr") %in% names(consistency)),
+  attr(consistency, "null_scale") >= 1,
+  attr(consistency, "control_genes") == 2L,
+  consistency$p_value[consistency$gene == "signal"] <
+    consistency$p_value[consistency$gene == "null"],
+  consistency$guide_direction_agreement[
+    consistency$gene == "signal"
+  ] == 1
+)
+
+calibrated_consistency_input <- consistency_input
+calibrated_consistency_input$raw_std_error <-
+  calibrated_consistency_input$std_error
+calibrated_consistency_input$std_error <-
+  calibrated_consistency_input$std_error * 3
+calibrated_consistency <- bb_gene_consistency(
+  calibrated_consistency_input,
+  control = consistency_control,
+  min_control_genes = 2
+)
+assert_close(
+  calibrated_consistency$raw_statistic,
+  consistency$raw_statistic,
+  message = "Gene consistency did not recover retained raw standard errors."
+)
+
 bad_response_failed <- inherits(
   try(bbreg(c(2, 3), c(1, 4), ~ 1, data.frame(x = 1:2)), silent = TRUE),
   "try-error"

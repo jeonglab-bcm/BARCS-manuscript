@@ -4,7 +4,7 @@
 "moi_0.25_quality_0.75_genes_400_replicates_4","BARCS",5,0.25,0.75,400,4,FALSE,0.339,0.00346410161513773
 "moi_0.25_quality_0.9_genes_100_replicates_4","BARCS",5,0.25,0.9,100,4,FALSE,0.1106,0.00114017542509914
 "moi_0.25_quality_0.9_genes_1000_replicates_4","BARCS",5,0.25,0.9,1000,4,FALSE,0.7822,0.0344920280644673
-"moi_0.25_quality_0.9_genes_400_replicates_1","BARCS",5,0.25,0.9,400,1,FALSE,0.2538,0.00408656334834051
+"moi_0.25_quality_0.9_genes_400_replicates_1","BARCS",5,0.25,0.9,400,1,FALSE,0.2524,0.0018165902124585
 "moi_0.25_quality_0.9_genes_400_replicates_3","BARCS",5,0.25,0.9,400,3,FALSE,0.3248,0.000836660026534076
 "moi_0.25_quality_0.9_genes_400_replicates_4","BARCS",5,0.25,0.9,400,4,TRUE,0.3476,0.0110589330407594
 "moi_0.25_quality_0.9_genes_400_replicates_6","BARCS",5,0.25,0.9,400,6,FALSE,0.3578,0.00759605160593318
@@ -14,7 +14,7 @@
 "moi_0.25_quality_0.75_genes_400_replicates_4","DESeq2",5,0.25,0.75,400,4,FALSE,0.955,0.0145430395722492
 "moi_0.25_quality_0.9_genes_100_replicates_4","DESeq2",5,0.25,0.9,100,4,FALSE,0.602,0.0861887463651725
 "moi_0.25_quality_0.9_genes_1000_replicates_4","DESeq2",5,0.25,0.9,1000,4,FALSE,1.4108,0.029003448070876
-"moi_0.25_quality_0.9_genes_400_replicates_1","DESeq2",5,0.25,0.9,400,1,FALSE,0.8816,0.0874231090730589
+"moi_0.25_quality_0.9_genes_400_replicates_1","DESeq2",5,0.25,0.9,400,1,FALSE,0.7982,0.0292694379857211
 "moi_0.25_quality_0.9_genes_400_replicates_3","DESeq2",5,0.25,0.9,400,3,FALSE,0.711,0.0155241746962592
 "moi_0.25_quality_0.9_genes_400_replicates_4","DESeq2",5,0.25,0.9,400,4,TRUE,0.917,0.0716903061787302
 "moi_0.25_quality_0.9_genes_400_replicates_6","DESeq2",5,0.25,0.9,400,6,FALSE,1.079,0.00659545297913646
@@ -24,7 +24,7 @@
 "moi_0.25_quality_0.75_genes_400_replicates_4","edgeR-QL",5,0.25,0.75,400,4,FALSE,0.2428,0.00248997991959747
 "moi_0.25_quality_0.9_genes_100_replicates_4","edgeR-QL",5,0.25,0.9,100,4,FALSE,0.0756,0.00151657508881045
 "moi_0.25_quality_0.9_genes_1000_replicates_4","edgeR-QL",5,0.25,0.9,1000,4,FALSE,0.5742,0.0120083304418221
-"moi_0.25_quality_0.9_genes_400_replicates_1","edgeR-QL",5,0.25,0.9,400,1,FALSE,0.1306,0.00433589667773573
+"moi_0.25_quality_0.9_genes_400_replicates_1","edgeR-QL",5,0.25,0.9,400,1,FALSE,0.1312,0.00995991967839099
 "moi_0.25_quality_0.9_genes_400_replicates_3","edgeR-QL",5,0.25,0.9,400,3,FALSE,0.2052,0.00311448230047966
 "moi_0.25_quality_0.9_genes_400_replicates_4","edgeR-QL",5,0.25,0.9,400,4,TRUE,0.243,0.00570087712549556
 "moi_0.25_quality_0.9_genes_400_replicates_6","edgeR-QL",5,0.25,0.9,400,6,FALSE,0.327,0.00273861278752592
@@ -34,7 +34,7 @@
 "moi_0.25_quality_0.75_genes_400_replicates_4","limma-voom",5,0.25,0.75,400,4,FALSE,0.0638000000000002,0.00164316767251621
 "moi_0.25_quality_0.9_genes_100_replicates_4","limma-voom",5,0.25,0.9,100,4,FALSE,0.0181999999999995,0.000447213595500294
 "moi_0.25_quality_0.9_genes_1000_replicates_4","limma-voom",5,0.25,0.9,1000,4,FALSE,0.162000000000001,0.00888819441731637
-"moi_0.25_quality_0.9_genes_400_replicates_1","limma-voom",5,0.25,0.9,400,1,FALSE,0.0503999999999998,0.00313049516849964
+"moi_0.25_quality_0.9_genes_400_replicates_1","limma-voom",5,0.25,0.9,400,1,FALSE,0.0496,0.00320936130717607
 "moi_0.25_quality_0.9_genes_400_replicates_3","limma-voom",5,0.25,0.9,400,3,FALSE,0.0548000000000002,0.0010954451150102
 "moi_0.25_quality_0.9_genes_400_replicates_4","limma-voom",5,0.25,0.9,400,4,TRUE,0.0616000000000003,0.00207364413533224
 "moi_0.25_quality_0.9_genes_400_replicates_6","limma-voom",5,0.25,0.9,400,6,FALSE,0.0744,0.00114017542509874
@@ -44,7 +44,7 @@
 "moi_0.25_quality_0.75_genes_400_replicates_4","MAGeCK-MLE",5,0.25,0.75,400,4,FALSE,4.306,0.0140890028036053
 "moi_0.25_quality_0.9_genes_100_replicates_4","MAGeCK-MLE",5,0.25,0.9,100,4,FALSE,3.9346,0.0249559612117025
 "moi_0.25_quality_0.9_genes_1000_replicates_4","MAGeCK-MLE",5,0.25,0.9,1000,4,FALSE,5.1912,0.0138636214604985
-"moi_0.25_quality_0.9_genes_400_replicates_1","MAGeCK-MLE",5,0.25,0.9,400,1,FALSE,4.0628,0.0611612622498914
+"moi_0.25_quality_0.9_genes_400_replicates_1","MAGeCK-MLE",5,0.25,0.9,400,1,FALSE,4.1002,0.199824172711912
 "moi_0.25_quality_0.9_genes_400_replicates_3","MAGeCK-MLE",5,0.25,0.9,400,3,FALSE,4.1818,0.0438771010892927
 "moi_0.25_quality_0.9_genes_400_replicates_4","MAGeCK-MLE",5,0.25,0.9,400,4,TRUE,4.3408,0.0938040510852275
 "moi_0.25_quality_0.9_genes_400_replicates_6","MAGeCK-MLE",5,0.25,0.9,400,6,FALSE,4.4538,0.00501996015920442

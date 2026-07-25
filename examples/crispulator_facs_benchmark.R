@@ -145,6 +145,40 @@ run_barcs <- function(label, sample_index, term = "phenotype_z") {
     alpha = 0.05
   )
   gene_result <- combine_guides(calibrated)
+  guide_consistency <- NULL
+  if (n_replicates == 1L && term == "phenotype_z") {
+    guide_consistency <- bb_gene_consistency(
+      guide_result,
+      control = guide_truth$class == "negcontrol",
+      min_guides = 3L,
+      alpha = 0.05,
+      min_control_genes = 10L
+    )
+    write.csv(
+      guide_consistency,
+      file.path(
+        result_dir,
+        paste0(label, "_guide_consistency_gene_results.csv")
+      ),
+      row.names = FALSE
+    )
+    write.csv(
+      data.frame(
+        method = paste0(label, "_guide_consistency"),
+        null_center = attr(guide_consistency, "null_center"),
+        null_scale = attr(guide_consistency, "null_scale"),
+        global_scale = attr(guide_consistency, "global_scale"),
+        control_scale = attr(guide_consistency, "control_scale"),
+        control_genes = attr(guide_consistency, "control_genes"),
+        assumption = attr(guide_consistency, "null_assumption")
+      ),
+      file.path(
+        result_dir,
+        paste0(label, "_guide_consistency_calibration.csv")
+      ),
+      row.names = FALSE
+    )
+  }
   write.csv(
     calibrated,
     gzfile(file.path(result_dir, paste0(label, "_guide_results.csv.gz"))),
@@ -166,7 +200,10 @@ run_barcs <- function(label, sample_index, term = "phenotype_z") {
     file.path(result_dir, paste0(label, "_runtime.csv")),
     row.names = FALSE
   )
-  gene_result
+  list(
+    gene = gene_result,
+    guide_consistency = guide_consistency
+  )
 }
 
 make_guide_result <- function(estimate, standard_error, statistic, p_value) {
@@ -324,14 +361,16 @@ three_sample_index <- sample_data$sample_type %in% c("low", "bulk", "high")
 tail_index <- sample_data$sample_type %in% c("low", "high")
 bulk_index <- sample_data$sample_type %in% c("input", "bulk")
 
-barcs_three <- run_barcs("barcs_low_bulk_high", three_sample_index)
+barcs_three_fit <- run_barcs("barcs_low_bulk_high", three_sample_index)
+barcs_three <- barcs_three_fit$gene
+barcs_guide_consistency <- barcs_three_fit$guide_consistency
 barcs_tails <- NULL
 barcs_bulk <- NULL
 if (n_replicates >= 2L) {
-  barcs_tails <- run_barcs("barcs_two_tails", tail_index)
+  barcs_tails <- run_barcs("barcs_two_tails", tail_index)$gene
   barcs_bulk <- run_barcs(
     "barcs_bulk_vs_input", bulk_index, term = "bulk_indicator"
-  )
+  )$gene
 }
 
 mageck <- file.path(".venv", "bin", "mageck")
@@ -523,6 +562,16 @@ metric_rows <- list(
   evaluate("DESeq2", deseq2_three, "Low + bulk + high"),
   evaluate("limma-voom", limma_three, "Low + bulk + high")
 )
+if (n_replicates == 1L) {
+  metric_rows <- c(
+    metric_rows,
+    list(evaluate(
+      "BARCS-GC",
+      barcs_guide_consistency,
+      "Low + bulk + high"
+    ))
+  )
+}
 if (n_replicates >= 2L) {
   metric_rows <- c(
     metric_rows,
@@ -550,6 +599,10 @@ all_results <- list(
   `DESeq2 / low + bulk + high` = deseq2_three,
   `limma-voom / low + bulk + high` = limma_three
 )
+if (n_replicates == 1L) {
+  all_results[["BARCS-GC / low + bulk + high"]] <-
+    barcs_guide_consistency
+}
 if (n_replicates >= 2L) {
   all_results <- c(
     all_results,
@@ -619,6 +672,7 @@ metric_matrix <- rbind(
 method_labels <- performance$method
 method_colour_keys <- c(
   BARCS = "BARCS",
+  `BARCS-GC` = "BARCS",
   `MAGeCK-MLE` = "MAGeCK",
   `edgeR-QL` = "edgeR",
   DESeq2 = "DESeq2",

@@ -231,7 +231,11 @@ question is a coefficient rather than a group label.
   additionally requires all control guides to share one residual degree of
   freedom, as they do when every guide uses the same complete design.  Guides
   fitted with heterogeneous designs require stratified or redesigned
-  calibration.
+  calibration.  The optional \texttt{bb\_gene\_consistency()} statistic can
+  recover concordant multi-guide signal when sample-level degrees of freedom
+  are inadequate, but its empirical-null $p$-values measure guide consistency.
+  They do not repair the missing biological replication and should not be
+  described as confirmatory sample-level inference.
   Dispersion shrinkage across guides or permutation of the phenotype should be
   evaluated before treating this prototype as a production method.
 
@@ -259,11 +263,14 @@ question is a coefficient rather than a group label.
   Recomputing totals after row subsetting changes the likelihood and can
   materially change calibration.
 
-  \item \textbf{Guide-to-gene aggregation.}  The supplied code reports
-  guide-level inference.  The GSE70038 analysis uses directional Stouffer
-  aggregation only to make a transparent gene-level comparison; the Sanson
-  benchmark uses the same rule.  A production gene test should be benchmarked
-  separately, ideally with control guides or phenotype permutations that
+  \item \textbf{Guide-to-gene aggregation.}  The primary replicated analyses
+  use directional Stouffer aggregation only to make a transparent gene-level
+  comparison.  BARCS-GC instead combines raw signed guide $t$ scores and
+  estimates a robust gene-level empirical null for the one-replicate
+  diagnostic.  Both assume weak enough cross-guide dependence for aggregation
+  to be informative, and the BARCS-GC MAD additionally assumes that fewer than
+  half of genes are active.  A production gene test should be benchmarked
+  separately, ideally with held-out controls or phenotype permutations that
   preserve cross-guide dependence.
 
   \item \textbf{Comparator assumptions.}  MAGeCK-MLE offers information
@@ -314,7 +321,10 @@ MAGeCK-MLE slightly leads global ranking, whereas BARCS leads directional
 recall and F1 at the prespecified threshold.  The 0--100\% bulk sample changes
 low--high effect ranks negligibly and carries no directional signal by itself;
 its apparent inferential benefit must be weighed against overlapping cells and
-50\% more sequencing.  Chronos captures mechanistic viability dynamics that a
+50\% more sequencing.  At the one-replicate boundary, BARCS-GC recovers a
+conservative subset by combining concordant guide $t$ scores, but that
+empirical-null evidence remains hypothesis-generating rather than a substitute
+for an independent screen.  Chronos captures mechanistic viability dynamics that a
 single slope omits, and Waterbear remains the appropriate generative model for
 correlated FACS partitions.  MAUDE's 25/26 recovery comes with 406 calls
 and cannot be converted into a trustworthy precision or F1 estimate without

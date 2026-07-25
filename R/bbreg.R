@@ -517,3 +517,174 @@ bb_calibrate_controls <- function(result, control, alpha = 0.05,
   attr(result, "control_alpha") <- alpha
   result
 }
+
+#' Aggregate guide t scores into an empirical-null gene statistic
+#'
+#' This function is intended for exploratory screens in which several
+#' independently designed guides target each gene but biological replication
+#' is too limited for reliable guide-level reference distributions. It does
+#' not treat guides as biological replicates. Instead, it combines the raw
+#' guide score `estimate / std_error`, then calibrates the gene-score
+#' distribution with a robust empirical null.
+#'
+#' For gene \(g\), the raw statistic is
+#' \deqn{S_g = m_g^{-1/2}\sum_j \widehat\beta_{gj}/
+#' \operatorname{SE}(\widehat\beta_{gj}).}
+#' Its null center is the median score among control genes when enough are
+#' supplied, and otherwise the median across all genes. The null scale is the
+#' largest of `min_scale`, the all-gene MAD, and the control-gene tail scale.
+#' The all-gene MAD assumes that fewer than half of genes are active.
+#'
+#' @param result A guide-level result from [bb_screen()]. If control
+#'   calibration has already been applied, the retained `raw_std_error`
+#'   column is used automatically.
+#' @param control Optional non-missing logical vector identifying control
+#'   guides. A control gene must contain only control guides.
+#' @param min_guides Minimum number of finite guide scores required per gene.
+#' @param alpha Tail probability used to estimate the control-gene scale.
+#' @param min_control_genes Minimum number of valid control genes needed to
+#'   use their median and tail scale.
+#' @param min_scale Lower bound for the empirical-null scale.
+#' @return A data frame with one row per testable gene. `statistic` is the
+#'   empirical-null standardized gene score and `p_value` uses a standard
+#'   normal reference. Null parameters are also stored as attributes.
+#' @export
+bb_gene_consistency <- function(result, control = NULL, min_guides = 3L,
+                                alpha = 0.05, min_control_genes = 10L,
+                                min_scale = 1) {
+  required <- c("gene", "estimate", "std_error")
+  if (!is.data.frame(result) || !all(required %in% names(result))) {
+    .bb_stop(
+      "`result` must contain guide-level `gene`, `estimate`, and `std_error` columns."
+    )
+  }
+  if (anyNA(result$gene)) {
+    .bb_stop("`result$gene` cannot contain missing values.")
+  }
+  if (length(min_guides) != 1L || !is.finite(min_guides) ||
+      min_guides < 2) {
+    .bb_stop("`min_guides` must be an integer of at least two.")
+  }
+  if (length(alpha) != 1L || !is.finite(alpha) ||
+      alpha <= 0 || alpha >= 0.5) {
+    .bb_stop("`alpha` must be one finite number between 0 and 0.5.")
+  }
+  if (length(min_control_genes) != 1L ||
+      !is.finite(min_control_genes) || min_control_genes < 2) {
+    .bb_stop("`min_control_genes` must be an integer of at least two.")
+  }
+  if (length(min_scale) != 1L || !is.finite(min_scale) ||
+      min_scale <= 0) {
+    .bb_stop("`min_scale` must be positive.")
+  }
+  min_guides <- as.integer(min_guides)
+  min_control_genes <- as.integer(min_control_genes)
+
+  if (is.null(control)) {
+    control <- rep(FALSE, nrow(result))
+  } else if (!is.logical(control) || length(control) != nrow(result) ||
+             anyNA(control)) {
+    .bb_stop("`control` must be a non-missing logical vector, one per guide.")
+  }
+  control_by_gene <- split(control, result$gene)
+  mixed_control <- vapply(
+    control_by_gene,
+    function(value) any(value) && !all(value),
+    logical(1L)
+  )
+  if (any(mixed_control)) {
+    .bb_stop("A gene cannot mix control and non-control guides.")
+  }
+
+  standard_error <- if ("raw_std_error" %in% names(result)) {
+    result$raw_std_error
+  } else {
+    result$std_error
+  }
+  valid <- is.finite(result$estimate) &
+    is.finite(standard_error) &
+    standard_error > 0
+  groups <- split(seq_len(nrow(result)), result$gene)
+  pieces <- lapply(names(groups), function(gene_name) {
+    index <- groups[[gene_name]]
+    index <- index[valid[index]]
+    if (length(index) < min_guides) {
+      return(NULL)
+    }
+    guide_score <- result$estimate[index] / standard_error[index]
+    gene_estimate <- stats::median(result$estimate[index])
+    nonzero <- result$estimate[index] != 0
+    agreement <- if (gene_estimate == 0 || !any(nonzero)) {
+      NA_real_
+    } else {
+      mean(
+        sign(result$estimate[index][nonzero]) == sign(gene_estimate)
+      )
+    }
+    data.frame(
+      gene = gene_name,
+      n_guides = length(index),
+      estimate = gene_estimate,
+      raw_statistic = sum(guide_score) / sqrt(length(guide_score)),
+      guide_direction_agreement = agreement,
+      converged_fraction = if ("converged" %in% names(result)) {
+        mean(result$converged[index], na.rm = TRUE)
+      } else {
+        NA_real_
+      },
+      control_gene = all(control[index]),
+      row.names = NULL
+    )
+  })
+  pieces <- Filter(Negate(is.null), pieces)
+  if (length(pieces) < 2L) {
+    .bb_stop("At least two genes must have enough finite guide scores.")
+  }
+  gene_result <- do.call(rbind, pieces)
+  rownames(gene_result) <- NULL
+
+  global_center <- stats::median(gene_result$raw_statistic)
+  global_scale <- stats::mad(
+    gene_result$raw_statistic,
+    center = global_center,
+    constant = 1 / stats::qnorm(0.75)
+  )
+  if (!is.finite(global_scale) || global_scale <= 0) {
+    global_scale <- 1
+  }
+
+  control_statistic <- gene_result$raw_statistic[
+    gene_result$control_gene
+  ]
+  enough_controls <- length(control_statistic) >= min_control_genes
+  null_center <- if (enough_controls) {
+    stats::median(control_statistic)
+  } else {
+    global_center
+  }
+  control_scale <- if (enough_controls) {
+    as.numeric(stats::quantile(
+      abs(control_statistic - null_center),
+      probs = 1 - alpha,
+      names = FALSE,
+      type = 8
+    )) / stats::qnorm(1 - alpha / 2)
+  } else {
+    NA_real_
+  }
+  scale_candidates <- c(min_scale, global_scale, control_scale)
+  null_scale <- max(scale_candidates[is.finite(scale_candidates)])
+
+  gene_result$statistic <-
+    (gene_result$raw_statistic - null_center) / null_scale
+  gene_result$p_value <- 2 * stats::pnorm(-abs(gene_result$statistic))
+  gene_result$fdr <- stats::p.adjust(gene_result$p_value, method = "BH")
+  attr(gene_result, "null_center") <- null_center
+  attr(gene_result, "null_scale") <- null_scale
+  attr(gene_result, "global_scale") <- global_scale
+  attr(gene_result, "control_scale") <- control_scale
+  attr(gene_result, "control_genes") <- length(control_statistic)
+  attr(gene_result, "null_assumption") <-
+    "Guide-consistency empirical null; not biological-replicate inference."
+  gene_result
+}

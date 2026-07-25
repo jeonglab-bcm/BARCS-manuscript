@@ -267,6 +267,54 @@ $$
 {\operatorname{SE}(\widehat\beta_{\mathrm{dose}})}.
 $$
 
+## Example 4: guide consistency when the screen has one replicate
+
+Suppose an irreplaceable screen has only one low, bulk, and high library, but
+five independently designed guides target each gene. The sample-level design
+still has only one residual degree of freedom. The guides therefore cannot be
+called biological replicates.
+
+`bb_gene_consistency()` instead asks a narrower question: do the guide
+t scores point in the same direction more strongly than the empirical null?
+Its input is a guide-level result with at least `gene`, `estimate`, and
+`std_error` columns:
+
+```r
+guide_consistency <- bb_gene_consistency(
+  guide_results,
+  control = grepl("^NTC", guide_results$gene)
+)
+```
+
+For guide \(j\) targeting gene \(g\), it first computes
+
+$$
+u_{gj}
+=
+\frac{\widehat\beta_{gj}}
+     {\operatorname{SE}(\widehat\beta_{gj})},
+\qquad
+S_g
+=
+\frac{1}{\sqrt{m_g}}\sum_{j=1}^{m_g}u_{gj}.
+$$
+
+Ten five-guide control genes set the null center and contribute a tail-scale
+check; the all-gene median absolute deviation supplies a robust scale. The
+larger scale is used, with a lower bound of one. For the deterministic example,
+the null center is approximately zero and the scale is one.
+
+| Gene | Guides | Median effect | Raw score | Calibrated z | Direction agreement | p | FDR |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| null_gene | 5 | 0.00 | -0.0447 | -0.0447 | NA | 0.964 | 0.964 |
+| signal_gene | 5 | 0.58 | 13.0586 | 13.0586 | 1.00 | \(5.67\times10^{-39}\) | \(6.81\times10^{-38}\) |
+
+The result supports reproducibility across distinct perturbations. It does
+not repair the missing screen replicate, and its empirical-null p-value must
+not be described as confirmatory biological-replicate inference. In the
+CRISPulator \(R=1\) benchmark this procedure is labeled BARCS-GC; ordinary
+BARCS remains unchanged for replicated designs.
+
 ## Input mistakes to avoid
 
 1. The order of `count`, `total`, and sample-table rows must match.
@@ -275,3 +323,5 @@ $$
 4. The design matrix must have full column rank.
 5. Replicated FACS bins from the same donor are not independent merely because
    they appear in separate rows.
+6. Multiple guides can establish perturbation consistency, but they are not
+   interchangeable with independent biological screen replicates.

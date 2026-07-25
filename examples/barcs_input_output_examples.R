@@ -11,6 +11,7 @@ if (file.exists(file.path("CB2", "DESCRIPTION")) &&
 } else if (!requireNamespace("CB2", quietly = TRUE)) {
   stop("Install CB2, or run this script from the BARCS repository root.")
 }
+source(file.path("R", "bbreg.R"))
 
 section("Example 1 input: two experimental groups")
 
@@ -122,9 +123,58 @@ section("Example 3B output: effect of a two-dose-step increase")
 two_step <- bb_contrast(adjusted_fit, c(dose = 2))
 print(two_step, digits = 12)
 
+section("Example 4 input: one screen with five guides per gene")
+
+control_gene <- rep(sprintf("NTC%02d", 1:10), each = 5)
+control_effect <- rep(c(-0.08, -0.04, 0, 0.04, 0.08), 10) +
+  rep(seq(-0.02, 0.02, length.out = 10), each = 5)
+guide_results <- data.frame(
+  gene = c(
+    control_gene,
+    rep(c("null_gene", "signal_gene"), each = 5)
+  ),
+  estimate = c(
+    control_effect,
+    c(-0.05, 0.02, 0, 0.03, -0.01),
+    c(0.52, 0.61, 0.58, 0.66, 0.55)
+  ),
+  std_error = 0.10,
+  converged = TRUE
+)
+print(
+  guide_results[guide_results$gene %in% c("null_gene", "signal_gene"), ],
+  row.names = FALSE
+)
+
+guide_consistency <- bb_gene_consistency(
+  guide_results,
+  control = grepl("^NTC", guide_results$gene)
+)
+section("Example 4 output: empirical-null guide consistency")
+print(
+  guide_consistency[
+    guide_consistency$gene %in% c("null_gene", "signal_gene"),
+    c(
+      "gene", "n_guides", "estimate", "raw_statistic", "statistic",
+      "guide_direction_agreement", "p_value", "fdr"
+    )
+  ],
+  digits = 8,
+  row.names = FALSE
+)
+cat(
+  "Null center:", attr(guide_consistency, "null_center"),
+  "null scale:", attr(guide_consistency, "null_scale"),
+  "control genes:", attr(guide_consistency, "control_genes"), "\n"
+)
+cat(attr(guide_consistency, "null_assumption"), "\n")
+
 stopifnot(
   abs(coef(dose_fit)[["dose"]] - 0.35) < 0.001,
   abs(coef(adjusted_fit)[["dose"]] - 0.3) < 0.001,
   abs(coef(adjusted_fit)[["batchB"]] - 0.2) < 0.001,
-  abs(two_step$estimate - 2 * coef(adjusted_fit)[["dose"]]) < 1e-12
+  abs(two_step$estimate - 2 * coef(adjusted_fit)[["dose"]]) < 1e-12,
+  guide_consistency$p_value[
+    guide_consistency$gene == "signal_gene"
+  ] < 1e-20
 )

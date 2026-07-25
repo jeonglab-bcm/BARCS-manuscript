@@ -258,10 +258,15 @@ The directional-recall difference is positive in seven of nine scenarios and
 ranges from -0.018 to 0.136; the F1 difference ranges from -0.022 to 0.080.
 Across those nine scenarios, realized FDP averages 0.094 for BARCS and 0.064
 for MAGeCK-MLE, versus 0.230-0.250 for the three general count-model pipelines.
-The additional one-replicate stress test is reported separately: BARCS
-improves average precision over MAGeCK-MLE (0.633 versus 0.548) but makes no
-discoveries at gene FDR 0.10, establishing one replicate as a ranking-only,
-not confirmatory, use case.
+The additional one-replicate stress test is reported separately. Ordinary
+BARCS improves average precision over MAGeCK-MLE (0.633 versus 0.548) but
+makes no discoveries at gene FDR 0.10. The optional `bb_gene_consistency()`
+aggregation (`BARCS-GC`) combines raw signed guide t scores and calibrates
+them with a robust gene-level empirical null. Across the same five seeds it
+raises average precision to 0.664, directional recall to 0.139, and F1 to
+0.232, with mean realized FDP 0 in the simulation. This remains a
+hypothesis-ranking tool: multiple guides demonstrate perturbation
+reproducibility but do not replace biological replication.
 
 On GSE70038, beta-binomial versus official MAGeCK-MLE gene-effect Spearman
 correlations are 0.888-0.928 across the four terminal-condition coefficients;
