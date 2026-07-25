@@ -1,0 +1,15 @@
+"metric","value"
+"mapped_reads_HAP1_Day00_R1",6201001
+"mapped_reads_HAP1_Day00_R2",5121629
+"mapped_reads_HAP1_Day14_R1",7638296
+"mapped_reads_HAP1_Day14_R2",6772000
+"guides_in_library",56322
+"guides_with_finite_fit",56256
+"residual_degrees_of_freedom",1
+"control_calibration_scale",1
+"tested_noncontrol_genes",8652
+"depletion_discoveries_fdr_0.10",328
+"essential_genes_tested",60
+"essential_genes_recovered_fdr_0.10",46
+"unexpressed_lncrna_tested",1570
+"unexpressed_lncrna_called_fdr_0.10",0

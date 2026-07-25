@@ -2,9 +2,10 @@
 
 # Reproduce the complete Liang et al. HAP1 day-0/day-14 raw-read input.
 #
-# The four deposited ENA FASTQs (~1.7 GB compressed) are streamed through the
-# article-matched Cutadapt/Bowtie workflow. FASTQs are not retained. Restarting
-# is safe because completed sample count files are skipped.
+# The four deposited ENA FASTQs (~1.7 GB compressed) are downloaded one at a
+# time with resume support and published-MD5 verification, processed through
+# the article-matched Cutadapt/Bowtie workflow, then deleted. Restarting is safe
+# because completed sample count files are skipped.
 
 set -euo pipefail
 
