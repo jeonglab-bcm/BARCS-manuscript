@@ -54,6 +54,7 @@ writeFileSync(
 const required = [
   "index.html",
   "app.js",
+  "format.js",
   "barcs-core.js",
   "barcs-worker.js",
   "fastq-core.js",

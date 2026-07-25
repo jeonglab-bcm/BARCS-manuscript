@@ -6,6 +6,7 @@ test("site build contains the analysis runtime and Cloudflare entry", () => {
   for (const path of [
     "dist/client/index.html",
     "dist/client/app.js",
+    "dist/client/format.js",
     "dist/client/barcs-core.js",
     "dist/client/barcs-worker.js",
     "dist/client/fastq-core.js",

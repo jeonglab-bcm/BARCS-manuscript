@@ -8,6 +8,7 @@ const manuscriptCounts = new URL(
   import.meta.url,
 ).pathname;
 const port = Number(process.env.PORT || 4173);
+const host = process.env.HOST || "127.0.0.1";
 const types = {
   ".css": "text/css; charset=utf-8",
   ".csv": "text/csv; charset=utf-8",
@@ -33,6 +34,7 @@ const server = createServer((request, response) => {
   createReadStream(file).pipe(response);
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Local URL: http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  const displayHost = host === "0.0.0.0" ? "localhost" : host;
+  console.log(`Local URL: http://${displayHost}:${port}`);
 });

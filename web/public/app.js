@@ -4,6 +4,7 @@ import {
   parseGuideLibrary,
   quantificationToCountsText,
 } from "./fastq-core.js";
+import { formatNumber, formatP } from "./format.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -26,21 +27,6 @@ const state = {
 function showError(element, message) {
   element.textContent = message;
   element.hidden = !message;
-}
-
-function formatNumber(value, digits = 3) {
-  if (!Number.isFinite(value)) return "—";
-  const absolute = Math.abs(value);
-  if (absolute !== 0 && (absolute < 0.001 || absolute >= 10000)) {
-    return value.toExponential(2);
-  }
-  return value.toLocaleString(undefined, { maximumFractionDigits: digits });
-}
-
-function formatP(value) {
-  if (!Number.isFinite(value)) return "—";
-  if (value < 0.001) return value.toExponential(2);
-  return value.toFixed(3);
 }
 
 function download(name, content, type = "text/csv;charset=utf-8") {
