@@ -98,18 +98,21 @@ reproduction commands.
 ## Manuscript verification
 
 The **Verify manuscript** action loads the actual 64,747-guide GSE70038 count
-matrix and the 16-by-5 Table 5 design used in the manuscript. It fits
-`GSC0131_end` with the other three terminal indicators as covariates and uses
-the manuscript's explicitly labeled median-effect/directional-Stouffer
-comparison summary. The default BARCS gene result remains the shared-effect
-Wald construction; Stouffer aggregation is not required for guide-level BARCS.
+matrix and the 16-by-5 Table 5 design used in the manuscript. All four terminal
+coefficients are supported in the same joint model. The preset initially shows
+`GSC0131_end`; changing the tested coefficient applies the corresponding
+locked reference. It uses the manuscript's explicitly labeled
+median-effect/directional-Stouffer comparison summary. The default BARCS gene
+result remains the shared-effect Wald construction; Stouffer aggregation is
+not required for guide-level BARCS.
 
-The locked verification checks 64,747 guide rows, 18,077 gene rows, all 3,608
-FDR < 0.10 discoveries, aggregate effect/p-value/FDR checksums, the top-20
-ordering, and six prespecified validation genes. The largest observed
-R-versus-browser differences on this screen are `7.54e-12` for guide effects,
-`8.42e-12` for guide p-values/FDR, `4.10e-9` for gene p-values, and `5.08e-9`
-for gene FDR. No FDR < 0.10 decision differs.
+For every coefficient, verification checks 64,747 guide rows, 18,077 gene
+rows, the complete FDR < 0.10 discovery count, aggregate
+effect/p-value/FDR checksums, the top-20 ordering, and six prespecified
+validation genes. Across all four coefficients, the largest observed
+R-versus-browser differences are `1.40e-11` for guide effects, `8.42e-12` for
+guide p-values/FDR, `5.14e-9` for gene p-values, and `5.26e-9` for gene FDR.
+No FDR < 0.10 decision differs.
 
 ## Deployment
 

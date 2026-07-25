@@ -353,80 +353,85 @@ test("GSE70038 manuscript preset reproduces the R manuscript results", () => {
     covariates: ["GSC0827_end", "NSCCB660_end", "NSCU5_end"],
     interactions: [],
   });
-  const guides = runScreen({
-    ...input,
-    design: design.matrix,
-    termIndex: design.columns.indexOf("GSC0131_end"),
-    minTotalCount: 0,
-  });
-  const genes = geneDirectionalStouffer(guides).results;
-  const byGene = new Map(genes.map((row) => [row.gene, row]));
   const reference = referenceRows("r-gse70038-manuscript-reference.csv");
   const manifest = JSON.parse(readFileSync(
     new URL("../public/manuscript-gse70038-reference.json", import.meta.url),
     "utf8",
   ));
-  assert.equal(guides.length, 64747);
-  assert.equal(genes.length, 18077);
-  assert.equal(
-    genes.filter((gene) => gene.fdr < 0.1).length,
-    manifest.summary.discoveriesAtFdrPointOne,
-  );
-  close(
-    genes.reduce((sum, gene) => sum + gene.estimate, 0),
-    manifest.summary.sumEstimate,
-    1e-6,
-    "manuscript effect checksum",
-  );
-  close(
-    genes.reduce((sum, gene) => sum + gene.p_value, 0),
-    manifest.summary.sumPValue,
-    1e-6,
-    "manuscript p-value checksum",
-  );
-  close(
-    genes.reduce((sum, gene) => sum + gene.fdr, 0),
-    manifest.summary.sumFdr,
-    1e-5,
-    "manuscript FDR checksum",
-  );
-  assert.deepEqual(
-    [...genes]
-      .sort((left, right) =>
-        left.fdr - right.fdr ||
-        (left.gene < right.gene ? -1 : left.gene > right.gene ? 1 : 0)
-      )
-      .slice(0, 20)
-      .map((gene) => gene.gene),
-    manifest.summary.top20Genes,
-  );
-  for (const expected of reference) {
-    const actual = byGene.get(expected.gene);
-    assert.ok(actual, `browser result omitted ${expected.gene}`);
-    assert.equal(actual.n_guides, asNumber(expected.n_guides));
-    close(
-      actual.estimate,
-      asNumber(expected.estimate),
-      1e-7,
-      `${expected.gene} manuscript effect`,
-    );
-    close(
-      actual.p_value,
-      asNumber(expected.p_value),
-      5e-8,
-      `${expected.gene} manuscript p-value`,
-    );
-    close(
-      actual.fdr,
-      asNumber(expected.fdr),
-      5e-8,
-      `${expected.gene} manuscript FDR`,
-    );
+  for (const term of design.columns.slice(1)) {
+    const guides = runScreen({
+      ...input,
+      design: design.matrix,
+      termIndex: design.columns.indexOf(term),
+      minTotalCount: 0,
+    });
+    const genes = geneDirectionalStouffer(guides).results;
+    const byGene = new Map(genes.map((row) => [row.gene, row]));
+    const termReference = manifest.terms?.[term] || manifest;
+    assert.equal(guides.length, manifest.guideCount);
+    assert.equal(genes.length, manifest.geneCount);
     assert.equal(
-      actual.fdr < 0.1,
-      asNumber(expected.fdr) < 0.1,
-      `${expected.gene} manuscript FDR decision differs`,
+      genes.filter((gene) => gene.fdr < 0.1).length,
+      termReference.summary.discoveriesAtFdrPointOne,
+      `${term} discovery count`,
     );
+    close(
+      genes.reduce((sum, gene) => sum + gene.estimate, 0),
+      termReference.summary.sumEstimate,
+      1e-6,
+      `${term} effect checksum`,
+    );
+    close(
+      genes.reduce((sum, gene) => sum + gene.p_value, 0),
+      termReference.summary.sumPValue,
+      1e-6,
+      `${term} p-value checksum`,
+    );
+    close(
+      genes.reduce((sum, gene) => sum + gene.fdr, 0),
+      termReference.summary.sumFdr,
+      1e-5,
+      `${term} FDR checksum`,
+    );
+    assert.deepEqual(
+      [...genes]
+        .sort((left, right) =>
+          left.fdr - right.fdr ||
+          (left.gene < right.gene ? -1 : left.gene > right.gene ? 1 : 0)
+        )
+        .slice(0, 20)
+        .map((gene) => gene.gene),
+      termReference.summary.top20Genes,
+      `${term} top-20 genes`,
+    );
+    for (const expected of reference.filter((row) => row.term === term)) {
+      const actual = byGene.get(expected.gene);
+      assert.ok(actual, `browser result omitted ${term}/${expected.gene}`);
+      assert.equal(actual.n_guides, asNumber(expected.n_guides));
+      close(
+        actual.estimate,
+        asNumber(expected.estimate),
+        1e-7,
+        `${term}/${expected.gene} manuscript effect`,
+      );
+      close(
+        actual.p_value,
+        asNumber(expected.p_value),
+        5e-8,
+        `${term}/${expected.gene} manuscript p-value`,
+      );
+      close(
+        actual.fdr,
+        asNumber(expected.fdr),
+        5e-8,
+        `${term}/${expected.gene} manuscript FDR`,
+      );
+      assert.equal(
+        actual.fdr < 0.1,
+        asNumber(expected.fdr) < 0.1,
+        `${term}/${expected.gene} manuscript FDR decision differs`,
+      );
+    }
   }
 });
 

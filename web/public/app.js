@@ -570,9 +570,11 @@ function verifyManuscriptResult() {
   const reference = state.manuscriptReference;
   if (!state.result?.configuration.manuscriptPreset ||
       !reference || !state.result.genes) return null;
+  const termReference =
+    reference.terms?.[state.result.configuration.term] || reference;
   const byGene = new Map(state.result.genes.map((row) => [row.gene, row]));
   let checked = 0;
-  for (const expected of reference.genes) {
+  for (const expected of termReference.genes) {
     const actual = byGene.get(expected.gene);
     if (!actual || actual.n_guides !== expected.n_guides) continue;
     const matches = ["estimate", "p_value", "fdr"].every((field) =>
@@ -585,7 +587,7 @@ function verifyManuscriptResult() {
     left.fdr - right.fdr ||
     (left.gene < right.gene ? -1 : left.gene > right.gene ? 1 : 0)
   );
-  const summary = reference.summary;
+  const summary = termReference.summary;
   const complete = state.result.guides.length === reference.guideCount &&
     state.result.genes.length === reference.geneCount &&
     state.result.genes.filter((gene) => gene.fdr < 0.1).length ===
@@ -606,9 +608,9 @@ function verifyManuscriptResult() {
       (gene, index) => gene.gene === summary.top20Genes[index],
     );
   return {
-    passed: complete && checked === reference.genes.length,
+    passed: complete && checked === termReference.genes.length,
     checked,
-    total: reference.genes.length,
+    total: termReference.genes.length,
   };
 }
 

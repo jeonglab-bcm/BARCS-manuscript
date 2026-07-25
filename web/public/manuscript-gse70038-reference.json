@@ -23,5 +23,58 @@
     {"gene": "PKMYT1", "n_guides": 5, "estimate": -0.987113219562289, "p_value": 2.43710635582883e-10, "fdr": 1.87470517422629e-8},
     {"gene": "TFAP2C", "n_guides": 5, "estimate": -0.889409726177996, "p_value": 1.33923704833715e-10, "fdr": 1.08562278577537e-8},
     {"gene": "WEE1", "n_guides": 5, "estimate": -0.530968483956092, "p_value": 0.000132242904518491, "fdr": 0.00199212915415063}
-  ]
+  ],
+  "terms": {
+    "GSC0827_end": {
+      "summary": {
+        "discoveriesAtFdrPointOne": 5702,
+        "sumEstimate": -1843.0603063015712,
+        "sumPValue": 5096.746806807177,
+        "sumFdr": 6815.710579455161,
+        "top20Genes": ["PTPMT1", "SRSF10", "PPP1R8", "LSM11", "HARS", "EIF2B4", "HDAC3", "CTDP1", "TBP", "HSD17B10", "CRCP", "LIN54", "RPS3", "APC2", "BSG", "USP5", "NUP93", "SMC1A", "RNF166", "TAF1C"]
+      },
+      "genes": [
+        {"gene": "FBXO42", "n_guides": 4, "estimate": -0.600917050344174, "p_value": 3.34809712681757e-6, "fdr": 9.82525190933136e-5},
+        {"gene": "HDAC2", "n_guides": 4, "estimate": -0.650813216345531, "p_value": 5.03911017034207e-7, "fdr": 2.1433410482182e-5},
+        {"gene": "HEATR1", "n_guides": 6, "estimate": -0.893289372190307, "p_value": 1.20807289209087e-9, "fdr": 1.67987182079437e-7},
+        {"gene": "PKMYT1", "n_guides": 5, "estimate": -0.831825896698903, "p_value": 2.75329465837961e-12, "fdr": 9.95426150790565e-10},
+        {"gene": "TFAP2C", "n_guides": 5, "estimate": -0.209084645397723, "p_value": 0.0112613287573104, "fdr": 0.0478540291363189},
+        {"gene": "WEE1", "n_guides": 5, "estimate": -0.107889053975045, "p_value": 0.0287141940865753, "fdr": 0.093559208093551}
+      ]
+    },
+    "NSCCB660_end": {
+      "summary": {
+        "discoveriesAtFdrPointOne": 7080,
+        "sumEstimate": -2270.046430755439,
+        "sumPValue": 4569.987124880839,
+        "sumFdr": 5894.679998899728,
+        "top20Genes": ["PTPMT1", "KIRREL", "SLC24A4", "IMP4", "NDUFS2", "SRSF10", "TAF1C", "GABPB1", "HSD17B10", "DHX15", "FBXO42", "FRMD6", "CTDP1", "EWSR1", "HDAC3", "UROD", "EIF6", "RPS3", "CHMP2A", "PLXNA1"]
+      },
+      "genes": [
+        {"gene": "FBXO42", "n_guides": 4, "estimate": 1.27239173080595, "p_value": 2.2619977577132e-20, "fdr": 3.4888907799955e-17},
+        {"gene": "HDAC2", "n_guides": 4, "estimate": -0.24469440048545, "p_value": 0.00240018792272912, "fdr": 0.0115856333989785},
+        {"gene": "HEATR1", "n_guides": 6, "estimate": -1.78729112338241, "p_value": 8.53203385414429e-14, "fdr": 1.45503373567327e-11},
+        {"gene": "PKMYT1", "n_guides": 5, "estimate": -0.261774588656207, "p_value": 3.50339128051371e-5, "fdr": 0.000374276522272267},
+        {"gene": "TFAP2C", "n_guides": 5, "estimate": -0.0178210047868644, "p_value": 0.201248335572884, "fdr": 0.338856758769655},
+        {"gene": "WEE1", "n_guides": 5, "estimate": -0.379901147712356, "p_value": 0.000255882556644768, "fdr": 0.00189031016610848}
+      ]
+    },
+    "NSCU5_end": {
+      "summary": {
+        "discoveriesAtFdrPointOne": 5737,
+        "sumEstimate": -2417.910665624253,
+        "sumPValue": 5101.861950565808,
+        "sumFdr": 6821.813394009947,
+        "top20Genes": ["TGFBR2", "TGFBR1", "CREBBP", "NF2", "PTPN14", "PTPMT1", "TAOK1", "MGA", "SRSF10", "ARID1A", "TP53", "GABPB1", "ATP6V0B", "OTUD5", "EXOC7", "CIAO1", "DHX15", "KIRREL", "CHMP3", "TAF1C"]
+      },
+      "genes": [
+        {"gene": "FBXO42", "n_guides": 4, "estimate": 0.302197431324548, "p_value": 5.0197081644568e-6, "fdr": 7.82927217332921e-5},
+        {"gene": "HDAC2", "n_guides": 4, "estimate": -0.255355305446047, "p_value": 0.0649663059195359, "fdr": 0.168179279981018},
+        {"gene": "HEATR1", "n_guides": 6, "estimate": -1.81451000018583, "p_value": 1.09439855960524e-10, "fdr": 5.83051244927476e-9},
+        {"gene": "PKMYT1", "n_guides": 5, "estimate": 0.157923879883731, "p_value": 0.0636654184833858, "fdr": 0.16566765602761},
+        {"gene": "TFAP2C", "n_guides": 5, "estimate": -0.11089900180729, "p_value": 0.320764195495881, "fdr": 0.504095348975489},
+        {"gene": "WEE1", "n_guides": 5, "estimate": -0.514957141847785, "p_value": 0.000612328007814463, "fdr": 0.00465742511155263}
+      ]
+    }
+  }
 }
