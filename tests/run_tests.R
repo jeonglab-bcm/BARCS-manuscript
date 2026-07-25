@@ -144,9 +144,9 @@ stopifnot(
   abs(mean(calibrated$p_value[seq_len(100)] < 0.05) - 0.05) <= 0.02
 )
 
-# Guide-consistency aggregation retains the signed guide t information when
-# sample-level degrees of freedom are too small for useful guide p-values.
-# These are guide-reproducibility statistics, not biological-replicate tests.
+# Guide-consistency inference estimates one inverse-variance-weighted gene
+# effect when sample-level degrees of freedom are too small for useful guide
+# p-values. It does not combine guide p-values by Fisher or Stouffer.
 set.seed(406)
 consistency_input <- data.frame(
   gene = rep(c("control_a", "control_b", "null", "signal"), each = 5),
@@ -168,7 +168,8 @@ consistency <- bb_gene_consistency(
 )
 stopifnot(
   nrow(consistency) == 4L,
-  all(c("raw_statistic", "statistic", "guide_direction_agreement",
+  all(c("std_error", "raw_statistic", "statistic",
+        "guide_direction_agreement",
         "control_gene", "p_value", "fdr") %in% names(consistency)),
   attr(consistency, "null_scale") >= 1,
   attr(consistency, "control_genes") == 2L,

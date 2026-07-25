@@ -537,11 +537,11 @@ One replicate crossed from low information into non-confirmatory inference.
 Ordinary BARCS retained higher average precision than MAGeCK-MLE, 0.633 versus
 0.548, but made no discoveries at gene FDR 0.10 across the five seeds;
 MAGeCK-MLE's mean directional recall was only 0.014.  The new BARCS-GC
-guide-consistency statistic increased average precision to 0.664,
-directional recall to 0.139, and F1 to 0.232.  It made 58 calls across the
-five simulations (2--21 per seed), all of which were active genes under the
+guide-consistency statistic increased average precision to 0.670,
+directional recall to 0.145, and F1 to 0.245.  It made 58 calls across the
+five simulations (3--19 per seed), all of which were active genes under the
 simulated truth, for mean realized FDP 0.  The fitted empirical-null scales
-were 2.11--2.39, showing why an unscaled guide-score reference would have been
+were 2.19--2.60, showing why an unscaled Wald reference would have been
 anti-conservative.
 
 This improvement is useful but deliberately narrow.  BARCS-GC asks whether
@@ -595,7 +595,7 @@ line is the nominal 0.10 target.  edgeR-QL, DESeq2, and limma-voom use the
 common directional Stouffer gene summary.  Their higher raw recall is
 accompanied by substantial FDP inflation.  The shaded one-replicate region is
 diagnostic only.  The open blue BARCS-GC point uses concordant guide
-$t$ scores and a robust empirical null; it recovers a conservative subset
+coefficient estimates and a robust empirical null; it recovers a conservative subset
 without redefining guides as biological replicates.  Several general
 count-model pipelines make more discoveries there with inflated FDP.}
 \label{fig:crispulator-multimethod}

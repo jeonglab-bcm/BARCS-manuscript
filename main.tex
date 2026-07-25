@@ -265,8 +265,9 @@ question is a coefficient rather than a group label.
 
   \item \textbf{Guide-to-gene aggregation.}  The primary replicated analyses
   use directional Stouffer aggregation only to make a transparent gene-level
-  comparison.  BARCS-GC instead combines raw signed guide $t$ scores and
-  estimates a robust gene-level empirical null for the one-replicate
+  comparison.  BARCS-GC instead estimates a shared guide coefficient by
+  inverse-variance weighting and calibrates its Wald statistic against a
+  robust gene-level empirical null for the one-replicate
   diagnostic.  Both assume weak enough cross-guide dependence for aggregation
   to be informative, and the BARCS-GC MAD additionally assumes that fewer than
   half of genes are active.  A production gene test should be benchmarked
@@ -322,7 +323,7 @@ recall and F1 at the prespecified threshold.  The 0--100\% bulk sample changes
 low--high effect ranks negligibly and carries no directional signal by itself;
 its apparent inferential benefit must be weighed against overlapping cells and
 50\% more sequencing.  At the one-replicate boundary, BARCS-GC recovers a
-conservative subset by combining concordant guide $t$ scores, but that
+conservative subset with a shared-effect Wald statistic, but that
 empirical-null evidence remains hypothesis-generating rather than a substitute
 for an independent screen.  Chronos captures mechanistic viability dynamics that a
 single slope omits, and Waterbear remains the appropriate generative model for

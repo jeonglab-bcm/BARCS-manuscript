@@ -261,28 +261,42 @@ When sample replication is insufficient, converting a guide statistic through
 a low-degree-of-freedom $t$ distribution can erase useful ranking information.
 We therefore prespecified a separate exploratory gene statistic, BARCS-GC,
 for the $R=1$ CRISPulator analysis.  It uses the uncalibrated guide
-coefficient and model-based standard error only as a signed precision score,
+coefficient and model-based standard error to estimate one shared gene effect.
+With
 \begin{equation}
-  u_{gj}
+  w_{gj}
   =
-  \frac{\widehat{\beta}_{gj}}
-       {\operatorname{SE}(\widehat{\beta}_{gj})},
+  \operatorname{SE}(\widehat{\beta}_{gj})^{-2},
+\end{equation}
+the inverse-variance estimate, its standard error, and raw Wald statistic are
+\begin{equation}
+  \widehat{\beta}_g
+  =
+  \frac{\sum_{j=1}^{m_g}w_{gj}\widehat{\beta}_{gj}}
+       {\sum_{j=1}^{m_g}w_{gj}},
   \qquad
-  S_g
+  \operatorname{SE}(\widehat{\beta}_g)
   =
-  \frac{1}{\sqrt{m_g}}\sum_{j=1}^{m_g}u_{gj}.
+  \left(\sum_{j=1}^{m_g}w_{gj}\right)^{-1/2},
+  \qquad
+  T_g
+  =
+  \frac{\widehat{\beta}_g}
+       {\operatorname{SE}(\widehat{\beta}_g)}.
   \label{eq:guideconsistency}
 \end{equation}
-Thus several concordant guide $t$ scores reinforce one another, whereas
-discordant guide directions cancel.  No guide $p$-value is used.
+This is a direct fixed-effect estimate of the common guide coefficient, not a
+Fisher or Stouffer combination of guide $p$-values.  Its additional assumption
+is that the guide coefficients target one common gene effect; the reported
+direction-agreement fraction exposes gross heterogeneity.
 
-Because $S_g$ does not have a trustworthy sample-replicate reference
+Because $T_g$ does not have a trustworthy sample-replicate reference
 distribution at $R=1$, it is calibrated across genes.  Let $c_0$ be the
 all-gene median and
 \begin{equation}
   s_{\mathrm{MAD}}
   =
-  \frac{\operatorname{median}_g|S_g-c_0|}
+  \frac{\operatorname{median}_g|T_g-c_0|}
        {\Phi^{-1}(0.75)}.
   \label{eq:gcmad}
 \end{equation}
@@ -291,7 +305,7 @@ and let
 \begin{equation}
   s_C
   =
-  \frac{Q_{0.95}\{|S_g-c_C|:g\in C\}}
+  \frac{Q_{0.95}\{|T_g-c_C|:g\in C\}}
        {\Phi^{-1}(0.975)}.
   \label{eq:gccontrol}
 \end{equation}
@@ -299,7 +313,7 @@ The calibrated statistic and two-sided empirical-null $p$-value are
 \begin{equation}
   Z_g^{\mathrm{GC}}
   =
-  \frac{S_g-c_C}{\max(1,s_{\mathrm{MAD}},s_C)},
+  \frac{T_g-c_C}{\max(1,s_{\mathrm{MAD}},s_C)},
   \qquad
   p_g^{\mathrm{GC}}
   =
@@ -308,8 +322,8 @@ The calibrated statistic and two-sided empirical-null $p$-value are
 \end{equation}
 followed by Benjamini--Hochberg adjustment.  If too few control genes are
 available, $c_0$ replaces $c_C$ and $s_C$ is omitted.  At least three finite
-guide scores are required per gene.  The all-gene MAD assumes that fewer than
-half of tested genes are active.
+guide coefficient estimates are required per gene.  The all-gene MAD assumes
+that fewer than half of tested genes are active.
 
 BARCS-GC measures reproducibility across independently designed
 perturbations; it does not turn guides into independent biological samples.

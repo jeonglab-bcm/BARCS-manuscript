@@ -518,18 +518,22 @@ bb_calibrate_controls <- function(result, control, alpha = 0.05,
   result
 }
 
-#' Aggregate guide t scores into an empirical-null gene statistic
+#' Test a shared guide effect against an empirical gene-level null
 #'
 #' This function is intended for exploratory screens in which several
 #' independently designed guides target each gene but biological replication
 #' is too limited for reliable guide-level reference distributions. It does
-#' not treat guides as biological replicates. Instead, it combines the raw
-#' guide score `estimate / std_error`, then calibrates the gene-score
-#' distribution with a robust empirical null.
+#' not treat guides as biological replicates. Instead, it estimates one shared
+#' gene effect by inverse-variance weighting of guide coefficients, forms its
+#' model-based Wald statistic, then calibrates the gene-statistic distribution
+#' with a robust empirical null. It does not combine guide p-values by Fisher's
+#' or Stouffer's method.
 #'
-#' For gene \(g\), the raw statistic is
-#' \deqn{S_g = m_g^{-1/2}\sum_j \widehat\beta_{gj}/
-#' \operatorname{SE}(\widehat\beta_{gj}).}
+#' For gene \(g\), let \(w_{gj}=\operatorname{SE}(\widehat\beta_{gj})^{-2}\).
+#' The shared effect and raw statistic are
+#' \deqn{\widehat\beta_g =
+#' \frac{\sum_j w_{gj}\widehat\beta_{gj}}{\sum_j w_{gj}},\qquad
+#' T_g = \widehat\beta_g\sqrt{\sum_jw_{gj}}.}
 #' Its null center is the median score among control genes when enough are
 #' supplied, and otherwise the median across all genes. The null scale is the
 #' largest of `min_scale`, the all-gene MAD, and the control-gene tail scale.
@@ -611,8 +615,11 @@ bb_gene_consistency <- function(result, control = NULL, min_guides = 3L,
     if (length(index) < min_guides) {
       return(NULL)
     }
-    guide_score <- result$estimate[index] / standard_error[index]
-    gene_estimate <- stats::median(result$estimate[index])
+    guide_weight <- 1 / standard_error[index]^2
+    gene_estimate <- sum(
+      guide_weight * result$estimate[index]
+    ) / sum(guide_weight)
+    gene_standard_error <- sqrt(1 / sum(guide_weight))
     nonzero <- result$estimate[index] != 0
     agreement <- if (gene_estimate == 0 || !any(nonzero)) {
       NA_real_
@@ -625,7 +632,8 @@ bb_gene_consistency <- function(result, control = NULL, min_guides = 3L,
       gene = gene_name,
       n_guides = length(index),
       estimate = gene_estimate,
-      raw_statistic = sum(guide_score) / sqrt(length(guide_score)),
+      std_error = gene_standard_error,
+      raw_statistic = gene_estimate / gene_standard_error,
       guide_direction_agreement = agreement,
       converged_fraction = if ("converged" %in% names(result)) {
         mean(result$converged[index], na.rm = TRUE)
@@ -685,6 +693,9 @@ bb_gene_consistency <- function(result, control = NULL, min_guides = 3L,
   attr(gene_result, "control_scale") <- control_scale
   attr(gene_result, "control_genes") <- length(control_statistic)
   attr(gene_result, "null_assumption") <-
-    "Guide-consistency empirical null; not biological-replicate inference."
+    paste(
+      "Shared-effect guide-consistency empirical null;",
+      "not biological-replicate inference."
+    )
   gene_result
 }

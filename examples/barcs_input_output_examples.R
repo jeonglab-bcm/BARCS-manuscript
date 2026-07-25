@@ -155,7 +155,7 @@ print(
   guide_consistency[
     guide_consistency$gene %in% c("null_gene", "signal_gene"),
     c(
-      "gene", "n_guides", "estimate", "raw_statistic", "statistic",
+      "gene", "n_guides", "estimate", "std_error", "raw_statistic", "statistic",
       "guide_direction_agreement", "p_value", "fdr"
     )
   ],

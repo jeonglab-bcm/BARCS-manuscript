@@ -275,7 +275,8 @@ still has only one residual degree of freedom. The guides therefore cannot be
 called biological replicates.
 
 `bb_gene_consistency()` instead asks a narrower question: do the guide
-t scores point in the same direction more strongly than the empirical null?
+coefficient estimates support a shared gene effect more strongly than the
+empirical null?
 Its input is a guide-level result with at least `gene`, `estimate`, and
 `std_error` columns:
 
@@ -286,28 +287,34 @@ guide_consistency <- bb_gene_consistency(
 )
 ```
 
-For guide \(j\) targeting gene \(g\), it first computes
+For guide \(j\) targeting gene \(g\), let
+\(w_{gj}=\operatorname{SE}(\widehat\beta_{gj})^{-2}\). The function directly
+estimates a shared gene coefficient and its model-based standard error:
 
 $$
-u_{gj}
+\widehat\beta_g
 =
-\frac{\widehat\beta_{gj}}
-     {\operatorname{SE}(\widehat\beta_{gj})},
+\frac{\sum_j w_{gj}\widehat\beta_{gj}}{\sum_jw_{gj}},
 \qquad
-S_g
+\operatorname{SE}(\widehat\beta_g)
 =
-\frac{1}{\sqrt{m_g}}\sum_{j=1}^{m_g}u_{gj}.
+\frac{1}{\sqrt{\sum_jw_{gj}}},
+\qquad
+T_g
+=
+\frac{\widehat\beta_g}{\operatorname{SE}(\widehat\beta_g)}.
 $$
 
+No guide p-values are combined by Fisher or Stouffer.
 Ten five-guide control genes set the null center and contribute a tail-scale
 check; the all-gene median absolute deviation supplies a robust scale. The
 larger scale is used, with a lower bound of one. For the deterministic example,
 the null center is approximately zero and the scale is one.
 
-| Gene | Guides | Median effect | Raw score | Calibrated z | Direction agreement | p | FDR |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| null_gene | 5 | 0.00 | -0.0447 | -0.0447 | NA | 0.964 | 0.964 |
-| signal_gene | 5 | 0.58 | 13.0586 | 13.0586 | 1.00 | \(5.67\times10^{-39}\) | \(6.81\times10^{-38}\) |
+| Gene | Guides | Shared effect | SE | Raw Wald score | Calibrated z | Direction agreement | p | FDR |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| null_gene | 5 | -0.002 | 0.0447 | -0.0447 | -0.0447 | 0.50 | 0.964 | 0.964 |
+| signal_gene | 5 | 0.584 | 0.0447 | 13.0586 | 13.0586 | 1.00 | \(5.67\times10^{-39}\) | \(6.81\times10^{-38}\) |
 
 The result supports reproducibility across distinct perturbations. It does
 not repair the missing screen replicate, and its empirical-null p-value must

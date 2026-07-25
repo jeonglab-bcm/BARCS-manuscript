@@ -261,10 +261,11 @@ for MAGeCK-MLE, versus 0.230-0.250 for the three general count-model pipelines.
 The additional one-replicate stress test is reported separately. Ordinary
 BARCS improves average precision over MAGeCK-MLE (0.633 versus 0.548) but
 makes no discoveries at gene FDR 0.10. The optional `bb_gene_consistency()`
-aggregation (`BARCS-GC`) combines raw signed guide t scores and calibrates
-them with a robust gene-level empirical null. Across the same five seeds it
-raises average precision to 0.664, directional recall to 0.139, and F1 to
-0.232, with mean realized FDP 0 in the simulation. This remains a
+analysis (`BARCS-GC`) estimates a shared guide coefficient by inverse-variance
+weighting and calibrates its Wald statistic with a robust gene-level empirical
+null; it does not use Fisher or Stouffer aggregation. Across the same five
+seeds it raises average precision to 0.670, directional recall to 0.145, and
+F1 to 0.245, with mean realized FDP 0 in the simulation. This remains a
 hypothesis-ranking tool: multiple guides demonstrate perturbation
 reproducibility but do not replace biological replication.
 
