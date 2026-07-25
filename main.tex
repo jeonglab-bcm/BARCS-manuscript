@@ -39,65 +39,154 @@ for quantitative and covariate-adjusted CRISPR pooled screens}
 \maketitle
 
 \begin{abstract}
-BARCS was most useful when the experimental design carried information beyond
-one binary contrast.  In a longitudinal HT-29 screen, it achieved the highest
-recall at 90\% precision while matching continuous-time MAGeCK-MLE and Chronos
-in global discrimination.  In a primary-T-cell FACS screen,
+BARCS was strongest when a pooled screen contained information beyond one
+binary contrast.  In a longitudinal HT-29 screen, it achieved the highest
+recall at 90\% precision while essentially matching continuous-time
+MAGeCK-MLE in global discrimination.  In a primary-T-cell FACS screen,
 control-calibrated BARCS recovered 22 of 26 experimentally confirmed IL2RA
 regulators versus 17 for all-bin MAGeCK-MLE and reduced the non-targeting
-$p<0.05$ frequency from 13.3\% to 4.9\%.  Across five CRISPulator FACS
-simulations, MAGeCK-MLE slightly led global ranking, whereas BARCS led
-directional recall (0.764 versus 0.717) and F1 (0.828 versus 0.817).
-Conversely, Liang's published RRA led the five-cell-line Cas13
-processed-count benchmark (average precision 0.891 versus 0.776 for BARCS),
-exposing BARCS's power boundary when the day-effect test has only one residual
-degree of freedom.
+$p<0.05$ frequency from 13.3\% to 4.9\%.  Across five CRISPulator simulations,
+BARCS led MAGeCK-MLE in directional recall (0.764 versus 0.717) and F1 (0.828
+versus 0.817), whereas MAGeCK-MLE slightly led average precision.  Conversely,
+Liang's published RRA led the processed-count Cas13 benchmark, exposing the
+power boundary of regression inference with one residual degree of freedom.
 
-BARCS extends the beta-binomial sampling principle of
-CB\textsuperscript{2} from two groups to a regression design matrix.  Guide
-counts are modeled against full-library totals; continuous or categorical
-phenotypes, covariates, interactions, and prespecified contrasts enter through
-a logit mean model; and inference uses guide-level dispersion with
-sample-level residual degrees of freedom.  The original statistic has an exact
-generalized-least-squares representation on its group-summary scale, while the
-default regression statistic is first-order locally equivalent under stated
-common-dispersion and independent-library asymptotics.  Parallel
-RcppArmadillo kernels analyzed 86,882 guides in 19.4 seconds.  The result is a
-fast, transparent path from pairwise CB\textsuperscript{2} screens to
-quantitative and covariate-adjusted designs, with diagnostics that identify
-when MAGeCK, Chronos, or a joint-bin model is the better fit.
+The problem addressed is coefficient inference from pooled-screen counts when
+independent biological screen units, represented by libraries, lie on a
+quantitative or covariate-adjusted design.
+BARCS extends the depth-aware beta-binomial principle of
+CB\textsuperscript{2} from two group means to
+$\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g$ and tests a
+prespecified coefficient or contrast.  Full-library totals determine
+sequencing precision, extra-binomial dispersion limits the information gained
+from depth, and residual degrees of freedom come from independent libraries.
+Fisher or Stouffer aggregation is not required by the guide-level model; an
+optional shared-effect Wald procedure provides exploratory gene inference
+when several guides target one gene.  Parallel RcppArmadillo kernels analyzed
+86,882 guides in 19.4 seconds.  BARCS therefore solves a specific gap between
+pairwise testing and specialist generative models: transparent, scalable
+inference for quantitative and adjusted pooled-screen designs, with explicit
+diagnostics for designs it cannot repair.
 \end{abstract}
 
 \section{Introduction}
 
-BARCS---Beta-binomial Analysis and Regression for CRISPR Screens---extends
-sample-aware pooled-screen inference from one pairwise comparison to a full
-experimental design.  Its purpose is to use quantitative structure that is
-otherwise discarded while keeping biological libraries, rather than
-sequencing reads, as the units that determine inferential precision.
+Many pooled CRISPR screens no longer ask only whether guide abundance differs
+between a control group and one treatment group.  Libraries may be collected
+across time, dose, ordered FACS bins, donors, batches, or combinations of these
+variables.  The scientific target is then a trend, adjusted association,
+interaction, or prespecified contrast.  Dichotomizing the design into
+``high'' and ``low'' groups discards intermediate information and makes
+covariate adjustment opaque.
 
-Modern pooled screens increasingly contain dose, time, ordered phenotype,
-donor, batch, and interaction information.  Reducing those designs to
-arbitrary ``high'' and ``low'' groups discards signal and obscures the
-adjustment set.  BARCS instead makes the scientific target a prespecified
-coefficient or contrast from the complete experimental design.
+The unmet statistical problem can be stated directly.  For guide $g$, suppose
+we observe counts $K_{gi}$, full mapped-guide totals $N_i$, and one row
+$\mathbf{x}_i^\top$ of a full-rank design matrix for each independent
+biological screen unit $i$, represented by a sequenced library.  We want to
+estimate
+\begin{equation}
+  \logit(\mu_{gi})
+  =
+  \mathbf{x}_i^\top\boldsymbol{\beta}_g
+  \quad\text{and test}\quad
+  H_0:\mathbf{c}^\top\boldsymbol{\beta}_g=0,
+  \label{eq:intro-target}
+\end{equation}
+while allowing unequal library depths and extra-binomial variation.  The
+output should be an interpretable guide coefficient, standard error, and
+$p$-value for the scientific contrast selected before examining the guide
+results.
 
-This scope distinction is essential.  BARCS models a
-phenotype attached to each independently sequenced library.  It does not
-recover one continuous phenotype per cell when guide identity and phenotype
-are not observed jointly.  FACS bins can provide an ordered approximation, but
-bins produced from the same donor are correlated partitions and require a
-joint-bin model for fully generative inference.
+Terminology matters: guide count or proportion is the response in
+Equation~\eqref{eq:intro-target}.  Time, dose, treatment, or an ordered
+phenotype summary enters as a sample-level predictor.  BARCS does not analyze
+a continuous per-cell outcome unless that outcome has first been observed or
+validly summarized at the library level.
+
+\begin{table}[ht]
+\centering
+\caption{Operational definition of the problem BARCS addresses.}
+\label{tab:problem}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{p{0.22\textwidth}p{0.68\textwidth}}
+\toprule
+Component & Definition\\
+\midrule
+Observed data &
+Guide counts $K_{gi}$, unfiltered full-library totals $N_i$, and a
+prespecified sample design matrix $X$\\
+Primary estimand &
+A guide-level coefficient or contrast
+$\mathbf{c}^\top\boldsymbol{\beta}_g$ conditional on the other columns of
+$X$\\
+Information unit &
+An independent biological screen unit represented by a sequenced library;
+additional reads refine that unit but do not create another one\\
+Primary output &
+Guide effect, standard error, $t$ statistic, residual degrees of freedom,
+$p$-value, FDR, and dispersion diagnostics\\
+Optional gene output &
+An inverse-variance shared-effect Wald statistic with empirical-null
+calibration; no Fisher or Stouffer step is required\\
+Not identified &
+Unobserved single-cell phenotypes, dependence among bins from one biological
+pool, mechanistic growth dynamics, or uncertainty that would have required
+missing biological replicates\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This is not solved by simply applying ordinary logistic regression to every
+read.  Reads measure one library more precisely but are not independent
+biological replicates.  Nor is it solved by running a two-group method
+repeatedly: separate pairwise tests cannot represent one adjusted coefficient
+and needlessly fragment the available design.  At the other extreme,
+specialist models such as Chronos or Waterbear answer richer mechanistic or
+joint-bin questions but are not general-purpose coefficient interfaces.
+
+BARCS---Beta-binomial Analysis and Regression for CRISPR Screens---fills this
+gap.  It models each guide count against the corresponding full-library total,
+uses a beta-binomial variance to separate sequencing precision from
+between-library heterogeneity, and places continuous variables, factors,
+interactions, and covariates in an ordinary R model matrix.  Independent
+libraries, not read depth or guide number, determine the sample-level
+reference degrees of freedom.
+
+The manuscript makes four contributions.  First, it defines the quantitative
+pooled-screen target as a coefficient or contrast rather than a forced binary
+comparison.  Second, it establishes precisely how that regression framework
+relates to the original CB\textsuperscript{2} statistic: exact nesting on the
+legacy group-summary scale and first-order local equivalence for the default
+logit fit under stated asymptotics, not finite-sample identity.  Third, it
+provides control-based diagnostics and an optional shared-effect gene
+statistic without making Fisher or Stouffer aggregation part of the core
+method.  Fourth, it evaluates both the intended use case and failure
+boundaries against MAGeCK, Chronos, BAGEL2, Waterbear, MAUDE, and published
+rank aggregation.
+
+The scope is deliberately narrower than continuous per-cell phenotype
+analysis.  BARCS analyzes a quantitative coordinate attached to each
+biological screen unit.  It cannot reconstruct a continuous phenotype for
+each cell when guide identity and phenotype were never observed jointly.  It
+also does not make correlated FACS bins independent, infer mechanistic
+viability dynamics, correct copy number automatically, or replace missing
+biological replication.  Those boundaries determine the benchmark design and
+the method choice rules reported below.
 
 \section{Results}
 
-We evaluated BARCS first where its design-matrix structure should matter, then
-in pairwise and specialist-model settings that test backward compatibility and
-the limits of the approach.  Method colors are fixed throughout the tables and
-figures: BARCS is blue, MAGeCK orange, Chronos green, published endpoint
-MAGeCK pink, BAGEL2 gold, Waterbear purple, and MAUDE red.  Variants of one
-method reuse its base color and are distinguished by labels, line types, or
-point symbols.
+The evaluation asks four questions rather than seeking one universal winner:
+does the full quantitative design recover biology that a pairwise split
+discards; are thresholded discoveries calibrated; what happens when
+replication or the likelihood interpretation is inadequate; and does the
+method remain competitive in ordinary endpoint screens?  We therefore begin
+with a longitudinal intended use case, examine a low-replication
+processed-count boundary, stress-test ordered-bin FACS data, and then use
+controlled simulations, backward-compatibility screens, and copy-number
+diagnostics to delimit the claim.  Method colors are fixed throughout: BARCS
+is blue, MAGeCK orange, Chronos green, published endpoint MAGeCK pink, BAGEL2
+gold, Waterbear purple, and MAUDE red.
 
 \input{sections/barcs-results}
 
@@ -145,6 +234,12 @@ result <- bb_calibrate_controls(
   control = guide_annotation$gene == "Non-Targeting Control"
 )
 result[order(result$fdr), ]
+
+# Optional direct shared-effect gene inference; no Fisher/Stouffer step.
+gene_result <- bb_gene_consistency(
+  result,
+  control = guide_annotation$gene == "Non-Targeting Control"
+)
 \end{verbatim}
 Column order in the count matrix must match row order in
 \texttt{sample\_data}.  The phenotype should be defined before looking at guide
@@ -159,8 +254,7 @@ eight aggregated time points in 19.4 seconds with four workers (4,481 guides
 per second); 86,840 fits reached the strict convergence tolerance, and all
 fits returned finite time coefficients.
 
-\section{\texorpdfstring{Choosing between CB\textsuperscript{2} and
-BARCS}{Choosing between CB2 and BARCS}}
+\section{Discussion: the problem BARCS is designed to solve}
 
 The methods answer related but different questions.  Original
 CB\textsuperscript{2} remains the direct choice when the biological estimand is
@@ -201,10 +295,12 @@ Post-fit CNV normalization can help, do nothing, or over-correct\\
 \end{tabular}
 \end{table}
 
-This decision rule is also the selling point of the extension.  It does not
-ask users to abandon a validated two-group workflow.  It opens the same
-beta-binomial framework to the large class of pooled screens whose scientific
-question is a coefficient rather than a group label.
+This decision rule defines the problem BARCS is intended to solve.  It does
+not ask users to abandon a validated two-group workflow or replace a
+purpose-built generative model.  It supplies the missing middle layer: a
+depth-aware coefficient test when the observed units are independent
+libraries and the scientific question is a trend, adjusted association,
+interaction, or contrast rather than one group label.
 
 \section{Assumptions, diagnostics, and limitations}
 
@@ -263,14 +359,16 @@ question is a coefficient rather than a group label.
   Recomputing totals after row subsetting changes the likelihood and can
   materially change calibration.
 
-  \item \textbf{Guide-to-gene aggregation.}  The primary replicated analyses
-  use directional Stouffer aggregation only to make a transparent gene-level
-  comparison.  BARCS-GC instead estimates a shared guide coefficient by
-  inverse-variance weighting and calibrates its Wald statistic against a
-  robust gene-level empirical null for the one-replicate
-  diagnostic.  Both assume weak enough cross-guide dependence for aggregation
-  to be informative, and the BARCS-GC MAD additionally assumes that fewer than
-  half of genes are active.  A production gene test should be benchmarked
+  \item \textbf{Guide-to-gene inference.}  The BARCS regression itself is
+  guide-level and requires no Fisher or Stouffer combination.  Some replicated
+  benchmark analyses use a directional Stouffer summary only as a transparent,
+  explicitly labeled comparison adapter.  BARCS-GC instead estimates one
+  shared guide coefficient by inverse-variance weighting and calibrates its
+  Wald statistic against a robust gene-level empirical null for the
+  one-replicate diagnostic.  That fixed-effect construction assumes a common
+  gene effect, while its all-gene MAD assumes that fewer than half of genes are
+  active.  The direction-agreement output should be inspected for guide
+  heterogeneity.  A production hierarchical gene test should be benchmarked
   separately, ideally with held-out controls or phenotype permutations that
   preserve cross-guide dependence.
 
@@ -290,68 +388,42 @@ question is a coefficient rather than a group label.
 
 \section{Conclusion}
 
-BARCS extends the beta-binomial sampling principle behind
-a successful two-group method into a regression framework.  This is an
-estimating-equation and design-matrix extension, not a claim that the default
-finite-sample estimator strictly contains the original CB\textsuperscript{2}
-algorithm.  Counts
-remain tied to their library depths, extra-binomial heterogeneity limits the
-leverage of deep sequencing, and uncertainty is determined by independent
-samples.  What changes is the scientific interface: the target can now be a
-dose slope, time trend, adjusted treatment effect, interaction, or named
-contrast from an ordinary model matrix.  RcppArmadillo kernels make that
-extension fast enough for genome-scale screening.
+BARCS solves one defined problem: testing a prespecified guide-abundance
+coefficient when independent pooled-screen units lie on a quantitative or
+covariate-adjusted design.  It preserves full-library denominators, separates
+read-depth precision from extra-binomial heterogeneity, and assigns reference
+degrees of freedom to independent libraries.  The scientific output can
+therefore be a time slope, dose response, adjusted treatment effect,
+interaction, or named contrast without reducing the experiment to an
+arbitrary binary split.
 
-The evidence supports a focused, defensible claim.  In the direct longitudinal
-use case, BARCS matches established methods in global
-ranking and gives the strongest high-precision recall.  In the ordered-bin
-stress test, its continuous four-bin trend recovers substantially more
-validated biology than all-bin MAGeCK-MLE.  After control calibration it
-retains a 22/26 versus 17/26 recovery advantage, has the best F1 and Matthews
-correlation among the independently rerun methods in the selected validation
-panel, and returns the non-targeting tail to its nominal rate.  The controlled
-CRISPulator benchmark clarifies the operating characteristic behind that
-result: BARCS favors directionally correct threshold recovery, while
-MAGeCK-MLE slightly favors global ranking.  Backward-
-compatibility analyses recover established biology and show strong agreement
-with MAGeCK, while the A375 benchmark demonstrates competitive endpoint
-performance.
+The benchmarks support that focused claim.  BARCS is competitive with
+continuous-time MAGeCK and Chronos in longitudinal HT-29 data, provides the
+strongest high-precision recall there, and recovers 22 of 26 validated IL2RA
+regulators after control calibration in the ordered-bin stress test.  The
+CRISPulator study shows its characteristic tradeoff: stronger directionally
+correct threshold recovery than MAGeCK-MLE in the baseline simulations, but
+no universal advantage in global ranking.  Endpoint analyses recover
+established biology and demonstrate backward compatibility rather than a need
+to replace successful pairwise tools.
 
-The same benchmarks prevent over-selling.  In the CRISPulator study,
-MAGeCK-MLE slightly leads global ranking, whereas BARCS leads directional
-recall and F1 at the prespecified threshold.  The 0--100\% bulk sample changes
-low--high effect ranks negligibly and carries no directional signal by itself;
-its apparent inferential benefit must be weighed against overlapping cells and
-50\% more sequencing.  At the one-replicate boundary, BARCS-GC recovers a
-conservative subset with a shared-effect Wald statistic, but that
-empirical-null evidence remains hypothesis-generating rather than a substitute
-for an independent screen.  Chronos captures mechanistic viability dynamics that a
-single slope omits, and Waterbear remains the appropriate generative model for
-correlated FACS partitions.  MAUDE's 25/26 recovery comes with 406 calls
-and cannot be converted into a trustworthy precision or F1 estimate without
-complete labels.  On Liang's deposited normalized Cas13 data, the published
-RRA leads all four compared methods, while BARCS's one-degree-of-freedom
-$t$ inference sacrifices threshold power despite retaining substantial effect
-rank agreement.  Copy-number correction is likewise a diagnostic choice, not
-an automatic improvement: it removes nuisance association in A375 and
-increases it in HT-29.  The external Chronos hit-calling audit reinforces the
-same boundary.  Preserving full-library totals removes the headline 152
-CB\textsuperscript{2} null-only discoveries, and pooled regression gives a
-well-behaved PSN1 null, but the DeWeirdt rerun remains weak and sensitive to a
-treatment-associated screen-quality shift.  Design-matrix generalization,
-rank aggregation, and empirical-null hit calling are complementary advances,
-not substitutes.
+Equally important, the method has explicit stopping rules.  It does not create
+biological replication from read depth or guide number, make bins from one
+donor independent, infer mechanistic growth dynamics, or guarantee that
+post-fit copy-number correction helps.  Liang's processed Cas13 benchmark
+shows the loss of threshold power with one residual degree of freedom;
+Waterbear and Chronos remain preferable when joint-bin dependence or
+mechanistic viability is the estimand.  BARCS-GC can prioritize a conservative
+multi-guide subset in an otherwise irreplaceable one-replicate screen, but its
+empirical-null Wald evidence remains exploratory.
 
-The resulting story is not ``CB\textsuperscript{2} versus a replacement.''
-Original CB\textsuperscript{2} answers the two-condition question;
-BARCS answers the coefficient question.  Together they
-provide a coherent beta-binomial path from simple endpoint screens to
-quantitative and covariate-adjusted designs, with explicit boundaries that tell
-users when to move to a specialist model.  The next improvements are therefore
-well defined: empirical-Bayes dispersion moderation, a native gene-level
-hierarchy, blocked or random-effect inference for repeated biological units,
-nonlinear time or dose effects, and covariance procedures that account for
-dispersion-estimation uncertainty.
+The contribution is therefore a bridge, not a universal replacement.
+Original CB\textsuperscript{2} answers a two-condition question; BARCS answers
+a coefficient question using the same depth-aware beta-binomial principle.
+The next steps follow directly from the remaining gaps: empirical-Bayes
+dispersion moderation, a hierarchical gene-effect model, blocked or
+random-effect inference for repeated biological units, nonlinear dose and time
+effects, and covariance estimators that propagate dispersion uncertainty.
 
 \bibliography{main}
 

@@ -1,6 +1,16 @@
 \subsection{\texorpdfstring{From CB\textsuperscript{2} to
 BARCS}{From CB2 to BARCS}}
 
+BARCS is fundamentally a guide-level coefficient model.  Its required inputs
+are a guide-by-library count matrix, the corresponding full-library totals,
+and a sample design matrix; its primary output is one coefficient or contrast
+test per guide.  Gene aggregation is downstream and optional.  In particular,
+neither Fisher nor Stouffer combination is required to fit or interpret the
+BARCS regression.  Some benchmarks below use an explicitly labeled Stouffer
+summary to compare with deposited gene-level results, whereas BARCS-GC uses
+the direct shared-effect Wald construction in
+Equations~\eqref{eq:guideconsistency}--\eqref{eq:gcz}.
+
 CB\textsuperscript{2} adapts the beta-binomial weighted test of
 \citet{baggerly2003differential} to CRISPR pooled screens
 \citep{jeong2019beta}.  Its central insight is worth preserving: sequencing
