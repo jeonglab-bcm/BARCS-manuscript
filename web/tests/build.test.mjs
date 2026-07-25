@@ -16,4 +16,5 @@ test("site build contains the analysis runtime and Cloudflare entry", () => {
   const html = readFileSync("dist/client/index.html", "utf8");
   assert.match(html, /Run BARCS/);
   assert.match(html, /Runs on this device/);
+  assert.match(html, /not promised to be bit-for-bit identical/);
 });

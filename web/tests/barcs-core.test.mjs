@@ -7,9 +7,15 @@ import {
   calibrateControls,
   fitGuide,
   geneConsistency,
+  runScreen,
   studentTwoSidedP,
 } from "../public/barcs-core.js";
-import { parseBarcsInputs, parseDelimited, toCsv } from "../public/csv.js";
+import {
+  parseBarcsInputs,
+  parseDelimited,
+  parseObjects,
+  toCsv,
+} from "../public/csv.js";
 
 const countsText = readFileSync(
   new URL("../public/example-counts.csv", import.meta.url),
@@ -25,6 +31,26 @@ function close(actual, expected, tolerance, label) {
     Math.abs(actual - expected) <= tolerance,
     `${label}: ${actual} differs from ${expected} by more than ${tolerance}`,
   );
+}
+
+const parityTolerance = Object.freeze({
+  estimate: 1e-7,
+  stdError: 2e-7,
+  statistic: 2e-5,
+  probability: 5e-8,
+  rho: 1e-8,
+  geneProbability: 3e-7,
+});
+
+function referenceRows(name) {
+  return parseObjects(readFileSync(
+    new URL(`fixtures/${name}`, import.meta.url),
+    "utf8",
+  )).rows;
+}
+
+function asNumber(value) {
+  return value === "" ? NaN : Number(value);
 }
 
 test("CSV parser supports commas, tabs, and quoted fields", () => {
@@ -106,6 +132,208 @@ test("browser fit agrees with the reference R implementation", () => {
     assert.equal(fit.degreesOfFreedom, 6);
     assert.equal(fit.converged, true);
   });
+});
+
+test("all guide results match R across supported model shapes", () => {
+  const input = parseBarcsInputs(countsText, metadataText);
+  const specifications = {
+    time: {
+      predictor: "time",
+      covariates: [],
+      interactions: [],
+    },
+    time_batch: {
+      predictor: "time",
+      covariates: ["batch"],
+      interactions: [],
+    },
+    time_by_batch: {
+      predictor: "time",
+      covariates: ["batch"],
+      interactions: [["time", "batch"]],
+    },
+    batch: {
+      predictor: "batch",
+      covariates: [],
+      interactions: [],
+    },
+  };
+  const reference = referenceRows("r-guide-reference.csv");
+  for (const [model, configuration] of Object.entries(specifications)) {
+    const expectedRows = reference.filter((row) => row.model === model);
+    const design = buildDesign(input.metadata, configuration);
+    const term = expectedRows[0].term;
+    const termIndex = design.columns.indexOf(term);
+    assert.notEqual(termIndex, -1, `${model} did not construct R term ${term}`);
+    const raw = runScreen({
+      ...input,
+      design: design.matrix,
+      termIndex,
+    });
+    const calibrated = calibrateControls(raw);
+    assert.equal(raw.length, expectedRows.length);
+    assert.equal(calibrated.results.length, expectedRows.length);
+    expectedRows.forEach((expected, index) => {
+      const actualRaw = raw[index];
+      const actualCalibrated = calibrated.results[index];
+      assert.equal(actualRaw.guide, expected.guide);
+      assert.equal(actualRaw.gene, expected.gene);
+      assert.equal(actualRaw.converged, expected.converged === "TRUE");
+      close(
+        actualRaw.estimate,
+        asNumber(expected.estimate),
+        parityTolerance.estimate,
+        `${model}/${expected.guide} estimate`,
+      );
+      close(
+        actualRaw.std_error,
+        asNumber(expected.raw_std_error),
+        parityTolerance.stdError,
+        `${model}/${expected.guide} raw SE`,
+      );
+      close(
+        actualRaw.t_value,
+        asNumber(expected.raw_t_value),
+        parityTolerance.statistic,
+        `${model}/${expected.guide} raw t`,
+      );
+      close(
+        actualRaw.p_value,
+        asNumber(expected.raw_p_value),
+        parityTolerance.probability,
+        `${model}/${expected.guide} raw p`,
+      );
+      close(
+        actualRaw.fdr,
+        asNumber(expected.raw_fdr),
+        parityTolerance.probability,
+        `${model}/${expected.guide} raw FDR`,
+      );
+      close(
+        actualRaw.rho,
+        asNumber(expected.rho),
+        parityTolerance.rho,
+        `${model}/${expected.guide} rho`,
+      );
+      close(
+        actualCalibrated.std_error,
+        asNumber(expected.calibrated_std_error),
+        parityTolerance.stdError,
+        `${model}/${expected.guide} calibrated SE`,
+      );
+      close(
+        actualCalibrated.t_value,
+        asNumber(expected.calibrated_t_value),
+        parityTolerance.statistic,
+        `${model}/${expected.guide} calibrated t`,
+      );
+      close(
+        actualCalibrated.p_value,
+        asNumber(expected.calibrated_p_value),
+        parityTolerance.probability,
+        `${model}/${expected.guide} calibrated p`,
+      );
+      close(
+        actualCalibrated.fdr,
+        asNumber(expected.calibrated_fdr),
+        parityTolerance.probability,
+        `${model}/${expected.guide} calibrated FDR`,
+      );
+      assert.equal(
+        actualRaw.fdr < 0.1,
+        asNumber(expected.raw_fdr) < 0.1,
+        `${model}/${expected.guide} raw FDR decision differs`,
+      );
+      assert.equal(
+        actualCalibrated.fdr < 0.1,
+        asNumber(expected.calibrated_fdr) < 0.1,
+        `${model}/${expected.guide} calibrated FDR decision differs`,
+      );
+    });
+    close(
+      calibrated.scale,
+      asNumber(expectedRows[0].control_scale),
+      parityTolerance.probability,
+      `${model} control scale`,
+    );
+  }
+});
+
+test("shared-effect gene results match the R reference", () => {
+  const input = parseBarcsInputs(countsText, metadataText);
+  const design = buildDesign(input.metadata, {
+    predictor: "time",
+    covariates: ["batch"],
+    interactions: [],
+  });
+  const raw = runScreen({
+    ...input,
+    design: design.matrix,
+    termIndex: design.columns.indexOf("time"),
+  });
+  const calibrated = calibrateControls(raw);
+  const actual = geneConsistency(calibrated.results).results;
+  const actualByGene = new Map(actual.map((row) => [row.gene, row]));
+  const reference = referenceRows("r-gene-reference.csv");
+  assert.equal(actual.length, reference.length);
+  assert.deepEqual(
+    actual.map((row) => row.gene),
+    reference.map((row) => row.gene),
+    "browser gene order differs from R",
+  );
+  for (const expected of reference) {
+    const row = actualByGene.get(expected.gene);
+    assert.ok(row, `browser gene results omitted ${expected.gene}`);
+    assert.equal(row.n_guides, asNumber(expected.n_guides));
+    assert.equal(row.control_gene, expected.control_gene === "TRUE");
+    close(
+      row.estimate,
+      asNumber(expected.estimate),
+      parityTolerance.estimate,
+      `${expected.gene} gene estimate`,
+    );
+    close(
+      row.std_error,
+      asNumber(expected.std_error),
+      parityTolerance.stdError,
+      `${expected.gene} gene SE`,
+    );
+    close(
+      row.raw_statistic,
+      asNumber(expected.raw_statistic),
+      parityTolerance.statistic,
+      `${expected.gene} raw gene statistic`,
+    );
+    close(
+      row.guide_direction_agreement,
+      asNumber(expected.guide_direction_agreement),
+      parityTolerance.probability,
+      `${expected.gene} direction agreement`,
+    );
+    close(
+      row.statistic,
+      asNumber(expected.statistic),
+      parityTolerance.statistic,
+      `${expected.gene} calibrated gene statistic`,
+    );
+    close(
+      row.p_value,
+      asNumber(expected.p_value),
+      parityTolerance.geneProbability,
+      `${expected.gene} gene p`,
+    );
+    close(
+      row.fdr,
+      asNumber(expected.fdr),
+      parityTolerance.geneProbability,
+      `${expected.gene} gene FDR`,
+    );
+    assert.equal(
+      row.fdr < 0.1,
+      asNumber(expected.fdr) < 0.1,
+      `${expected.gene} gene FDR decision differs`,
+    );
+  }
 });
 
 test("Student t probability and BH correction are numerically sound", () => {

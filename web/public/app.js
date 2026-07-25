@@ -530,6 +530,11 @@ function renderDiagnostics() {
         ? "Computed from every uploaded guide row"
         : `Read from metadata column ${state.input.totalsSource}`,
     },
+    {
+      label: "R-reference parity",
+      value: "Numerically equivalent",
+      note: "Same equations; small floating-point differences are expected",
+    },
   ];
   $("#diagnosticList").innerHTML = items.map((item) => `
     <div class="diagnostic-item">

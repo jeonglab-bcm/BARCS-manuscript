@@ -61,9 +61,18 @@ npm test
 
 The test suite checks parsing, design coding, probability calculations,
 calibration, gene inference, the deployment artifact, and numerical parity
-with reference values produced by `R/bbreg.R`. The three parity fixtures agree
-with the R coefficient, standard error, t statistic, p-value, and dispersion
-within numerical tolerance.
+with reference values produced by `R/bbreg.R`. The committed suite covers all
+48 guides under four supported design shapes (192 fits) and all nine
+shared-effect gene results in the example screen. It requires the same guide
+and gene order, convergence status, and FDR < 0.10 calls, while comparing
+reported statistics under explicit numerical tolerances.
+
+The R implementation is the reference. The browser and R results are
+numerically equivalent, not bit-for-bit identical: independent IRLS stopping
+paths, matrix arithmetic, root finding, and probability-library
+implementations can produce small IEEE-754 floating-point differences. See
+[`PARITY.md`](PARITY.md) for the tested contract, observed errors, and
+reproduction commands.
 
 ## Deployment
 

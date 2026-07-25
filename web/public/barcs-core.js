@@ -102,13 +102,65 @@ export function studentTwoSidedP(statistic, degreesOfFreedom) {
   );
 }
 
-function erf(value) {
-  const sign = value < 0 ? -1 : 1;
+function polynomial(value, coefficients) {
+  let result = coefficients[0];
+  for (let index = 1; index < coefficients.length; index += 1) {
+    result = result * value + coefficients[index];
+  }
+  return result;
+}
+
+function polynomialWithLeadingOne(value, coefficients) {
+  let result = value + coefficients[0];
+  for (let index = 1; index < coefficients.length; index += 1) {
+    result = result * value + coefficients[index];
+  }
+  return result;
+}
+
+function erfc(value) {
   const x = Math.abs(value);
-  const t = 1 / (1 + 0.3275911 * x);
-  const polynomial = (((((1.061405429 * t - 1.453152027) * t) +
-    1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
-  return sign * (1 - polynomial * Math.exp(-x * x));
+  if (x < 1) return 1 - erf(value);
+  if (x >= 27.3) return value < 0 ? 2 : 0;
+  const p = [
+    2.461969814735305e-10, 0.5641895648310688, 7.463210564422699,
+    48.63719709856814, 196.5208329560771, 526.4451949954773,
+    934.5285271719576, 1027.551886895157, 557.5353353693993,
+  ];
+  const q = [
+    13.2281951154745, 86.70721408859897, 354.9377788878199,
+    975.7085017432055, 1823.909166879098, 2246.33760818711,
+    1656.663091941614, 557.5353408177277,
+  ];
+  const r = [
+    0.5641895835477551, 1.275366707599781, 5.019050422511805,
+    6.160210979930536, 7.409742699504489, 2.978866653721002,
+  ];
+  const s = [
+    2.260528632201173, 9.396035249380014, 12.04895398080967,
+    17.08144507475659, 9.608968090632859, 3.369076451000815,
+  ];
+  const ratio = x < 8
+    ? polynomial(x, p) / polynomialWithLeadingOne(x, q)
+    : polynomial(x, r) / polynomialWithLeadingOne(x, s);
+  const result = Math.exp(-x * x) * ratio;
+  return value < 0 ? 2 - result : result;
+}
+
+function erf(value) {
+  const x = Math.abs(value);
+  if (x > 1) return value < 0 ? erfc(x) - 1 : 1 - erfc(x);
+  const t = [
+    9.604973739870516, 90.02601972038427, 2232.005345946843,
+    7003.325141128051, 55592.30130103949,
+  ];
+  const u = [
+    33.56171416475031, 521.3579497801527, 4594.323829709801,
+    22629.00006138909, 49267.39426086359,
+  ];
+  const result = value * polynomial(x * x, t) /
+    polynomialWithLeadingOne(x * x, u);
+  return result;
 }
 
 export function normalCdf(value) {
@@ -116,7 +168,7 @@ export function normalCdf(value) {
 }
 
 export function normalTwoSidedP(statistic) {
-  return clamp(2 * (1 - normalCdf(Math.abs(statistic))), 0, 1);
+  return clamp(erfc(Math.abs(statistic) / Math.SQRT2), 0, 1);
 }
 
 export function normalQuantile(probability) {
@@ -699,7 +751,10 @@ export function geneConsistency(results, options = {}) {
     grouped.get(row.gene).push({ ...row, standardError });
   }
   const genes = [];
-  for (const [gene, guides] of grouped) {
+  const orderedGroups = [...grouped.entries()].sort(
+    ([left], [right]) => left < right ? -1 : left > right ? 1 : 0,
+  );
+  for (const [gene, guides] of orderedGroups) {
     if (guides.length < minGuides) continue;
     if (guides.some((guide) => guide.control) &&
         guides.some((guide) => !guide.control)) {

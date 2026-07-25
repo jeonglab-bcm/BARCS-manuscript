@@ -302,7 +302,7 @@ tr.hit td:first-child { box-shadow: inset 3px 0 var(--coral); }
 .diagnostic-item strong { display: block; margin-top: 4px; font: 500 17px "SFMono-Regular", Consolas, monospace; }
 .diagnostic-item p { margin: 4px 0 0; color: var(--muted); font-size: 9px; }
 .principles { max-width: 1360px; margin: 0 auto 110px; padding: 0 clamp(24px, 6vw, 72px); }
-.principle-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+.principle-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); }
 .principle-grid article { padding: 28px 28px 0 0; }
 .principle-grid span { color: var(--blue); font: 500 10px "SFMono-Regular", Consolas, monospace; }
 .principle-grid h3 { margin: 28px 0 8px; font-size: 17px; }
