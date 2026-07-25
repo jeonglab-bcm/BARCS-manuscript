@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Run BARCS beta-binomial regression for quantitative and covariate-adjusted pooled CRISPR screens entirely in your browser.">
+    <meta name="theme-color" content="#f3f0e8">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="BARCS Studio">
+    <meta property="og:description" content="Keep the full design. Test the coefficient. Pooled-screen regression that runs entirely in your browser.">
+    <meta property="og:image" content="__BARCS_ORIGIN__/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BARCS Studio">
+    <meta name="twitter:description" content="Pooled-screen regression in your browser.">
+    <meta name="twitter:image" content="__BARCS_ORIGIN__/og.png">
+    <title>BARCS Studio — pooled-screen regression in your browser</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="BARCS Studio home">
+        <span class="brand-mark" aria-hidden="true">B</span>
+        <span>
+          <strong>BARCS</strong>
+          <small>Studio</small>
+        </span>
+      </a>
+      <div class="header-actions">
+        <span class="privacy-pill"><span aria-hidden="true">●</span> Runs on this device</span>
+        <a class="text-link" href="https://github.com/jeonglab-bcm/BARCS" target="_blank" rel="noreferrer">Documentation</a>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Beta-binomial analysis for modern CRISPR screens</p>
+          <h1>Keep the full design.<br><em>Test the coefficient.</em></h1>
+          <p class="lede">Analyze time, dose, ordered phenotype, treatment, and covariate-adjusted pooled screens without reducing the experiment to a high–low comparison.</p>
+        </div>
+        <div class="hero-proof" aria-label="How BARCS works">
+          <div class="equation">
+            <span>logit(μ<sub>gi</sub>)</span>
+            <strong>=</strong>
+            <span>x<sub>i</sub><sup>T</sup>β<sub>g</sub></span>
+          </div>
+          <p>Counts remain tied to full-library depth. Independent libraries—not reads—set the residual degrees of freedom.</p>
+          <div class="proof-row">
+            <span>CSV / TSV</span><span aria-hidden="true">→</span>
+            <span>local worker</span><span aria-hidden="true">→</span>
+            <span>downloadable results</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="BARCS analysis workspace">
+        <aside class="setup-column">
+          <div class="section-heading">
+            <span class="step-number">01</span>
+            <div>
+              <h2>Load the screen</h2>
+              <p>Nothing is uploaded to a server.</p>
+            </div>
+          </div>
+
+          <div class="upload-grid">
+            <label class="file-drop" id="countsDrop">
+              <input id="countsFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
+              <span class="file-kicker">Guide counts</span>
+              <strong id="countsLabel">Choose counts file</strong>
+              <small>guide, gene, control, then sample columns</small>
+            </label>
+            <label class="file-drop" id="metadataDrop">
+              <input id="metadataFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
+              <span class="file-kicker">Sample metadata</span>
+              <strong id="metadataLabel">Choose metadata file</strong>
+              <small>sample, predictor, covariates, optional total</small>
+            </label>
+          </div>
+          <div class="upload-actions">
+            <button class="button secondary" id="exampleButton" type="button">Load example</button>
+            <button class="button quiet" id="formatButton" type="button">View input format</button>
+          </div>
+          <div class="notice error" id="loadError" role="alert" hidden></div>
+
+          <div class="data-summary" id="dataSummary" hidden>
+            <div><strong id="guideCount">—</strong><span>guides</span></div>
+            <div><strong id="sampleCount">—</strong><span>libraries</span></div>
+            <div><strong id="controlCount">—</strong><span>controls</span></div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="section-heading compact">
+            <span class="step-number">02</span>
+            <div>
+              <h2>Specify the model</h2>
+              <p>Choose the effect you want to test.</p>
+            </div>
+          </div>
+
+          <fieldset id="modelFields" disabled>
+            <label class="field">
+              <span>Primary predictor</span>
+              <select id="predictorSelect"></select>
+            </label>
+            <div class="field">
+              <span>Adjustment covariates</span>
+              <div class="checklist" id="covariateList">
+                <small>Load data to see available variables.</small>
+              </div>
+            </div>
+            <label class="field">
+              <span>Interaction <small>optional</small></span>
+              <select id="interactionSelect">
+                <option value="">None</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Coefficient to test</span>
+              <select id="termSelect"></select>
+            </label>
+            <div class="model-preview">
+              <span>Model</span>
+              <code id="formulaPreview">~ predictor</code>
+              <small id="degreesPreview">— residual degrees of freedom</small>
+            </div>
+            <details class="advanced">
+              <summary>Analysis options</summary>
+              <label class="inline-field">
+                <span>Minimum total guide count</span>
+                <input id="minCountInput" type="number" min="0" step="1" value="10">
+              </label>
+              <label class="inline-field">
+                <span>Discovery FDR</span>
+                <input id="fdrInput" type="number" min="0.001" max="0.5" step="0.01" value="0.10">
+              </label>
+              <label class="toggle">
+                <input id="calibrateInput" type="checkbox">
+                <span>Calibrate with negative controls</span>
+              </label>
+              <label class="toggle">
+                <input id="geneInput" type="checkbox" checked>
+                <span>Compute shared-effect gene results</span>
+              </label>
+            </details>
+          </fieldset>
+          <div class="notice error" id="modelError" role="alert" hidden></div>
+          <button class="button primary run-button" id="runButton" type="button" disabled>
+            <span>Run BARCS</span><span aria-hidden="true">→</span>
+          </button>
+          <div class="progress-wrap" id="progressWrap" hidden>
+            <div class="progress-label"><span id="progressText">Fitting guides</span><strong id="progressPercent">0%</strong></div>
+            <progress id="progressBar" max="1" value="0"></progress>
+          </div>
+        </aside>
+
+        <section class="results-column" aria-live="polite">
+          <div class="empty-results" id="emptyResults">
+            <span class="empty-index">β</span>
+            <h2>Your coefficient results will appear here.</h2>
+            <p>Load a count matrix and sample metadata, select the scientific effect, and BARCS will fit each guide locally.</p>
+            <ul>
+              <li>Guide effects with Student-<em>t</em> inference</li>
+              <li>Dispersion and convergence diagnostics</li>
+              <li>Optional control calibration and gene statistics</li>
+            </ul>
+          </div>
+
+          <div id="results" hidden>
+            <div class="results-header">
+              <div>
+                <p class="eyebrow">Analysis complete</p>
+                <h2 id="resultTitle">Coefficient results</h2>
+                <p id="resultSubtitle"></p>
+              </div>
+              <div class="download-menu">
+                <button class="button secondary" id="downloadGuides" type="button">Download guides</button>
+                <button class="button quiet" id="downloadGenes" type="button">Download genes</button>
+              </div>
+            </div>
+
+            <div class="metric-grid">
+              <article><span>Analyzed</span><strong id="metricAnalyzed">—</strong><small>finite guide fits</small></article>
+              <article><span>Discoveries</span><strong id="metricDiscoveries">—</strong><small id="metricThreshold">at FDR 0.10</small></article>
+              <article><span>Converged</span><strong id="metricConverged">—</strong><small>strict IRLS tolerance</small></article>
+              <article><span>Median ρ</span><strong id="metricRho">—</strong><small>extra-binomial correlation</small></article>
+            </div>
+
+            <nav class="result-tabs" aria-label="Result views">
+              <button class="tab active" data-tab="guides" type="button">Guide results</button>
+              <button class="tab" data-tab="genes" type="button">Gene results</button>
+              <button class="tab" data-tab="diagnostics" type="button">Diagnostics</button>
+            </nav>
+
+            <div class="tab-panel active" id="guidesPanel">
+              <div class="plot-card">
+                <div class="plot-heading">
+                  <div><h3>Effect evidence</h3><p>Coefficient against −log<sub>10</sub> <em>p</em></p></div>
+                  <span class="legend"><i></i> FDR threshold</span>
+                </div>
+                <canvas id="volcanoCanvas" height="320" aria-label="Volcano plot of guide effects and p-values"></canvas>
+              </div>
+              <div class="table-card">
+                <div class="table-tools">
+                  <div><h3>Top guide signals</h3><p id="guideTableCount"></p></div>
+                  <label class="search"><span class="sr-only">Filter guide results</span><input id="guideSearch" type="search" placeholder="Filter guide or gene"></label>
+                </div>
+                <div class="table-scroll"><table id="guideTable"></table></div>
+              </div>
+            </div>
+
+            <div class="tab-panel" id="genesPanel">
+              <div class="gene-note" id="geneNote"></div>
+              <div class="table-card">
+                <div class="table-tools">
+                  <div><h3>Shared-effect gene signals</h3><p>Inverse-variance Wald statistic with empirical-null calibration</p></div>
+                  <label class="search"><span class="sr-only">Filter gene results</span><input id="geneSearch" type="search" placeholder="Filter gene"></label>
+                </div>
+                <div class="table-scroll"><table id="geneTable"></table></div>
+              </div>
+            </div>
+
+            <div class="tab-panel" id="diagnosticsPanel">
+              <div class="diagnostic-grid">
+                <div class="plot-card">
+                  <div class="plot-heading"><div><h3>Guide dispersion</h3><p>Distribution of fitted ρ</p></div></div>
+                  <canvas id="rhoCanvas" height="270" aria-label="Histogram of fitted guide dispersion"></canvas>
+                </div>
+                <div class="diagnostic-list" id="diagnosticList"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="principles">
+        <p class="eyebrow">What this web version preserves</p>
+        <div class="principle-grid">
+          <article><span>01</span><h3>Full-library denominators</h3><p>Totals are computed before filtering, so subsetting guides cannot silently change the likelihood.</p></article>
+          <article><span>02</span><h3>Sample-level inference</h3><p>Residual degrees of freedom come from independent libraries and the chosen design matrix.</p></article>
+          <article><span>03</span><h3>Visible boundaries</h3><p>The app rejects rank-deficient designs and reports convergence, dispersion boundaries, and calibration scale.</p></article>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="formatDialog">
+      <form method="dialog">
+        <div class="dialog-heading"><h2>Input format</h2><button class="icon-button" aria-label="Close">×</button></div>
+        <p>Column names may be comma- or tab-separated. Count sample columns must match metadata sample values exactly.</p>
+        <div class="format-grid">
+          <div><h3>counts.csv</h3><pre>guide,gene,control,D0_A,D0_B,D7_A,D7_B
+g1,GENE1,false,120,98,54,47
+nt1,NTC,true,85,91,87,90</pre></div>
+          <div><h3>metadata.csv</h3><pre>sample,time,batch,total
+D0_A,0,A,1824000
+D0_B,0,B,1912500
+D7_A,7,A,1768300
+D7_B,7,B,1897100</pre></div>
+        </div>
+        <p class="dialog-note">The optional <code>total</code> column should contain full mapped-guide library totals and is recommended when the count file has already been filtered. For valid Student-<em>t</em> inference, the number of independent libraries must exceed the number of fitted design columns.</p>
+      </form>
+    </dialog>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

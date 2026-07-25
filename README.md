@@ -37,6 +37,10 @@ For a code-first version with six progressively richer examples, use
 [`docs/cb2-generalization-computational-walkthrough.md`](docs/cb2-generalization-computational-walkthrough.md).
 For compact input-table → function-call → output-table examples, use
 [`docs/barcs-input-output-examples.md`](docs/barcs-input-output-examples.md).
+For installation-free analysis, [`web/`](web/) contains BARCS Web: a static
+browser implementation that fits the same beta-binomial estimating equations
+locally, validates the design, draws diagnostics, and exports guide- and
+gene-level results without sending screen data to a server.
 
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
@@ -78,6 +82,9 @@ commits the updated submodule pointer. See
 
 - `R/bbreg.R`: dependency-free R implementation for one guide, contrasts, and
   guide-by-guide screens.
+- `web/`: dependency-free serverless web application with a browser worker,
+  example screen, downloadable results, and numerical parity tests against the
+  R implementation.
 - `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
   low 25%, high 25%, overlapping 0--100% bulk, and input samples.
 - `examples/crispulator_facs_benchmark.R`: one-seed BARCS/MAGeCK-MLE FACS
