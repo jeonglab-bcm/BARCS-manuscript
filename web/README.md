@@ -116,20 +116,32 @@ No FDR < 0.10 decision differs.
 
 ## Liang HAP1 examples
 
-**Load Liang HAP1** opens a compact 72-guide view of the deposited HAP1
-processed counts: four guides each for four essential/protein-coding genes,
-two published lncRNA signals, and two TPM-zero lncRNA nulls, plus 40
-non-targeting controls. The values are rounded normalized/ComBat
-pseudo-counts, while metadata totals are retained from the complete
-56,322-guide table before subsetting.
+**Run full Liang HAP1** opens the complete deposited HAP1 endpoint screen:
+56,174 guide rows, two day-0 libraries, and two day-14 libraries. The values
+are Liang's normalized/ComBat-processed values rounded to pseudo-counts, with
+full-library totals retained. This is a real full-screen processed-count
+sensitivity analysis, not a selected-gene example.
 
-**Run Liang FASTQ demo** aligns four bundled FASTQ.gz fixtures against the real
-selected Liang guide sequences and then configures `~ replicate + day14`.
-These reads are synthetic exact-match teaching fixtures, not deposited Liang
-raw reads. They reproduce the bundled selected-guide pseudo-counts exactly and
-exercise forward/reverse orientation detection. The complete downloadable
-bundle and provenance table are under `public/examples/liang-hap1/`; regenerate
-them with:
+**Prepare real Liang FASTQs** loads the complete 56,322-guide library and
+paired sample metadata. The accompanying manifest links to the four deposited
+ENA FASTQs (about 1.7 GB total), records their MD5 checksums, and specifies the
+browser filenames needed to match metadata. After downloading and renaming the
+files, select all four in BARCS Web and quantify locally.
+
+For an article-matched raw-read reproduction, use:
+
+```sh
+bash scripts/run_liang_hap1_real_case.sh
+```
+
+That runner streams the real reads through the reported anchor trimming and
+Bowtie settings without retaining FASTQs. The browser's exact matcher is a
+faster local QC/counting path and is not claimed to reproduce Cutadapt plus
+one-mismatch Bowtie exactly.
+
+The earlier 72-guide synthetic FASTQs remain only as committed automated-test
+fixtures. They are not exposed as the primary biological example. Regenerate
+all public Liang inputs with:
 
 ```sh
 Rscript scripts/generate_liang_web_examples.R

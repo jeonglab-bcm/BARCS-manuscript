@@ -1,13 +1,12 @@
 #!/usr/bin/env Rscript
 
-# Generate compact Liang et al. HAP1 examples for BARCS Studio.
+# Generate full and compact Liang et al. HAP1 examples for BARCS Studio.
 #
-# The count example is a selected-guide view of the deposited normalized,
-# ComBat-corrected values from Table S2, rounded exactly as in the benchmark.
-# Its metadata retains totals calculated across the complete 56,322-guide
-# table. The FASTQ files are synthetic teaching fixtures: they use the real
-# selected guide sequences and emit one exact-matching read per rounded
-# selected-guide pseudo-count. They are not deposited sequencing reads.
+# The primary count example contains every HAP1 guide present in the deposited
+# normalized, ComBat-corrected Table S2 values, rounded exactly as in the
+# benchmark. The small FASTQ files remain explicit software-validation
+# fixtures. A separate manifest points to the four deposited HAP1 endpoint
+# FASTQs; no synthetic reads are presented as biological data.
 
 options(stringsAsFactors = FALSE)
 
@@ -19,7 +18,12 @@ guide_path <- file.path(raw_dir, "guide_library.tsv")
 count_path <- file.path(raw_dir, "published_processed_counts_HAP1.tsv")
 expression_path <- file.path(raw_dir, "lncrna_expression.tsv")
 published_path <- file.path(raw_dir, "published_liang_rra.tsv")
-required <- c(guide_path, count_path, expression_path, published_path)
+endpoint_manifest_path <- file.path(raw_dir, "endpoint_sample_manifest.tsv")
+ena_manifest_path <- file.path(raw_dir, "PRJNA1344834_ena_fastq.tsv")
+required <- c(
+  guide_path, count_path, expression_path, published_path,
+  endpoint_manifest_path, ena_manifest_path
+)
 if (any(!file.exists(required))) {
   stop(
     "Liang source files are missing. Run ",
@@ -31,6 +35,8 @@ guide <- read.delim(guide_path, check.names = FALSE)
 processed <- read.delim(count_path, check.names = FALSE)
 expression <- read.delim(expression_path, check.names = FALSE)
 published <- read.delim(published_path, check.names = FALSE)
+endpoint_manifest <- read.delim(endpoint_manifest_path, check.names = FALSE)
+ena_manifest <- read.delim(ena_manifest_path, check.names = FALSE)
 
 reverse_complement <- function(sequence) {
   paste(rev(chartr(
@@ -127,6 +133,82 @@ selected$source_class <- ifelse(
 rounded_all <- round(as.matrix(processed[count_columns]))
 storage.mode(rounded_all) <- "integer"
 full_library_totals <- colSums(rounded_all)
+
+# The complete browser example uses every guide for which Liang deposited HAP1
+# processed endpoint values. Table S2 omits 148 of the 56,322 library entries,
+# so this file has 56,174 rows rather than silently filling absent values.
+full_gene <- processed$gene
+full_control <- processed$target_group == "non-targeting"
+control_index <- which(full_control)
+full_gene[control_index] <- sprintf(
+  "NTC_%03d",
+  ceiling(seq_along(control_index) / 4)
+)
+full_count_example <- data.frame(
+  guide = processed$sgrna,
+  gene = full_gene,
+  control = tolower(as.character(full_control)),
+  rounded_all,
+  check.names = FALSE
+)
+colnames(full_count_example)[-(1:3)] <- sample_names
+write.csv(
+  full_count_example,
+  file.path(output_dir, "liang-hap1-full-counts.csv"),
+  row.names = FALSE,
+  quote = FALSE
+)
+
+raw_library_control <- guide$target_group == "non-targeting"
+raw_library_gene <- guide$gene
+raw_control_index <- which(raw_library_control)
+raw_library_gene[raw_control_index] <- sprintf(
+  "NTC_%03d",
+  ceiling(seq_along(raw_control_index) / 4)
+)
+full_library_example <- data.frame(
+  guide = guide$sgrna,
+  gene = raw_library_gene,
+  sequence = guide$sequence,
+  control = tolower(as.character(raw_library_control)),
+  original_gene = guide$gene,
+  target_group = guide$target_group
+)
+write.csv(
+  full_library_example,
+  file.path(output_dir, "liang-hap1-full-guide-library.csv"),
+  row.names = FALSE,
+  quote = FALSE
+)
+
+hapi_endpoint <- endpoint_manifest[
+  endpoint_manifest$cell_line == "HAP1" &
+    endpoint_manifest$day %in% c(0L, 14L),
+]
+hapi_endpoint <- hapi_endpoint[
+  match(sample_names, hapi_endpoint$sample),
+]
+ena_index <- match(hapi_endpoint$run, ena_manifest$run_accession)
+if (nrow(hapi_endpoint) != 4L || anyNA(ena_index)) {
+  stop("Could not resolve the four deposited HAP1 endpoint FASTQs.")
+}
+real_fastq_manifest <- data.frame(
+  sample = hapi_endpoint$sample,
+  run_accession = hapi_endpoint$run,
+  day14 = as.integer(hapi_endpoint$day == 14L),
+  replicate = paste0("R", hapi_endpoint$replicate),
+  downloaded_filename = paste0(hapi_endpoint$run, ".fastq.gz"),
+  browser_filename = paste0(hapi_endpoint$sample, ".fastq.gz"),
+  fastq_url = hapi_endpoint$ena_fastq_url,
+  md5 = ena_manifest$fastq_md5[ena_index],
+  compressed_bytes = as.numeric(ena_manifest$fastq_bytes[ena_index])
+)
+write.csv(
+  real_fastq_manifest,
+  file.path(output_dir, "liang-hap1-real-fastq-manifest.csv"),
+  row.names = FALSE,
+  quote = FALSE
+)
 rounded_selected <- round(as.matrix(selected[count_columns]))
 storage.mode(rounded_selected) <- "integer"
 colnames(rounded_selected) <- sample_names
@@ -239,12 +321,46 @@ write.csv(
 )
 
 readme <- c(
-  "# Liang HAP1 BARCS examples",
+  "# Liang HAP1 full real-data case",
   "",
   "Source study: Liang et al. transcriptome-scale Cas13 fitness screens ",
   "(Cell Genomics, 2026; BioProject PRJNA1344834).",
   "",
-  "## Count-matrix example",
+  "## Full processed-count analysis",
+  "",
+  "`liang-hap1-full-counts.csv` contains all 56,174 HAP1 guides for which ",
+  "Liang deposited processed endpoint values. The four columns are the two ",
+  "day-0 and two day-14 libraries. Values are the deposited normalized, ",
+  "ComBat-corrected values rounded to integer pseudo-counts, exactly as in ",
+  "the manuscript sensitivity analysis. `liang-hap1-metadata.csv` retains ",
+  "the corresponding complete-library totals. Non-targeting guides are ",
+  "assigned to four-guide pseudo-genes only for gene-level null calibration; ",
+  "their guide identities and counts are unchanged.",
+  "",
+  "This is a complete real screen, not a selected-gene toy case. Because the ",
+  "deposited values have already been normalized and corrected, it remains a ",
+  "processed-count sensitivity analysis rather than a raw-count likelihood ",
+  "analysis.",
+  "",
+  "## Deposited FASTQ analysis",
+  "",
+  "`liang-hap1-real-fastq-manifest.csv` lists the four real HAP1 endpoint ",
+  "FASTQs from ENA, including run accessions, HTTPS URLs, MD5 checksums, and ",
+  "compressed byte sizes. Together they are about 1.7 GB. ",
+  "`liang-hap1-full-guide-library.csv` contains all 56,322 library guides. ",
+  "For browser analysis, rename each downloaded file to the ",
+  "`browser_filename` in the manifest so it matches the sample metadata. ",
+  "From the repository root, run:",
+  "",
+  "```sh",
+  "bash scripts/run_liang_hap1_real_case.sh",
+  "```",
+  "",
+  "The runner streams the deposited reads through the article-matched ",
+  "Cutadapt/Bowtie workflow and writes a BARCS-ready raw count matrix. It does ",
+  "not retain the FASTQs.",
+  "",
+  "## Small validation fixture",
   "",
   "`liang-hap1-counts.csv` contains 72 real Liang guide rows: four guides ",
   "each for four essential/protein-coding genes, two published lncRNA ",
@@ -256,9 +372,8 @@ readme <- c(
   "This is a compact same-input sensitivity example. It is not a raw-count ",
   "likelihood analysis and should not be used to replace the complete benchmark.",
   "",
-  "## FASTQ example",
-  "",
-  "The four `.fastq.gz` files are synthetic teaching fixtures, not Liang's ",
+  "The four small `.fastq.gz` files are synthetic software-test fixtures, not ",
+  "a biological example and not Liang's ",
   "deposited sequencing reads. They use the real selected 23-nt Liang guide ",
   "sequences and contain one exact-matching read per rounded selected-guide ",
   "pseudo-count. Ten percent of reads contain the reverse-complement spacer to ",
@@ -273,7 +388,10 @@ readme <- c(
   "therefore its estimates need not equal the count example, which retains the ",
   "complete Liang library denominators."
 )
-writeLines(readme, file.path(output_dir, "README.md"))
+writeLines(
+  trimws(readme, which = "right"),
+  file.path(output_dir, "README.md")
+)
 
 bundle_files <- c(
   "README.md",
@@ -294,6 +412,7 @@ setwd(old_directory)
 on.exit(NULL, add = FALSE)
 
 message(
-  "Wrote ", nrow(selected), " guides and ",
-  sum(rounded_selected), " synthetic reads to ", output_dir, "."
+  "Wrote the ", nrow(full_count_example), "-guide real HAP1 case plus ",
+  nrow(selected), " validation guides and ",
+  sum(rounded_selected), " synthetic test reads to ", output_dir, "."
 )

@@ -30,7 +30,7 @@ async function visitFastq(file, visitor, maximumReads = Infinity) {
     buffer += chunk.value || "";
     const parts = buffer.split(/\r?\n/);
     buffer = parts.pop() || "";
-    lines.push(...parts);
+    for (const part of parts) lines.push(part);
     while (lines.length >= 4 && reads < maximumReads) {
       const record = lines.splice(0, 4);
       if (!record[0].startsWith("@") || !record[2].startsWith("+") ||

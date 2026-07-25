@@ -59,6 +59,17 @@ test("CSV parser supports commas, tabs, and quoted fields", () => {
   assert.deepEqual(parseDelimited("a\tb\n1\t2\n"), [["a", "b"], ["1", "2"]]);
 });
 
+test("CSV export supports full-screen row counts without argument spreading", () => {
+  const rows = Array.from(
+    { length: 100_000 },
+    (_, index) => ({ guide: `g${index}`, count: index }),
+  );
+  const csv = toCsv(rows, ["guide", "count"]);
+  assert.match(csv, /^guide,count\ng0,0\n/);
+  assert.match(csv, /g99999,99999$/);
+  assert.equal(csv.split("\n").length, 100_001);
+});
+
 test("BARCS input parser preserves full-library totals", () => {
   const input = parseBarcsInputs(countsText, metadataText);
   assert.equal(input.counts.length, 48);

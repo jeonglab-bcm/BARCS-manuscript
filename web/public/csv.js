@@ -170,13 +170,20 @@ function escapeField(value) {
 
 export function toCsv(rows, preferredColumns = []) {
   if (!rows.length) return "";
-  const discovered = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+  const discoveredSet = new Set();
+  for (const row of rows) {
+    for (const key of Object.keys(row)) discoveredSet.add(key);
+  }
+  const discovered = [...discoveredSet];
   const columns = [
     ...preferredColumns.filter((column) => discovered.includes(column)),
     ...discovered.filter((column) => !preferredColumns.includes(column)),
   ];
-  return [
-    columns.map(escapeField).join(","),
-    ...rows.map((row) => columns.map((column) => escapeField(row[column])).join(",")),
-  ].join("\n");
+  const lines = [columns.map(escapeField).join(",")];
+  for (const row of rows) {
+    lines.push(
+      columns.map((column) => escapeField(row[column])).join(","),
+    );
+  }
+  return lines.join("\n");
 }

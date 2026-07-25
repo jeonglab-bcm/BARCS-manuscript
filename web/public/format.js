@@ -21,3 +21,19 @@ export function formatP(value) {
   if (value < 0.001) return value.toExponential(2);
   return value.toFixed(3);
 }
+
+export function arrayMaximum(values, fallback = -Infinity) {
+  let maximum = fallback;
+  for (const value of values) {
+    if (Number.isFinite(value) && value > maximum) maximum = value;
+  }
+  return maximum;
+}
+
+export function arrayMinimum(values, fallback = Infinity) {
+  let minimum = fallback;
+  for (const value of values) {
+    if (Number.isFinite(value) && value < minimum) minimum = value;
+  }
+  return minimum;
+}

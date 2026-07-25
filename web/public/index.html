@@ -98,9 +98,10 @@
               Align reads and build counts
             </button>
             <div class="fastq-example">
-              <button class="button secondary" id="liangFastqButton" type="button">Run Liang FASTQ demo</button>
-              <a class="button quiet" href="./examples/liang-hap1/liang-hap1-fastq-example.zip" download>Download demo files</a>
-              <small>Real Liang guide sequences with synthetic exact-match reads.</small>
+              <button class="button secondary" id="liangFastqButton" type="button">Prepare real Liang FASTQs</button>
+              <a class="button quiet" href="./examples/liang-hap1/liang-hap1-real-fastq-manifest.csv" download>FASTQ manifest</a>
+              <a class="button quiet" href="./examples/liang-hap1/README.md" target="_blank">Raw-read guide</a>
+              <small id="liangRawStatus">Four deposited HAP1 libraries · 1.7 GB · real ENA reads.</small>
             </div>
             <div class="progress-wrap" id="quantProgressWrap" hidden>
               <div class="progress-label"><span id="quantProgressText">Detecting library</span><strong id="quantProgressPercent">0%</strong></div>
@@ -131,7 +132,7 @@
           </div>
           <div class="upload-actions">
             <button class="button secondary" id="exampleButton" type="button">Load example</button>
-            <button class="button secondary" id="liangButton" type="button">Load Liang HAP1</button>
+            <button class="button secondary" id="liangButton" type="button">Run full Liang HAP1</button>
             <button class="button secondary" id="manuscriptButton" type="button">Verify manuscript</button>
             <button class="button quiet" id="formatButton" type="button">View input format</button>
           </div>
@@ -330,6 +331,6 @@ TGCATGCATGCATGCATGCA</pre></div>
         <p class="dialog-note">FASTQ sample names are filenames without <code>.fastq</code>, <code>.fq</code>, or <code>.gz</code>, and must match metadata. Exact uniquely mapped reads form the full-library totals. Duplicate guide sequences are excluded because they cannot be assigned uniquely. For valid Student-<em>t</em> inference, independent libraries must outnumber fitted design columns.</p>
       </form>
     </dialog>
-    <script type="module" src="./app.js"></script>
+    <script type="module" src="./app.js?v=20260725-stackfix"></script>
   </body>
 </html>

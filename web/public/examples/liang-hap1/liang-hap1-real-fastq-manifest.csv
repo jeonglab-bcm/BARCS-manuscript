@@ -1,0 +1,5 @@
+sample,run_accession,day14,replicate,downloaded_filename,browser_filename,fastq_url,md5,compressed_bytes
+HAP1_Day00_R1,SRR32105813,0,R1,SRR32105813.fastq.gz,HAP1_Day00_R1.fastq.gz,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR321/013/SRR32105813/SRR32105813.fastq.gz,575be1d254e9c27e5d1f1d6e6981cdfd,405879071
+HAP1_Day00_R2,SRR32105812,0,R2,SRR32105812.fastq.gz,HAP1_Day00_R2.fastq.gz,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR321/012/SRR32105812/SRR32105812.fastq.gz,63756599e43095ce0899f115f80d3c2e,343400157
+HAP1_Day14_R1,SRR32105789,1,R1,SRR32105789.fastq.gz,HAP1_Day14_R1.fastq.gz,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR321/089/SRR32105789/SRR32105789.fastq.gz,4c3a83157731976033ef6a7f892b7769,581770787
+HAP1_Day14_R2,SRR32105788,1,R2,SRR32105788.fastq.gz,HAP1_Day14_R2.fastq.gz,https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR321/088/SRR32105788/SRR32105788.fastq.gz,b3bec9ae6b59fcc68e0349852b7ea485,443990294

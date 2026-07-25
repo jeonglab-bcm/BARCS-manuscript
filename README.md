@@ -86,10 +86,12 @@ commits the updated submodule pointer. See
   local FASTQ/gzip alignment, candidate-library determination, mapping and
   representation QC, downloadable results, and full-example plus
   manuscript-scale parity tests against the reference R implementation. It
-  includes a compact Liang HAP1 processed-count example and a matching
-  synthetic FASTQ teaching bundle built from real Liang guide sequences. The
-  two implementations are scientifically equivalent within declared
-  floating-point tolerances, not promised to be bit-for-bit identical.
+  includes the complete 56,174-guide Liang HAP1 processed-count screen, the
+  complete 56,322-guide library, and a manifest for all four deposited HAP1
+  endpoint FASTQs. The small synthetic FASTQs are retained only as automated
+  quantifier fixtures. The two implementations are scientifically equivalent
+  within declared floating-point tolerances, not promised to be bit-for-bit
+  identical.
 - `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
   low 25%, high 25%, overlapping 0--100% bulk, and input samples.
 - `examples/crispulator_facs_benchmark.R`: one-seed BARCS/MAGeCK-MLE FACS
@@ -127,6 +129,8 @@ commits the updated submodule pointer. See
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
   tables, stream the 20 endpoint FASTQs through the published anchor/Bowtie
   rules without retaining reads, and submit restartable counting jobs.
+- `scripts/run_liang_hap1_real_case.sh`: stream the four real HAP1 endpoint
+  FASTQs and write a complete BARCS-ready raw count matrix plus metadata.
 - `data/derived/A375_DepMap19Q3_CNV.tsv`: gene-level A375 copy-number profile
   extracted from DepMap Public 19Q3 (ACH-000219).
 - `data/derived/HT29_DepMap20Q2_CNV.tsv`: gene-level HT-29 copy-number profile

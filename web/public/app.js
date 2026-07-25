@@ -1,10 +1,15 @@
 import { buildDesign } from "./barcs-core.js";
-import { parseBarcsInputs, toCsv } from "./csv.js";
+import { parseBarcsInputs, toCsv } from "./csv.js?v=20260725-stackfix";
 import {
   parseGuideLibrary,
   quantificationToCountsText,
 } from "./fastq-core.js";
-import { formatNumber, formatP } from "./format.js";
+import {
+  arrayMaximum,
+  arrayMinimum,
+  formatNumber,
+  formatP,
+} from "./format.js?v=20260725-stackfix";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -25,10 +30,6 @@ const state = {
   manuscriptReference: null,
 };
 const LIANG_EXAMPLE_ROOT = "./examples/liang-hap1";
-const LIANG_FASTQ_SAMPLES = [
-  "HAP1_Day00_R1", "HAP1_Day00_R2",
-  "HAP1_Day14_R1", "HAP1_Day14_R2",
-];
 
 function showError(element, message) {
   element.textContent = message;
@@ -161,7 +162,10 @@ function renderQuantification() {
 function quantifyFastqs() {
   if (!state.libraries.length || !state.fastqFiles.length) return;
   state.manuscriptPreset = false;
-  state.quantWorker = new Worker("./fastq-worker.js", { type: "module" });
+  state.quantWorker = new Worker(
+    "./fastq-worker.js?v=20260725-stackfix",
+    { type: "module" },
+  );
   $("#quantifyButton").disabled = true;
   $("#quantifyButton").textContent = "Aligning…";
   $("#quantProgressWrap").hidden = false;
@@ -415,7 +419,7 @@ async function loadLiangExample() {
   showError($("#loadError"), "");
   try {
     const [counts, metadata] = await Promise.all([
-      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-counts.csv`),
+      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-full-counts.csv`),
       fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-metadata.csv`),
     ]);
     state.countText = counts;
@@ -423,40 +427,34 @@ async function loadLiangExample() {
     state.liangPreset = true;
     state.manuscriptPreset = false;
     setSourceMode("counts");
-    $("#countsLabel").textContent = "Liang HAP1 · 72 selected guides";
+    $("#countsLabel").textContent = "Liang HAP1 · 56,174 deposited guides";
     $("#metadataLabel").textContent = "HAP1 day 0/day 14 · paired replicates";
     $("#countsDrop").classList.add("loaded");
     $("#metadataDrop").classList.add("loaded");
     tryParseInput();
     configureLiangModel();
+    runAnalysis();
   } catch (error) {
     showError($("#loadError"), `Could not load Liang HAP1: ${error.message}`);
   } finally {
     $("#liangButton").disabled = false;
-    $("#liangButton").textContent = "Load Liang HAP1";
+    $("#liangButton").textContent = "Run full Liang HAP1";
   }
 }
 
 async function loadLiangFastqExample() {
   $("#liangFastqButton").disabled = true;
-  $("#liangFastqButton").textContent = "Loading reads…";
+  $("#liangFastqButton").textContent = "Loading library…";
   showError($("#loadError"), "");
   try {
-    const [libraryText, metadataText, ...blobs] = await Promise.all([
-      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-guide-library.csv`),
+    const [libraryText, metadataText] = await Promise.all([
+      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-full-guide-library.csv`),
       fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-fastq-metadata.csv`),
-      ...LIANG_FASTQ_SAMPLES.map((sample) =>
-        fetchExample(`${LIANG_EXAMPLE_ROOT}/${sample}.fastq.gz`, "blob")
-      ),
     ]);
     state.libraries = [
-      parseGuideLibrary(libraryText, "Liang HAP1 selected library"),
+      parseGuideLibrary(libraryText, "Liang HAP1 complete library"),
     ];
-    state.fastqFiles = blobs.map((blob, index) => new File(
-      [blob],
-      `${LIANG_FASTQ_SAMPLES[index]}.fastq.gz`,
-      { type: "application/gzip" },
-    ));
+    state.fastqFiles = [];
     state.metadataText = metadataText;
     state.countText = null;
     state.input = null;
@@ -465,20 +463,21 @@ async function loadLiangFastqExample() {
     state.liangPreset = true;
     state.manuscriptPreset = false;
     setSourceMode("fastq");
-    $("#libraryLabel").textContent = "Liang HAP1 selected library · 72 guides";
-    $("#fastqLabel").textContent = "4 synthetic Liang FASTQ.gz files";
+    $("#libraryLabel").textContent = "Liang HAP1 complete library · 56,322 guides";
+    $("#fastqLabel").textContent = "Select the 4 deposited HAP1 FASTQ.gz files";
     $("#metadataLabel").textContent = "HAP1 day 0/day 14 · paired replicates";
     $("#libraryDrop").classList.add("loaded");
-    $("#fastqDrop").classList.add("loaded");
+    $("#fastqDrop").classList.remove("loaded");
     $("#metadataDrop").classList.add("loaded");
     $("#dataSummary").hidden = true;
+    $("#liangRawStatus").textContent =
+      "Library and metadata ready. Download the manifest, rename files to its browser_filename values, then select all four FASTQs.";
     updateQuantifyButton();
-    quantifyFastqs();
   } catch (error) {
-    showError($("#loadError"), `Could not load Liang FASTQ demo: ${error.message}`);
+    showError($("#loadError"), `Could not prepare Liang FASTQs: ${error.message}`);
   } finally {
     $("#liangFastqButton").disabled = false;
-    $("#liangFastqButton").textContent = "Run Liang FASTQ demo";
+    $("#liangFastqButton").textContent = "Prepare real Liang FASTQs";
   }
 }
 
@@ -832,9 +831,12 @@ function drawVolcano() {
   context.clearRect(0, 0, width, height);
   drawAxes(context, width, height, padding, "coefficient", "−log10 p");
   if (!rows.length) return;
-  const maximumEffect = Math.max(...rows.map((row) => Math.abs(row.estimate)), 0.1);
-  const maximumEvidence = Math.max(
-    ...rows.map((row) => -Math.log10(Math.max(row.p_value, 1e-300))),
+  const maximumEffect = arrayMaximum(
+    rows.map((row) => Math.abs(row.estimate)),
+    0.1,
+  );
+  const maximumEvidence = arrayMaximum(
+    rows.map((row) => -Math.log10(Math.max(row.p_value, 1e-300))),
     1,
   );
   const x = (value) => padding.left +
@@ -873,13 +875,13 @@ function drawRhoHistogram() {
   context.clearRect(0, 0, width, height);
   drawAxes(context, width, height, padding, "ρ", "guides");
   if (!values.length) return;
-  const maxValue = Math.max(...values, 0.001);
+  const maxValue = arrayMaximum(values, 0.001);
   const bins = 24;
   const counts = new Array(bins).fill(0);
   values.forEach((value) => {
     counts[Math.min(bins - 1, Math.floor(value / maxValue * bins))] += 1;
   });
-  const maximum = Math.max(...counts);
+  const maximum = arrayMaximum(counts, 1);
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   counts.forEach((count, index) => {
@@ -921,7 +923,7 @@ function renderDiagnostics() {
     },
     {
       label: "Full-library totals",
-      value: `${formatNumber(Math.min(...state.input.totals), 0)}–${formatNumber(Math.max(...state.input.totals), 0)}`,
+      value: `${formatNumber(arrayMinimum(state.input.totals), 0)}–${formatNumber(arrayMaximum(state.input.totals), 0)}`,
       note: state.input.totalsSource === "column sums"
         ? "Computed from every uploaded guide row"
         : `Read from metadata column ${state.input.totalsSource}`,
