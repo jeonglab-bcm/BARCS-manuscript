@@ -204,9 +204,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   border: 0;
   min-height: 40px;
   padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   font-size: 12px;
   font-weight: 800;
+  text-decoration: none;
   transition: transform .15s, background .15s, opacity .15s;
 }
 .button:hover:not(:disabled) { transform: translateY(-1px); }
@@ -216,6 +220,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .button.secondary { color: var(--blue); background: var(--blue-soft); }
 .button.quiet { color: var(--ink); background: transparent; border: 1px solid var(--line); }
 .full-button { width: 100%; margin-top: 11px; }
+.fastq-example {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fastq-example small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
 .quant-summary { margin-top: 14px; border: 1px solid var(--line); background: white; }
 .quant-heading { display: grid; grid-template-columns: 1.3fr .8fr .9fr; }
 .quant-heading div { min-width: 0; padding: 11px; border-right: 1px solid var(--line); }

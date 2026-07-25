@@ -97,6 +97,11 @@
             <button class="button secondary full-button" id="quantifyButton" type="button" disabled>
               Align reads and build counts
             </button>
+            <div class="fastq-example">
+              <button class="button secondary" id="liangFastqButton" type="button">Run Liang FASTQ demo</button>
+              <a class="button quiet" href="./examples/liang-hap1/liang-hap1-fastq-example.zip" download>Download demo files</a>
+              <small>Real Liang guide sequences with synthetic exact-match reads.</small>
+            </div>
             <div class="progress-wrap" id="quantProgressWrap" hidden>
               <div class="progress-label"><span id="quantProgressText">Detecting library</span><strong id="quantProgressPercent">0%</strong></div>
               <progress id="quantProgressBar" max="1" value="0"></progress>
@@ -126,6 +131,7 @@
           </div>
           <div class="upload-actions">
             <button class="button secondary" id="exampleButton" type="button">Load example</button>
+            <button class="button secondary" id="liangButton" type="button">Load Liang HAP1</button>
             <button class="button secondary" id="manuscriptButton" type="button">Verify manuscript</button>
             <button class="button quiet" id="formatButton" type="button">View input format</button>
           </div>

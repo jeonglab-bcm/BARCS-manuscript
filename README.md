@@ -85,7 +85,9 @@ commits the updated submodule pointer. See
 - `web/`: dependency-free serverless web application with a browser worker,
   local FASTQ/gzip alignment, candidate-library determination, mapping and
   representation QC, downloadable results, and full-example plus
-  manuscript-scale parity tests against the reference R implementation. The
+  manuscript-scale parity tests against the reference R implementation. It
+  includes a compact Liang HAP1 processed-count example and a matching
+  synthetic FASTQ teaching bundle built from real Liang guide sequences. The
   two implementations are scientifically equivalent within declared
   floating-point tolerances, not promised to be bit-for-bit identical.
 - `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of

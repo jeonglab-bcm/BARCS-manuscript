@@ -1,0 +1,73 @@
+guide,gene,sequence,control,source_class,original_target_group
+gEss_000126,PRPF8,TCAGATGAATAGAGCTGTAGCCC,false,essential protein-coding,essential protein-coding gene
+gEss_000125,PRPF8,GTCCAGAATATCATGCATCACAG,false,essential protein-coding,essential protein-coding gene
+gEss_000128,PRPF8,AACATCATGTTTCATGAGGCGCA,false,essential protein-coding,essential protein-coding gene
+gEss_000127,PRPF8,CAAAGAGCAGGATATCTGCACAG,false,essential protein-coding,essential protein-coding gene
+gEss_000752,RPLP2,GCCTCGATACCCACGCTGTCCAA,false,essential protein-coding,essential protein-coding gene
+gEss_000755,RPLP2,TCATCTGACTCTTCAGACTCCTC,false,essential protein-coding,essential protein-coding gene
+gEss_000754,RPLP2,ATACCCTGGGCAATGACGTCTTC,false,essential protein-coding,essential protein-coding gene
+gEss_000760,RPLP2,GTCGTCGTCCGCCTCGATACCCA,false,essential protein-coding,essential protein-coding gene
+gEss_000939,EIF3B,CGTCCACGTTGCTGTCCAGCTCG,false,essential protein-coding,essential protein-coding gene
+gEss_000931,EIF3B,CTGGAATATCCCACTCGTCACTG,false,essential protein-coding,essential protein-coding gene
+gEss_000932,EIF3B,GCATTCTGCCTCTTCAAGCCAGT,false,essential protein-coding,essential protein-coding gene
+gEss_000940,EIF3B,TCGTCCACGTTGCTGTCCAGCTC,false,essential protein-coding,essential protein-coding gene
+gL_061021,SFPQ,TCATAACCTATGCCACCACCACC,false,essential protein-coding,protein-coding gene
+gL_061022,SFPQ,TTCATAACCTATGCCACCACCAC,false,essential protein-coding,protein-coding gene
+gEss_000977,SFPQ,GCACCTCCCTGCCCAAAGCGCTC,false,essential protein-coding,essential protein-coding gene
+gEss_000976,SFPQ,TGCCCAAAGCGCTCAGTACGCAT,false,essential protein-coding,essential protein-coding gene
+gL_032256,Hum_XLOC_053432,TTCTACACCTCTCACGTCTCTTC,false,published lncRNA signal,long non-coding RNA
+gL_049286,Hum_XLOC_053432,CCTCTCACGTCTCTTCACCGTGC,false,published lncRNA signal,long non-coding RNA
+gL_049288,Hum_XLOC_053432,AGACTAGAGTCAAGCTCAACAGA,false,published lncRNA signal,long non-coding RNA
+gL_032254,Hum_XLOC_053432,ACGTCTCTTCACCGTGCCAGACT,false,published lncRNA signal,long non-coding RNA
+gL_002469,Hum_XLOC_004254,ATGTTACAAAGAAGCACTGCACC,false,published lncRNA signal,long non-coding RNA
+gL_002471,Hum_XLOC_004254,GTAAGCTTCAAAGGCCACTGCAC,false,published lncRNA signal,long non-coding RNA
+gL_034025,Hum_XLOC_004254,TGAGGCAGAACTGCTTAACTCGG,false,published lncRNA signal,long non-coding RNA
+gL_034026,Hum_XLOC_004254,TACCCAAGCAAGTCATCCATGGA,false,published lncRNA signal,long non-coding RNA
+gL_000062,Hum_XLOC_000094,ATCAGATGAACGAACACACACAG,false,TPM-zero lncRNA null,long non-coding RNA
+gL_000061,Hum_XLOC_000094,AACGAACACACACAGCACACACG,false,TPM-zero lncRNA null,long non-coding RNA
+gL_000063,Hum_XLOC_000094,CATCAGATGAACGAACACACACA,false,TPM-zero lncRNA null,long non-coding RNA
+gL_000060,Hum_XLOC_000094,ACGAACACACACAGCACACACGT,false,TPM-zero lncRNA null,long non-coding RNA
+gL_032814,Hum_XLOC_000105,AGACAGCCATCAGGGAGCTGCAT,false,TPM-zero lncRNA null,long non-coding RNA
+gL_032813,Hum_XLOC_000105,TGTGGAGCAGCAGAGACTTCAGC,false,TPM-zero lncRNA null,long non-coding RNA
+gL_000071,Hum_XLOC_000105,CAACACCATGAGAGCTTGGCAGT,false,TPM-zero lncRNA null,long non-coding RNA
+gL_000074,Hum_XLOC_000105,TCCACCATGTAGTGAATGCAGGA,false,TPM-zero lncRNA null,long non-coding RNA
+gNT_000315,NTC_01,ACCGCCTCGTCGAGTCCTCGCCT,true,non-targeting control,non-targeting
+gNT_000959,NTC_01,ACTTGTCTCGACTGTGGCTCCAG,true,non-targeting control,non-targeting
+gNT_000577,NTC_01,AGCGATCGCCCGCAGTTGCACCT,true,non-targeting control,non-targeting
+gNT_000993,NTC_01,ATCTCAACACGCTACAGCAACTC,true,non-targeting control,non-targeting
+gNT_000561,NTC_02,ATCTGTCACGACGAGCGACCATC,true,non-targeting control,non-targeting
+gNT_000423,NTC_02,GCGATTCGGAGTGCTCGAGGGCA,true,non-targeting control,non-targeting
+gNT_000402,NTC_02,ATTGGACCAGCCCGTTCGCTGAC,true,non-targeting control,non-targeting
+gNT_000919,NTC_02,CTCCCGCCGATCGTCCCGCGGGT,true,non-targeting control,non-targeting
+gNT_000157,NTC_03,AGCCGCGGTATGTATGTTCACCA,true,non-targeting control,non-targeting
+gNT_000632,NTC_03,GGTACGGCAAGCACGCACGGTAC,true,non-targeting control,non-targeting
+gNT_000126,NTC_03,ACCGGTACCATCCTGGACGCGGC,true,non-targeting control,non-targeting
+gNT_000715,NTC_03,GGCGACCTCGCACCAAACTTGAC,true,non-targeting control,non-targeting
+gNT_000110,NTC_04,CAAGTCATACGGCCTGTCGCACA,true,non-targeting control,non-targeting
+gNT_000952,NTC_04,GGCGTGCGCGACACGGTTGCCGC,true,non-targeting control,non-targeting
+gNT_000823,NTC_04,GTCGAGCATACGGTAATTGATCA,true,non-targeting control,non-targeting
+gNT_000787,NTC_04,CAGCGACTGCTGATTGGGCCCTC,true,non-targeting control,non-targeting
+gNT_000150,NTC_05,ATCTCAATAGCGAGGACGCAACG,true,non-targeting control,non-targeting
+gNT_000394,NTC_05,CGTTGCACTCTCCTGGGTGACTC,true,non-targeting control,non-targeting
+gNT_000866,NTC_05,CATCTGTCCATATTCGCGCCAGG,true,non-targeting control,non-targeting
+gNT_000666,NTC_05,AGGTGGGCTGGTCGCCAGATCGT,true,non-targeting control,non-targeting
+gNT_000696,NTC_06,GCCGAGAGCCGTCGATCTATGCT,true,non-targeting control,non-targeting
+gNT_000035,NTC_06,CCTGCAGTAAAGCGGGTCCAATC,true,non-targeting control,non-targeting
+gNT_000261,NTC_06,TGAATCTCACGCTCACCCGATTG,true,non-targeting control,non-targeting
+gNT_000100,NTC_06,ATGAGCTGCAAATCGCGCATGCC,true,non-targeting control,non-targeting
+gNT_000014,NTC_07,AGCCCATCGCGCACGCACATTGG,true,non-targeting control,non-targeting
+gNT_000501,NTC_07,CATGTCCACACGGTAACGTCCTC,true,non-targeting control,non-targeting
+gNT_000675,NTC_07,ACCCGTTTCACGGTTGCGCAACA,true,non-targeting control,non-targeting
+gNT_000353,NTC_07,CGTGTGAGGGCCGCCCGAGGTAC,true,non-targeting control,non-targeting
+gNT_000967,NTC_08,CTGTACGCCAACGTGCGTAACTC,true,non-targeting control,non-targeting
+gNT_000267,NTC_08,AAGCCCTCTAGATCGCACACAGA,true,non-targeting control,non-targeting
+gNT_000555,NTC_08,AACGCACGAATATACGAGCTCCC,true,non-targeting control,non-targeting
+gNT_000948,NTC_08,CGACTGTTGGCGAGGCGGAACTC,true,non-targeting control,non-targeting
+gNT_000304,NTC_09,ACTACTACGCCAAGGTCCCACCA,true,non-targeting control,non-targeting
+gNT_000216,NTC_09,GCATCTCCGTCCAGAGTTCGGTT,true,non-targeting control,non-targeting
+gNT_000791,NTC_09,GGGCTAGACACGCCCGGTGGCCC,true,non-targeting control,non-targeting
+gNT_000480,NTC_09,GATTCAGCGGATCGGCCGACCAG,true,non-targeting control,non-targeting
+gNT_000651,NTC_10,GTCAGCGTCCCGGTCCTCCGTGG,true,non-targeting control,non-targeting
+gNT_000834,NTC_10,TGATTTGGCAAGGTCCGCTACCT,true,non-targeting control,non-targeting
+gNT_000704,NTC_10,AATACGCCTTTAGGCCAGCCATT,true,non-targeting control,non-targeting
+gNT_000874,NTC_10,ACGTTGGAAGTCAGCCGATCCCC,true,non-targeting control,non-targeting

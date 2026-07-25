@@ -1,0 +1,19 @@
+gene,source_class,tpm,published_day14_p_value,published_day14_log2_fold_change
+PRPF8,essential protein-coding,,9.13700616425971e-13,-8.427
+RPLP2,essential protein-coding,,1.46192098628155e-11,-7.716
+EIF3B,essential protein-coding,,2.97428586076162e-11,-7.707
+SFPQ,essential protein-coding,,1.69394874413688e-10,-8.009
+Hum_XLOC_053432,published lncRNA signal,166.5,1.68398465980471e-07,-4.905
+Hum_XLOC_004254,published lncRNA signal,21175.8,1.82437176485314e-07,-5.073
+Hum_XLOC_000094,TPM-zero lncRNA null,0,1,0.009
+Hum_XLOC_000105,TPM-zero lncRNA null,0,1,0.079
+NTC_01,non-targeting control,,,
+NTC_02,non-targeting control,,,
+NTC_03,non-targeting control,,,
+NTC_04,non-targeting control,,,
+NTC_05,non-targeting control,,,
+NTC_06,non-targeting control,,,
+NTC_07,non-targeting control,,,
+NTC_08,non-targeting control,,,
+NTC_09,non-targeting control,,,
+NTC_10,non-targeting control,,,

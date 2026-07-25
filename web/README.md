@@ -114,6 +114,27 @@ R-versus-browser differences are `1.40e-11` for guide effects, `8.42e-12` for
 guide p-values/FDR, `5.14e-9` for gene p-values, and `5.26e-9` for gene FDR.
 No FDR < 0.10 decision differs.
 
+## Liang HAP1 examples
+
+**Load Liang HAP1** opens a compact 72-guide view of the deposited HAP1
+processed counts: four guides each for four essential/protein-coding genes,
+two published lncRNA signals, and two TPM-zero lncRNA nulls, plus 40
+non-targeting controls. The values are rounded normalized/ComBat
+pseudo-counts, while metadata totals are retained from the complete
+56,322-guide table before subsetting.
+
+**Run Liang FASTQ demo** aligns four bundled FASTQ.gz fixtures against the real
+selected Liang guide sequences and then configures `~ replicate + day14`.
+These reads are synthetic exact-match teaching fixtures, not deposited Liang
+raw reads. They reproduce the bundled selected-guide pseudo-counts exactly and
+exercise forward/reverse orientation detection. The complete downloadable
+bundle and provenance table are under `public/examples/liang-hap1/`; regenerate
+them with:
+
+```sh
+Rscript scripts/generate_liang_web_examples.R
+```
+
 ## Deployment
 
 `npm run build` produces a dependency-free static client under `dist/client`

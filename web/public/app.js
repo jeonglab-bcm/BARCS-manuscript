@@ -20,9 +20,15 @@ const state = {
   fastqFiles: [],
   quantification: null,
   sourceMode: "counts",
+  liangPreset: false,
   manuscriptPreset: false,
   manuscriptReference: null,
 };
+const LIANG_EXAMPLE_ROOT = "./examples/liang-hap1";
+const LIANG_FASTQ_SAMPLES = [
+  "HAP1_Day00_R1", "HAP1_Day00_R2",
+  "HAP1_Day14_R1", "HAP1_Day14_R2",
+];
 
 function showError(element, message) {
   element.textContent = message;
@@ -41,6 +47,7 @@ function download(name, content, type = "text/csv;charset=utf-8") {
 async function readFile(file, kind) {
   const text = await file.text();
   state[kind] = text;
+  state.liangPreset = false;
   state.manuscriptPreset = false;
   const label = kind === "countText" ? $("#countsLabel") : $("#metadataLabel");
   const drop = kind === "countText" ? $("#countsDrop") : $("#metadataDrop");
@@ -66,6 +73,7 @@ function updateQuantifyButton() {
 }
 
 async function readLibraries(files) {
+  state.liangPreset = false;
   const libraries = [];
   const errors = [];
   for (const file of files) {
@@ -85,6 +93,7 @@ async function readLibraries(files) {
 }
 
 function readFastqFiles(files) {
+  state.liangPreset = false;
   state.fastqFiles = [...files];
   $("#fastqLabel").textContent = state.fastqFiles.length
     ? `${state.fastqFiles.length} FASTQ ${state.fastqFiles.length === 1 ? "file" : "files"}`
@@ -178,6 +187,7 @@ function quantifyFastqs() {
       finishQuantification();
       renderQuantification();
       tryParseInput();
+      if (state.liangPreset) configureLiangModel();
     } else if (data.type === "error") {
       state.quantWorker.terminate();
       finishQuantification();
@@ -360,6 +370,7 @@ async function loadExample() {
     ]);
     state.countText = counts;
     state.metadataText = metadata;
+    state.liangPreset = false;
     state.manuscriptPreset = false;
     setSourceMode("counts");
     $("#countsLabel").textContent = "example-counts.csv";
@@ -372,6 +383,102 @@ async function loadExample() {
   } finally {
     $("#exampleButton").disabled = false;
     $("#exampleButton").textContent = "Load example";
+  }
+}
+
+function configureLiangModel() {
+  $("#predictorSelect").value = "day14";
+  populateCovariates();
+  $$("#covariateList input").forEach((input) => {
+    input.checked = input.value === "replicate";
+  });
+  updateInteractionChoices();
+  updateModel();
+  $("#termSelect").value = "day14";
+  $("#minCountInput").value = "10";
+  $("#calibrateInput").checked = true;
+  $("#geneInput").checked = true;
+  $("#geneMethodSelect").value = "shared-effect";
+}
+
+async function fetchExample(path, type = "text") {
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`${path.split("/").at(-1)} is unavailable.`);
+  }
+  return response[type]();
+}
+
+async function loadLiangExample() {
+  $("#liangButton").disabled = true;
+  $("#liangButton").textContent = "Loading…";
+  showError($("#loadError"), "");
+  try {
+    const [counts, metadata] = await Promise.all([
+      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-counts.csv`),
+      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-metadata.csv`),
+    ]);
+    state.countText = counts;
+    state.metadataText = metadata;
+    state.liangPreset = true;
+    state.manuscriptPreset = false;
+    setSourceMode("counts");
+    $("#countsLabel").textContent = "Liang HAP1 · 72 selected guides";
+    $("#metadataLabel").textContent = "HAP1 day 0/day 14 · paired replicates";
+    $("#countsDrop").classList.add("loaded");
+    $("#metadataDrop").classList.add("loaded");
+    tryParseInput();
+    configureLiangModel();
+  } catch (error) {
+    showError($("#loadError"), `Could not load Liang HAP1: ${error.message}`);
+  } finally {
+    $("#liangButton").disabled = false;
+    $("#liangButton").textContent = "Load Liang HAP1";
+  }
+}
+
+async function loadLiangFastqExample() {
+  $("#liangFastqButton").disabled = true;
+  $("#liangFastqButton").textContent = "Loading reads…";
+  showError($("#loadError"), "");
+  try {
+    const [libraryText, metadataText, ...blobs] = await Promise.all([
+      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-guide-library.csv`),
+      fetchExample(`${LIANG_EXAMPLE_ROOT}/liang-hap1-fastq-metadata.csv`),
+      ...LIANG_FASTQ_SAMPLES.map((sample) =>
+        fetchExample(`${LIANG_EXAMPLE_ROOT}/${sample}.fastq.gz`, "blob")
+      ),
+    ]);
+    state.libraries = [
+      parseGuideLibrary(libraryText, "Liang HAP1 selected library"),
+    ];
+    state.fastqFiles = blobs.map((blob, index) => new File(
+      [blob],
+      `${LIANG_FASTQ_SAMPLES[index]}.fastq.gz`,
+      { type: "application/gzip" },
+    ));
+    state.metadataText = metadataText;
+    state.countText = null;
+    state.input = null;
+    state.design = null;
+    state.quantification = null;
+    state.liangPreset = true;
+    state.manuscriptPreset = false;
+    setSourceMode("fastq");
+    $("#libraryLabel").textContent = "Liang HAP1 selected library · 72 guides";
+    $("#fastqLabel").textContent = "4 synthetic Liang FASTQ.gz files";
+    $("#metadataLabel").textContent = "HAP1 day 0/day 14 · paired replicates";
+    $("#libraryDrop").classList.add("loaded");
+    $("#fastqDrop").classList.add("loaded");
+    $("#metadataDrop").classList.add("loaded");
+    $("#dataSummary").hidden = true;
+    updateQuantifyButton();
+    quantifyFastqs();
+  } catch (error) {
+    showError($("#loadError"), `Could not load Liang FASTQ demo: ${error.message}`);
+  } finally {
+    $("#liangFastqButton").disabled = false;
+    $("#liangFastqButton").textContent = "Run Liang FASTQ demo";
   }
 }
 
@@ -414,6 +521,7 @@ async function loadManuscript() {
     state.countText = counts;
     state.metadataText = metadata;
     state.manuscriptReference = reference;
+    state.liangPreset = false;
     state.manuscriptPreset = true;
     setSourceMode("counts");
     $("#countsLabel").textContent = "GSE70038 · 64,747 guides";
@@ -889,6 +997,8 @@ for (const [dropSelector, inputSelector, handler] of [
   });
 }
 $("#exampleButton").addEventListener("click", loadExample);
+$("#liangButton").addEventListener("click", loadLiangExample);
+$("#liangFastqButton").addEventListener("click", loadLiangFastqExample);
 $("#manuscriptButton").addEventListener("click", loadManuscript);
 $("#countsMode").addEventListener("click", () => setSourceMode("counts"));
 $("#fastqMode").addEventListener("click", () => setSourceMode("fastq"));
