@@ -1,6 +1,7 @@
 import {
   calibrateControls,
   geneConsistency,
+  geneDirectionalStouffer,
   runScreen,
 } from "./barcs-core.js";
 
@@ -20,7 +21,9 @@ self.onmessage = ({ data }) => {
     let genes = null;
     let geneDiagnostics = null;
     if (data.options.genes) {
-      geneDiagnostics = geneConsistency(guideResults, data.options.gene);
+      geneDiagnostics = data.options.geneMethod === "directional-stouffer"
+        ? geneDirectionalStouffer(guideResults, data.options.gene)
+        : geneConsistency(guideResults, data.options.gene);
       genes = geneDiagnostics.results;
     }
     self.postMessage({
@@ -35,10 +38,11 @@ self.onmessage = ({ data }) => {
             controls: calibration.controls,
           },
           gene: geneDiagnostics && {
-            center: geneDiagnostics.center,
-            scale: geneDiagnostics.scale,
-            controlGenes: geneDiagnostics.controlGenes,
-            usedControlNull: geneDiagnostics.usedControlNull,
+            method: geneDiagnostics.method || "shared-effect",
+            center: geneDiagnostics.center ?? null,
+            scale: geneDiagnostics.scale ?? null,
+            controlGenes: geneDiagnostics.controlGenes ?? 0,
+            usedControlNull: geneDiagnostics.usedControlNull ?? false,
           },
           elapsedMs: performance.now() - started,
         },

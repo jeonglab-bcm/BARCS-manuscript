@@ -8,6 +8,11 @@ test("site build contains the analysis runtime and Cloudflare entry", () => {
     "dist/client/app.js",
     "dist/client/barcs-core.js",
     "dist/client/barcs-worker.js",
+    "dist/client/fastq-core.js",
+    "dist/client/fastq-worker.js",
+    "dist/client/manuscript-gse70038-counts.tsv",
+    "dist/client/manuscript-gse70038-metadata.tsv",
+    "dist/client/manuscript-gse70038-reference.json",
     "dist/server/index.js",
     "dist/.openai/hosting.json",
   ]) {
@@ -17,4 +22,6 @@ test("site build contains the analysis runtime and Cloudflare entry", () => {
   assert.match(html, /Run BARCS/);
   assert.match(html, /Runs on this device/);
   assert.match(html, /not promised to be bit-for-bit identical/);
+  assert.match(html, /FASTQ → counts/);
+  assert.match(html, /Verify manuscript/);
 });

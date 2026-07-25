@@ -163,6 +163,24 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   font: 500 10px "SFMono-Regular", Consolas, monospace;
 }
 .upload-grid { display: grid; gap: 11px; }
+.source-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  background: #eeece5;
+}
+.source-switch button {
+  min-height: 38px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+}
+.source-switch button.active { color: var(--blue-deep); background: white; }
+.source-panel + .metadata-upload, .metadata-upload { margin-top: 11px; }
 .file-drop {
   position: relative;
   min-height: 112px;
@@ -181,7 +199,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .file-kicker { color: var(--blue); font: 500 10px "SFMono-Regular", Consolas, monospace; text-transform: uppercase; }
 .file-drop strong { margin: 5px 0 3px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-drop small { color: var(--muted); font-size: 10px; }
-.upload-actions { display: flex; gap: 8px; margin-top: 12px; }
+.upload-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .button {
   border: 0;
   min-height: 40px;
@@ -197,6 +215,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .button.primary:hover:not(:disabled) { background: var(--blue-deep); }
 .button.secondary { color: var(--blue); background: var(--blue-soft); }
 .button.quiet { color: var(--ink); background: transparent; border: 1px solid var(--line); }
+.full-button { width: 100%; margin-top: 11px; }
+.quant-summary { margin-top: 14px; border: 1px solid var(--line); background: white; }
+.quant-heading { display: grid; grid-template-columns: 1.3fr .8fr .9fr; }
+.quant-heading div { min-width: 0; padding: 11px; border-right: 1px solid var(--line); }
+.quant-heading div:last-child { border-right: 0; }
+.quant-heading span { display: block; color: var(--muted); font-size: 8px; text-transform: uppercase; }
+.quant-heading strong { display: block; overflow: hidden; margin-top: 3px; font: 500 11px "SFMono-Regular", Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.compact-table { max-height: 220px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.quant-summary .upload-actions { padding: 0 10px 10px; }
+.quant-summary .button { min-height: 32px; padding: 0 9px; font-size: 9px; }
 .data-summary { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 16px; border: 1px solid var(--line); }
 .data-summary div { padding: 12px; border-right: 1px solid var(--line); }
 .data-summary div:last-child { border-right: 0; }
@@ -234,6 +262,8 @@ select, input[type="number"], input[type="search"] {
 .advanced summary { padding: 13px 0; cursor: pointer; font-size: 11px; font-weight: 800; }
 .inline-field { display: grid; grid-template-columns: 1fr 90px; gap: 12px; align-items: center; margin: 10px 0; }
 .inline-field input { min-height: 36px; }
+.gene-method-field { grid-template-columns: 90px minmax(0, 1fr); align-items: start; }
+.gene-method-field select { min-height: 38px; padding: 0 7px; font-size: 9px; }
 .toggle { display: flex; align-items: center; gap: 9px; margin: 11px 0; font-size: 11px; }
 .toggle input { accent-color: var(--blue); }
 .run-button { width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 20px; }

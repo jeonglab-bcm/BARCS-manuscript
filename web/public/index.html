@@ -61,17 +61,62 @@
             <span class="step-number">01</span>
             <div>
               <h2>Load the screen</h2>
-              <p>Nothing is uploaded to a server.</p>
+              <p>Start from counts or quantify raw reads locally.</p>
             </div>
           </div>
 
-          <div class="upload-grid">
+          <div class="source-switch" role="tablist" aria-label="Screen input source">
+            <button id="countsMode" class="active" type="button" role="tab" aria-selected="true">Count matrix</button>
+            <button id="fastqMode" type="button" role="tab" aria-selected="false">FASTQ → counts</button>
+          </div>
+
+          <div id="countsSourcePanel" class="source-panel">
             <label class="file-drop" id="countsDrop">
               <input id="countsFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
               <span class="file-kicker">Guide counts</span>
               <strong id="countsLabel">Choose counts file</strong>
               <small>guide, gene, control, then sample columns</small>
             </label>
+          </div>
+
+          <div id="fastqSourcePanel" class="source-panel" hidden>
+            <div class="upload-grid">
+              <label class="file-drop" id="libraryDrop">
+                <input id="libraryFiles" type="file" multiple accept=".fa,.fasta,.csv,.tsv,.txt">
+                <span class="file-kicker">Guide libraries</span>
+                <strong id="libraryLabel">Choose one or more libraries</strong>
+                <small>FASTA or guide/sequence table; candidates are ranked</small>
+              </label>
+              <label class="file-drop" id="fastqDrop">
+                <input id="fastqFiles" type="file" multiple accept=".fastq,.fq,.fastq.gz,.fq.gz,.gz">
+                <span class="file-kicker">Sequencing reads</span>
+                <strong id="fastqLabel">Choose FASTQ files</strong>
+                <small>FASTQ or FASTQ.gz; one file per independent library</small>
+              </label>
+            </div>
+            <button class="button secondary full-button" id="quantifyButton" type="button" disabled>
+              Align reads and build counts
+            </button>
+            <div class="progress-wrap" id="quantProgressWrap" hidden>
+              <div class="progress-label"><span id="quantProgressText">Detecting library</span><strong id="quantProgressPercent">0%</strong></div>
+              <progress id="quantProgressBar" max="1" value="0"></progress>
+            </div>
+            <div class="quant-summary" id="quantSummary" hidden>
+              <div class="quant-heading">
+                <div><span>Selected library</span><strong id="selectedLibrary">—</strong></div>
+                <div><span>Unique guides</span><strong id="quantGuideCount">—</strong></div>
+                <div><span>Candidate confidence</span><strong id="libraryConfidence">—</strong></div>
+              </div>
+              <div class="table-scroll compact-table"><table id="qcTable"></table></div>
+              <div class="upload-actions">
+                <button class="button quiet" id="downloadCounts" type="button">Download counts</button>
+                <button class="button quiet" id="downloadQc" type="button">Download QC</button>
+                <button class="button quiet" id="downloadMetadataTemplate" type="button">Metadata template</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="metadata-upload">
             <label class="file-drop" id="metadataDrop">
               <input id="metadataFile" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
               <span class="file-kicker">Sample metadata</span>
@@ -81,6 +126,7 @@
           </div>
           <div class="upload-actions">
             <button class="button secondary" id="exampleButton" type="button">Load example</button>
+            <button class="button secondary" id="manuscriptButton" type="button">Verify manuscript</button>
             <button class="button quiet" id="formatButton" type="button">View input format</button>
           </div>
           <div class="notice error" id="loadError" role="alert" hidden></div>
@@ -128,7 +174,7 @@
             </div>
             <details class="advanced">
               <summary>Analysis options</summary>
-              <label class="inline-field">
+              <label class="inline-field gene-method-field">
                 <span>Minimum total guide count</span>
                 <input id="minCountInput" type="number" min="0" step="1" value="10">
               </label>
@@ -142,7 +188,14 @@
               </label>
               <label class="toggle">
                 <input id="geneInput" type="checkbox" checked>
-                <span>Compute shared-effect gene results</span>
+                <span>Compute gene results</span>
+              </label>
+              <label class="inline-field">
+                <span>Gene summary</span>
+                <select id="geneMethodSelect">
+                  <option value="shared-effect">Shared-effect Wald (default)</option>
+                  <option value="directional-stouffer">Directional Stouffer (manuscript comparison only)</option>
+                </select>
               </label>
             </details>
           </fieldset>
@@ -160,11 +213,12 @@
           <div class="empty-results" id="emptyResults">
             <span class="empty-index">β</span>
             <h2>Your coefficient results will appear here.</h2>
-            <p>Load a count matrix and sample metadata, select the scientific effect, and BARCS will fit each guide locally.</p>
+            <p>Align FASTQ reads or load a count matrix, add sample metadata, and BARCS will fit each guide locally.</p>
             <ul>
+              <li>Exact guide alignment with library and orientation detection</li>
+              <li>Mapping, representation, and count-distribution QC</li>
               <li>Guide effects with Student-<em>t</em> inference</li>
               <li>Dispersion and convergence diagnostics</li>
-              <li>Optional control calibration and gene statistics</li>
             </ul>
           </div>
 
@@ -259,8 +313,15 @@ D0_A,0,A,1824000
 D0_B,0,B,1912500
 D7_A,7,A,1768300
 D7_B,7,B,1897100</pre></div>
+          <div><h3>library.csv</h3><pre>guide,gene,control,sequence
+g1,GENE1,false,ACGTACGTACGTACGTACGT
+nt1,NTC,true,TGCATGCATGCATGCATGCA</pre></div>
+          <div><h3>library.fasta</h3><pre>&gt;g1 gene=GENE1
+ACGTACGTACGTACGTACGT
+&gt;nt1 gene=NTC control=true
+TGCATGCATGCATGCATGCA</pre></div>
         </div>
-        <p class="dialog-note">The optional <code>total</code> column should contain full mapped-guide library totals and is recommended when the count file has already been filtered. For valid Student-<em>t</em> inference, the number of independent libraries must exceed the number of fitted design columns.</p>
+        <p class="dialog-note">FASTQ sample names are filenames without <code>.fastq</code>, <code>.fq</code>, or <code>.gz</code>, and must match metadata. Exact uniquely mapped reads form the full-library totals. Duplicate guide sequences are excluded because they cannot be assigned uniquely. For valid Student-<em>t</em> inference, independent libraries must outnumber fitted design columns.</p>
       </form>
     </dialog>
     <script type="module" src="./app.js"></script>

@@ -67,3 +67,31 @@ npm test
 The fixtures are committed so the web suite remains runnable on systems
 without R. Regenerating them requires the same `R/bbreg.R` source used by the
 package tests.
+
+## Manuscript-scale parity
+
+The GSE70038 preset is a second, independent parity layer. It uses the
+manuscript's 64,747-guide count matrix, 16-library Table 5 design, no
+minimum-count filter, and its explicitly labeled median-effect/directional
+Stouffer comparison summary for `GSC0131_end`.
+
+The test requires:
+
+- 64,747 guide results and 18,077 gene results;
+- exactly 3,608 gene discoveries at FDR < 0.10;
+- the same top 20 genes;
+- matching aggregate effect, p-value, and FDR checksums;
+- matching effects, p-values, FDRs, and decisions for FBXO42, HDAC2, HEATR1,
+  PKMYT1, TFAP2C, and WEE1.
+
+Across all 64,747 guide rows, the largest observed absolute differences are
+`7.54e-12` for the coefficient, `3.47e-14` for the standard error, `8.42e-12`
+for the p-value and FDR, and `3.05e-18` for dispersion. Across all 18,077
+genes, the largest observed differences are `1.53e-12` for the median effect,
+`4.10e-9` for the p-value, and `5.08e-9` for FDR. All FDR < 0.10 decisions are
+identical.
+
+Achieving this agreement requires matching R's Brent-style root finder,
+binomial `glm.fit` initialization, stable deviance arithmetic, and probability
+tails. These are numerical implementation details, not changes to the BARCS
+estimating equations.

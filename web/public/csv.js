@@ -69,16 +69,30 @@ export function parseObjects(text) {
 export function parseBarcsInputs(countText, metadataText) {
   const countsFile = parseObjects(countText);
   const metadataFile = parseObjects(metadataText);
-  if (!countsFile.header.includes("guide")) {
-    throw new Error("The count file needs a `guide` column.");
+  const guideColumn = ["guide", "sgRNA", "sgrna", "id"].find(
+    (name) => countsFile.header.includes(name),
+  );
+  const geneColumn = ["gene", "Gene", "target"].find(
+    (name) => countsFile.header.includes(name),
+  );
+  const controlColumn = ["control", "negative_control", "ntc"].find(
+    (name) => countsFile.header.includes(name),
+  );
+  const sampleColumn = ["sample", "samples", "sample_name"].find(
+    (name) => metadataFile.header.includes(name),
+  );
+  if (!guideColumn) {
+    throw new Error("The count file needs a `guide`, `sgRNA`, or `id` column.");
   }
-  if (!metadataFile.header.includes("sample")) {
-    throw new Error("The metadata file needs a `sample` column.");
+  if (!sampleColumn) {
+    throw new Error(
+      "The metadata file needs a `sample`, `samples`, or `sample_name` column.",
+    );
   }
   if (!countsFile.rows.length || !metadataFile.rows.length) {
     throw new Error("Both files need at least one data row.");
   }
-  const samples = metadataFile.rows.map((row) => row.sample);
+  const samples = metadataFile.rows.map((row) => row[sampleColumn]);
   if (samples.some((sample) => !sample) ||
       new Set(samples).size !== samples.length) {
     throw new Error("Metadata sample names must be non-empty and unique.");
@@ -91,7 +105,7 @@ export function parseBarcsInputs(countText, metadataText) {
       `Count columns are missing metadata samples: ${missingSamples.join(", ")}.`,
     );
   }
-  const guides = countsFile.rows.map((row) => row.guide);
+  const guides = countsFile.rows.map((row) => row[guideColumn]);
   if (guides.some((guide) => !guide) ||
       new Set(guides).size !== guides.length) {
     throw new Error("Guide names must be non-empty and unique.");
@@ -133,14 +147,16 @@ export function parseBarcsInputs(countText, metadataText) {
     counts,
     totals,
     guide: guides,
-    gene: countsFile.rows.map((row) => row.gene || ""),
+    gene: countsFile.rows.map((row) => geneColumn ? row[geneColumn] : ""),
     control: countsFile.rows.map(
-      (row) => truthy.has(String(row.control || "").toLowerCase()),
+      (row) => truthy.has(
+        String(controlColumn ? row[controlColumn] : "").toLowerCase(),
+      ),
     ),
     samples,
     metadata: metadataFile.rows,
     metadataColumns: metadataFile.header.filter(
-      (name) => name !== "sample" && name !== totalColumn,
+      (name) => name !== sampleColumn && name !== totalColumn,
     ),
     countColumns: countsFile.header,
     totalsSource: totalColumn || "column sums",

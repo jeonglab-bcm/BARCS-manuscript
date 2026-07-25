@@ -1,4 +1,5 @@
 import {
+  copyFileSync,
   cpSync,
   mkdirSync,
   readFileSync,
@@ -15,6 +16,10 @@ const client = join(dist, "client");
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(client, { recursive: true });
 cpSync(source, client, { recursive: true });
+copyFileSync(
+  join(project, "..", "data", "derived", "GSE70038_mageck_counts.tsv"),
+  join(client, "manuscript-gse70038-counts.tsv"),
+);
 mkdirSync(join(dist, "server"), { recursive: true });
 mkdirSync(join(dist, ".openai"), { recursive: true });
 
@@ -51,6 +56,10 @@ const required = [
   "app.js",
   "barcs-core.js",
   "barcs-worker.js",
+  "fastq-core.js",
+  "fastq-worker.js",
+  "manuscript-gse70038-counts.tsv",
+  "manuscript-gse70038-metadata.tsv",
   "styles.css",
 ];
 for (const file of required) {

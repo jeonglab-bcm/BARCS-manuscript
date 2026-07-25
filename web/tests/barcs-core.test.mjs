@@ -7,6 +7,7 @@ import {
   calibrateControls,
   fitGuide,
   geneConsistency,
+  geneDirectionalStouffer,
   runScreen,
   studentTwoSidedP,
 } from "../public/barcs-core.js";
@@ -332,6 +333,99 @@ test("shared-effect gene results match the R reference", () => {
       row.fdr < 0.1,
       asNumber(expected.fdr) < 0.1,
       `${expected.gene} gene FDR decision differs`,
+    );
+  }
+});
+
+test("GSE70038 manuscript preset reproduces the R manuscript results", () => {
+  const input = parseBarcsInputs(
+    readFileSync(
+      new URL("../../data/derived/GSE70038_mageck_counts.tsv", import.meta.url),
+      "utf8",
+    ),
+    readFileSync(
+      new URL("../public/manuscript-gse70038-metadata.tsv", import.meta.url),
+      "utf8",
+    ),
+  );
+  const design = buildDesign(input.metadata, {
+    predictor: "GSC0131_end",
+    covariates: ["GSC0827_end", "NSCCB660_end", "NSCU5_end"],
+    interactions: [],
+  });
+  const guides = runScreen({
+    ...input,
+    design: design.matrix,
+    termIndex: design.columns.indexOf("GSC0131_end"),
+    minTotalCount: 0,
+  });
+  const genes = geneDirectionalStouffer(guides).results;
+  const byGene = new Map(genes.map((row) => [row.gene, row]));
+  const reference = referenceRows("r-gse70038-manuscript-reference.csv");
+  const manifest = JSON.parse(readFileSync(
+    new URL("../public/manuscript-gse70038-reference.json", import.meta.url),
+    "utf8",
+  ));
+  assert.equal(guides.length, 64747);
+  assert.equal(genes.length, 18077);
+  assert.equal(
+    genes.filter((gene) => gene.fdr < 0.1).length,
+    manifest.summary.discoveriesAtFdrPointOne,
+  );
+  close(
+    genes.reduce((sum, gene) => sum + gene.estimate, 0),
+    manifest.summary.sumEstimate,
+    1e-6,
+    "manuscript effect checksum",
+  );
+  close(
+    genes.reduce((sum, gene) => sum + gene.p_value, 0),
+    manifest.summary.sumPValue,
+    1e-6,
+    "manuscript p-value checksum",
+  );
+  close(
+    genes.reduce((sum, gene) => sum + gene.fdr, 0),
+    manifest.summary.sumFdr,
+    1e-5,
+    "manuscript FDR checksum",
+  );
+  assert.deepEqual(
+    [...genes]
+      .sort((left, right) =>
+        left.fdr - right.fdr ||
+        (left.gene < right.gene ? -1 : left.gene > right.gene ? 1 : 0)
+      )
+      .slice(0, 20)
+      .map((gene) => gene.gene),
+    manifest.summary.top20Genes,
+  );
+  for (const expected of reference) {
+    const actual = byGene.get(expected.gene);
+    assert.ok(actual, `browser result omitted ${expected.gene}`);
+    assert.equal(actual.n_guides, asNumber(expected.n_guides));
+    close(
+      actual.estimate,
+      asNumber(expected.estimate),
+      1e-7,
+      `${expected.gene} manuscript effect`,
+    );
+    close(
+      actual.p_value,
+      asNumber(expected.p_value),
+      5e-8,
+      `${expected.gene} manuscript p-value`,
+    );
+    close(
+      actual.fdr,
+      asNumber(expected.fdr),
+      5e-8,
+      `${expected.gene} manuscript FDR`,
+    );
+    assert.equal(
+      actual.fdr < 0.1,
+      asNumber(expected.fdr) < 0.1,
+      `${expected.gene} manuscript FDR decision differs`,
     );
   }
 });

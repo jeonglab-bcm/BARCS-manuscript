@@ -346,36 +346,146 @@ function linearPredictor(design, coefficient) {
   return result;
 }
 
+function devianceTerm(observed, expected) {
+  if (observed === 0) return expected;
+  if (Math.abs(observed - expected) < 0.1 * (observed + expected)) {
+    const difference = observed - expected;
+    let ratio = difference / (observed + expected);
+    let sum = difference * ratio;
+    let term = 2 * observed * ratio;
+    ratio *= ratio;
+    for (let index = 1; index < 1000; index += 1) {
+      term *= ratio;
+      const next = sum + term / (2 * index + 1);
+      if (next === sum) return next;
+      sum = next;
+    }
+    return sum;
+  }
+  return observed * Math.log(observed / expected) + expected - observed;
+}
+
+function binomialDeviance(count, total, mu) {
+  let deviance = 0;
+  for (let index = 0; index < count.length; index += 1) {
+    const successes = count[index];
+    const failures = total[index] - successes;
+    deviance += 2 * (
+      devianceTerm(successes, total[index] * mu[index]) +
+      devianceTerm(failures, total[index] * (1 - mu[index]))
+    );
+  }
+  return deviance;
+}
+
 function binomialInitial(count, total, design, tolerance) {
   const columns = design[0].length;
-  const coefficient = new Float64Array(columns);
-  const pooled = (count.reduce((sum, value) => sum + value, 0) + 0.5) /
-    (total.reduce((sum, value) => sum + value, 0) + 1);
-  coefficient[0] = logit(pooled);
-  let beta = coefficient;
+  let beta = new Float64Array(columns);
+  let mu = Float64Array.from(
+    count,
+    (value, index) => (value + 0.5) / (total[index] + 1),
+  );
+  let eta = Float64Array.from(mu, logit);
+  let previousDeviance = binomialDeviance(count, total, mu);
   for (let iteration = 0; iteration < 50; iteration += 1) {
-    const eta = linearPredictor(design, beta);
     const response = new Float64Array(count.length);
     const weight = new Float64Array(count.length);
     for (let index = 0; index < count.length; index += 1) {
-      const mu = clamp(logistic(eta[index]), 1e-8, 1 - 1e-8);
       response[index] = eta[index] +
-        (count[index] / total[index] - mu) / (mu * (1 - mu));
-      weight[index] = total[index] * mu * (1 - mu);
+        (count[index] / total[index] - mu[index]) /
+        (mu[index] * (1 - mu[index]));
+      weight[index] = total[index] * mu[index] * (1 - mu[index]);
     }
     const system = weightedSystem(design, weight, response);
     const next = solvePositiveDefinite(system.information, system.target);
-    let change = 0;
-    for (let index = 0; index < beta.length; index += 1) {
-      change = Math.max(
-        change,
-        Math.abs(next[index] - beta[index]) / Math.max(1, Math.abs(beta[index])),
-      );
-    }
+    const nextEta = linearPredictor(design, next);
+    const nextMu = Float64Array.from(
+      nextEta,
+      (value) => value < -30
+        ? Number.EPSILON
+        : value > 30
+          ? 1 - Number.EPSILON
+          : logistic(value),
+    );
+    const deviance = binomialDeviance(count, total, nextMu);
     beta = next;
-    if (change < tolerance) break;
+    if (Math.abs(deviance - previousDeviance) /
+        (0.1 + Math.abs(deviance)) < tolerance) break;
+    previousDeviance = deviance;
+    eta = nextEta;
+    mu = nextMu;
   }
   return beta;
+}
+
+function brentRoot(fn, lower, upper, tolerance = 1e-10, maxIterations = 1000) {
+  let a = lower;
+  let b = upper;
+  let fa = fn(a);
+  let fb = fn(b);
+  if (fa === 0) return a;
+  if (fb === 0) return b;
+  if (Math.sign(fa) === Math.sign(fb)) {
+    throw new Error("Root interval does not bracket a sign change.");
+  }
+  let c = a;
+  let fc = fa;
+  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+    const previousStep = b - a;
+    if (Math.abs(fc) < Math.abs(fb)) {
+      const previousB = b;
+      const previousFb = fb;
+      a = previousB;
+      fa = previousFb;
+      b = c;
+      fb = fc;
+      c = previousB;
+      fc = previousFb;
+    }
+    const adjustedTolerance =
+      2 * Number.EPSILON * Math.abs(b) + tolerance / 2;
+    let nextStep = (c - b) / 2;
+    if (Math.abs(nextStep) <= adjustedTolerance || fb === 0) return b;
+    if (Math.abs(previousStep) >= adjustedTolerance &&
+        Math.abs(fa) > Math.abs(fb)) {
+      const interval = c - b;
+      let p;
+      let q;
+      if (a === c) {
+        const ratio = fb / fa;
+        p = interval * ratio;
+        q = 1 - ratio;
+      } else {
+        q = fa / fc;
+        const firstRatio = fb / fc;
+        const secondRatio = fb / fa;
+        p = secondRatio * (
+          interval * q * (q - firstRatio) -
+          (b - a) * (firstRatio - 1)
+        );
+        q = (q - 1) * (firstRatio - 1) * (secondRatio - 1);
+      }
+      if (p > 0) q = -q;
+      else p = -p;
+      if (p < 0.75 * interval * q -
+          Math.abs(adjustedTolerance * q) / 2 &&
+          p < Math.abs(previousStep * q / 2)) {
+        nextStep = p / q;
+      }
+    }
+    if (Math.abs(nextStep) < adjustedTolerance) {
+      nextStep = nextStep > 0 ? adjustedTolerance : -adjustedTolerance;
+    }
+    a = b;
+    fa = fb;
+    b += nextStep;
+    fb = fn(b);
+    if ((fb > 0 && fc > 0) || (fb < 0 && fc < 0)) {
+      c = a;
+      fc = fa;
+    }
+  }
+  return b;
 }
 
 function estimateRho(count, total, mu, degreesOfFreedom) {
@@ -406,15 +516,12 @@ function estimateRho(count, total, mu, degreesOfFreedom) {
       boundary: true,
     };
   }
-  let low = 0;
-  let high = upper;
-  for (let iteration = 0; iteration < 100; iteration += 1) {
-    const middle = (low + high) / 2;
-    if (pearson(middle) > degreesOfFreedom) low = middle;
-    else high = middle;
-    if (high - low < 1e-10) break;
-  }
-  const rho = (low + high) / 2;
+  const rho = brentRoot(
+    (value) => pearson(value) - degreesOfFreedom,
+    0,
+    upper,
+    1e-10,
+  );
   return { rho, scale: 1, pearson: pearson(rho), boundary: false };
 }
 
@@ -819,5 +926,59 @@ export function geneConsistency(results, options = {}) {
     scale,
     controlGenes: controls.length,
     usedControlNull: enoughControls,
+  };
+}
+
+export function geneDirectionalStouffer(results, options = {}) {
+  const minGuides = options.minGuides ?? 1;
+  const grouped = new Map();
+  for (const row of results) {
+    if (!row.gene || !Number.isFinite(row.estimate) ||
+        !Number.isFinite(row.p_value)) continue;
+    if (!grouped.has(row.gene)) grouped.set(row.gene, []);
+    grouped.get(row.gene).push(row);
+  }
+  const genes = [...grouped.entries()]
+    .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+    .flatMap(([gene, guides]) => {
+      if (guides.length < minGuides) return [];
+      const estimates = guides.map((guide) => guide.estimate);
+      const signed = guides.map((guide) => {
+        if (guide.estimate === 0) return 0;
+        const upperTail = Math.max(
+          guide.p_value / 2,
+          2.2250738585072014e-308,
+        );
+        return Math.sign(guide.estimate) * -normalQuantile(upperTail);
+      });
+      const statistic = signed.reduce((sum, value) => sum + value, 0) /
+        Math.sqrt(signed.length);
+      const nonzero = estimates.filter((value) => value !== 0);
+      const effect = median(estimates);
+      const agreement = effect === 0 || !nonzero.length
+        ? NaN
+        : nonzero.filter((value) => Math.sign(value) === Math.sign(effect))
+          .length / nonzero.length;
+      return [{
+        gene,
+        n_guides: guides.length,
+        estimate: effect,
+        std_error: NaN,
+        raw_statistic: statistic,
+        statistic,
+        p_value: normalTwoSidedP(statistic),
+        guide_direction_agreement: agreement,
+        converged_fraction: guides.filter((guide) => guide.converged).length /
+          guides.length,
+        control_gene: guides.every((guide) => guide.control),
+      }];
+    });
+  const adjusted = bhAdjust(genes.map((gene) => gene.p_value));
+  genes.forEach((gene, index) => {
+    gene.fdr = adjusted[index];
+  });
+  return {
+    results: genes,
+    method: "directional Stouffer",
   };
 }

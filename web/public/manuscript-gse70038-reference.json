@@ -1,0 +1,27 @@
+{
+  "dataset": "GSE70038",
+  "design": "MAGeCKFlute Table 5 / Box 3",
+  "term": "GSC0131_end",
+  "guideCount": 64747,
+  "geneCount": 18077,
+  "summary": {
+    "discoveriesAtFdrPointOne": 3608,
+    "sumEstimate": -1189.8766810646703,
+    "sumPValue": 6084.493270468653,
+    "sumFdr": 8725.526213298523,
+    "top20Genes": ["PTPMT1", "SRSF10", "VARS2", "IMP4", "EIF2B4", "EIF6", "ATP6V0B", "UROD", "TAF1C", "CTDP1", "CIAO1", "HSD17B10", "DHX15", "CHMP2A", "PKM", "LAS1L", "MAP3K7", "LSM11", "PPP1R8", "AIFM1"]
+  },
+  "absoluteTolerance": {
+    "estimate": 1e-7,
+    "p_value": 5e-8,
+    "fdr": 5e-8
+  },
+  "genes": [
+    {"gene": "FBXO42", "n_guides": 4, "estimate": -0.120799525305143, "p_value": 0.0802142167305015, "fdr": 0.252839127434573},
+    {"gene": "HDAC2", "n_guides": 4, "estimate": 0.175713977194903, "p_value": 0.010909163632395, "fdr": 0.065407943941229},
+    {"gene": "HEATR1", "n_guides": 6, "estimate": -1.40611268440739, "p_value": 6.08905101511445e-13, "fdr": 1.02870817944134e-10},
+    {"gene": "PKMYT1", "n_guides": 5, "estimate": -0.987113219562289, "p_value": 2.43710635582883e-10, "fdr": 1.87470517422629e-8},
+    {"gene": "TFAP2C", "n_guides": 5, "estimate": -0.889409726177996, "p_value": 1.33923704833715e-10, "fdr": 1.08562278577537e-8},
+    {"gene": "WEE1", "n_guides": 5, "estimate": -0.530968483956092, "p_value": 0.000132242904518491, "fdr": 0.00199212915415063}
+  ]
+}

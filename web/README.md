@@ -1,8 +1,9 @@
 # BARCS Web
 
-BARCS Web is a static, privacy-first implementation of BARCS. The count
-matrix, model fitting, calibration, plots, and result export all remain in the
-browser. It does not require an R or Python installation, a database, or an
+BARCS Web is a static, privacy-first FASTQ-to-results implementation of BARCS.
+Raw reads, guide libraries, count matrices, model fitting, plots, and result
+export all remain in the browser. FASTQ quantification and guide fitting run
+in separate web workers. It does not require R, Python, a database, or an
 analysis server.
 
 ## What it implements
@@ -23,6 +24,26 @@ analysis server.
 
 The numerical engine is in `public/barcs-core.js` and runs in
 `public/barcs-worker.js`, keeping large analyses off the interface thread.
+
+## Raw-read workflow
+
+The FASTQ path accepts one or more candidate guide libraries plus one FASTQ or
+FASTQ.gz file per independent sample. It:
+
+- parses FASTA or delimited `guide`, `sequence`, `gene`, and `control`
+  annotations;
+- excludes repeated guide sequences that cannot be assigned uniquely;
+- samples the first FASTQ to rank candidate libraries by exact unique matches;
+- searches every read in both orientations and determines the dominant guide
+  position;
+- streams gzip decompression and counting without uploading raw reads;
+- reports total, uniquely mapped, ambiguous, and unmapped reads, zero-guide
+  fraction, count Gini coefficient, orientation, and guide position;
+- produces downloadable counts, QC, and a sample-metadata template.
+
+Exact uniquely mapped guide reads define the full-library totals supplied to
+BARCS. FASTQ basenames become sample identifiers and must match the `sample`
+column in metadata.
 
 ## Input contract
 
@@ -74,6 +95,22 @@ implementations can produce small IEEE-754 floating-point differences. See
 [`PARITY.md`](PARITY.md) for the tested contract, observed errors, and
 reproduction commands.
 
+## Manuscript verification
+
+The **Verify manuscript** action loads the actual 64,747-guide GSE70038 count
+matrix and the 16-by-5 Table 5 design used in the manuscript. It fits
+`GSC0131_end` with the other three terminal indicators as covariates and uses
+the manuscript's explicitly labeled median-effect/directional-Stouffer
+comparison summary. The default BARCS gene result remains the shared-effect
+Wald construction; Stouffer aggregation is not required for guide-level BARCS.
+
+The locked verification checks 64,747 guide rows, 18,077 gene rows, all 3,608
+FDR < 0.10 discoveries, aggregate effect/p-value/FDR checksums, the top-20
+ordering, and six prespecified validation genes. The largest observed
+R-versus-browser differences on this screen are `7.54e-12` for guide effects,
+`8.42e-12` for guide p-values/FDR, `4.10e-9` for gene p-values, and `5.08e-9`
+for gene FDR. No FDR < 0.10 decision differs.
+
 ## Deployment
 
 `npm run build` produces a dependency-free static client under `dist/client`
@@ -82,7 +119,9 @@ durable storage or server-side analysis bindings are declared.
 
 ## Scope
 
-The web implementation reproduces the current BARCS guide coefficient model.
-It does not turn sequencing reads or multiple guides into biological
-replicates, reconstruct unobserved single-cell phenotypes, or model dependence
-among FACS bins derived from the same biological pool.
+The exact matcher is intended for pooled-screen amplicons containing the
+library spacer. It is not a genomic aligner, adapter trimmer, base-quality
+recalibrator, or approximate mismatch caller. The web implementation does not
+turn sequencing reads or multiple guides into biological replicates,
+reconstruct unobserved single-cell phenotypes, or model dependence among FACS
+bins derived from the same biological pool.
