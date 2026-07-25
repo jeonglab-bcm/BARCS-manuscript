@@ -5,7 +5,7 @@ import {
   determineLibrary,
   finalizeQuantification,
   stripFastqExtension,
-} from "./fastq-core.js";
+} from "./fastq-core.js?v=20260725-cb2kmer";
 
 async function textStream(file) {
   let stream = file.stream();
@@ -31,17 +31,20 @@ async function visitFastq(file, visitor, maximumReads = Infinity) {
     const parts = buffer.split(/\r?\n/);
     buffer = parts.pop() || "";
     for (const part of parts) lines.push(part);
-    while (lines.length >= 4 && reads < maximumReads) {
-      const record = lines.splice(0, 4);
-      if (!record[0].startsWith("@") || !record[2].startsWith("+") ||
-          record[1].length !== record[3].length) {
+    let lineIndex = 0;
+    while (lines.length - lineIndex >= 4 && reads < maximumReads) {
+      if (!lines[lineIndex].startsWith("@") ||
+          !lines[lineIndex + 2].startsWith("+") ||
+          lines[lineIndex + 1].length !== lines[lineIndex + 3].length) {
         throw new Error(
           `${file.name} has an invalid FASTQ record near read ${reads + 1}.`,
         );
       }
-      visitor(record[1], reads);
+      visitor(lines[lineIndex + 1], reads);
       reads += 1;
+      lineIndex += 4;
     }
+    if (lineIndex) lines = lines.slice(lineIndex);
   }
   if (reads >= maximumReads) {
     await reader.cancel();

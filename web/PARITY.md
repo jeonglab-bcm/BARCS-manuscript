@@ -95,3 +95,28 @@ Achieving this agreement requires matching R's Brent-style root finder,
 binomial `glm.fit` initialization, stable deviance arithmetic, and probability
 tails. These are numerical implementation details, not changes to the BARCS
 estimating equations.
+
+## CB2 FASTQ-count parity and reverse-orientation extension
+
+The raw-read worker separately reproduces CB2's exact forward k-mer search:
+
+- the same A/C/G/T two-bit encoding and rolling base-4 hash;
+- exclusion of every library sequence that occurs more than once;
+- one fixed guide length per candidate library;
+- the first forward k-mer hit per read;
+- at most one guide count per read.
+
+The committed reference
+`tests/fixtures/cb2-toy-fastq-reference.csv` was produced by `CB2::quant()`.
+The JavaScript test recounts all six CB2 toy FASTQs and requires exact equality
+for all 25 guides in every sample: 150 integer counts, with no tolerance.
+
+There is one deliberate non-numerical extension. CB2's C++ search stores
+reverse-complement hits in `cnt_rc`, but `CB2::quant()` currently returns only
+`cnt`. BARCS Web accepts the first reverse-complement hit when the forward scan
+has no match. The reverse-oriented test therefore verifies the intended search
+path, not literal parity with CB2's current return-value omission.
+
+This parity statement applies to CB2 exact k-mer counting. It does not imply
+equivalence to the Liang article's Cutadapt plus one-mismatch Bowtie pipeline;
+that native reference workflow remains separate and explicitly labeled.

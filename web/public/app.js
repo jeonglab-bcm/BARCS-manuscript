@@ -3,7 +3,7 @@ import { parseBarcsInputs, toCsv } from "./csv.js?v=20260725-stackfix";
 import {
   parseGuideLibrary,
   quantificationToCountsText,
-} from "./fastq-core.js";
+} from "./fastq-core.js?v=20260725-cb2kmer";
 import {
   arrayMaximum,
   arrayMinimum,
@@ -104,7 +104,7 @@ function readFastqFiles(files) {
 }
 
 function finishQuantification() {
-  $("#quantifyButton").textContent = "Align reads and build counts";
+  $("#quantifyButton").textContent = "Count with CB2 k-mers";
   $("#quantProgressWrap").hidden = true;
   state.quantWorker = null;
   updateQuantifyButton();
@@ -163,11 +163,11 @@ function quantifyFastqs() {
   if (!state.libraries.length || !state.fastqFiles.length) return;
   state.manuscriptPreset = false;
   state.quantWorker = new Worker(
-    "./fastq-worker.js?v=20260725-stackfix",
+    "./fastq-worker.js?v=20260725-cb2kmer",
     { type: "module" },
   );
   $("#quantifyButton").disabled = true;
-  $("#quantifyButton").textContent = "Aligning…";
+  $("#quantifyButton").textContent = "Counting k-mers…";
   $("#quantProgressWrap").hidden = false;
   $("#quantProgressBar").value = 0;
   $("#quantProgressPercent").textContent = "0%";
@@ -180,7 +180,7 @@ function quantifyFastqs() {
         `${Math.round(data.fraction * 100)}%`;
       $("#quantProgressText").textContent = data.phase === "detect"
         ? "Detecting guide library"
-        : `Aligning ${data.sample}${data.reads ? ` · ${data.reads.toLocaleString()} reads` : ""}`;
+        : `Counting ${data.sample}${data.reads ? ` · ${data.reads.toLocaleString()} reads` : ""}`;
     } else if (data.type === "complete") {
       state.quantification = data.result;
       state.countText = quantificationToCountsText(
@@ -200,7 +200,7 @@ function quantifyFastqs() {
   };
   state.quantWorker.onerror = (event) => {
     finishQuantification();
-    showError($("#loadError"), event.message || "FASTQ alignment failed.");
+    showError($("#loadError"), event.message || "FASTQ k-mer counting failed.");
   };
   state.quantWorker.postMessage({
     type: "quantify",

@@ -95,7 +95,7 @@
               </label>
             </div>
             <button class="button secondary full-button" id="quantifyButton" type="button" disabled>
-              Align reads and build counts
+              Count with CB2 k-mers
             </button>
             <div class="fastq-example">
               <button class="button secondary" id="liangFastqButton" type="button">Prepare real Liang FASTQs</button>
@@ -220,9 +220,9 @@
           <div class="empty-results" id="emptyResults">
             <span class="empty-index">β</span>
             <h2>Your coefficient results will appear here.</h2>
-            <p>Align FASTQ reads or load a count matrix, add sample metadata, and BARCS will fit each guide locally.</p>
+            <p>Count FASTQ guide k-mers or load a count matrix, add sample metadata, and BARCS will fit each guide locally.</p>
             <ul>
-              <li>Exact guide alignment with library and orientation detection</li>
+              <li>CB2-derived rolling k-mer counting with reverse-orientation fallback</li>
               <li>Mapping, representation, and count-distribution QC</li>
               <li>Guide effects with Student-<em>t</em> inference</li>
               <li>Dispersion and convergence diagnostics</li>
@@ -328,9 +328,9 @@ ACGTACGTACGTACGTACGT
 &gt;nt1 gene=NTC control=true
 TGCATGCATGCATGCATGCA</pre></div>
         </div>
-        <p class="dialog-note">FASTQ sample names are filenames without <code>.fastq</code>, <code>.fq</code>, or <code>.gz</code>, and must match metadata. Exact uniquely mapped reads form the full-library totals. Duplicate guide sequences are excluded because they cannot be assigned uniquely. For valid Student-<em>t</em> inference, independent libraries must outnumber fitted design columns.</p>
+        <p class="dialog-note">FASTQ sample names are filenames without <code>.fastq</code>, <code>.fq</code>, or <code>.gz</code>, and must match metadata. The browser uses CB2-derived exact rolling k-mers: the first forward guide hit is counted, and the reverse complement is searched only when no forward hit exists. This completes CB2's stored-but-unreturned reverse-count path. Every library must use one guide length. Repeated guide sequences are excluded. For valid Student-<em>t</em> inference, independent libraries must outnumber fitted design columns.</p>
       </form>
     </dialog>
-    <script type="module" src="./app.js?v=20260725-stackfix"></script>
+    <script type="module" src="./app.js?v=20260725-cb2kmer"></script>
   </body>
 </html>

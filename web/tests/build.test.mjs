@@ -33,7 +33,8 @@ test("site build contains the analysis runtime and Cloudflare entry", () => {
   assert.match(html, /Run full Liang HAP1/);
   assert.match(html, /Prepare real Liang FASTQs/);
   assert.match(html, /Verify manuscript/);
-  assert.match(html, /app\.js\?v=20260725-stackfix/);
+  assert.match(html, /CB2-derived rolling k-mer counting/);
+  assert.match(html, /app\.js\?v=20260725-cb2kmer/);
 
   const app = readFileSync("dist/client/app.js", "utf8");
   const csv = readFileSync("dist/client/csv.js", "utf8");

@@ -5,6 +5,9 @@ const GUIDE_ALIASES = ["guide", "sgRNA", "sgrna", "id"];
 const SEQUENCE_ALIASES = ["sequence", "seq", "spacer"];
 const GENE_ALIASES = ["gene", "Gene", "target"];
 const CONTROL_ALIASES = ["control", "negative_control", "ntc"];
+const BASE_CODE = Object.freeze({ A: 0, C: 1, G: 3, T: 2 });
+const COMPLEMENT_CODE = Object.freeze([2, 3, 0, 1]);
+const MAX_SAFE_KMER_LENGTH = 26;
 
 function firstColumn(header, aliases) {
   return aliases.find((name) => header.includes(name));
@@ -58,14 +61,21 @@ function validateGuideRows(rows, name) {
   if (!guides.length) {
     throw new Error(`${name} has no uniquely identifiable guide sequences.`);
   }
+  const lengths = [...new Set(guides.map((row) => row.sequence.length))]
+    .sort((left, right) => left - right);
+  if (lengths.length !== 1) {
+    throw new Error(
+      `${name} contains mixed guide lengths (${lengths.join(", ")} nt). ` +
+      "CB2-compatible k-mer counting requires one guide length per library.",
+    );
+  }
   return {
     name,
     guides,
     totalGuides: rows.length,
     duplicateSequences,
     excludedGuides: rows.length - guides.length,
-    lengths: [...new Set(guides.map((row) => row.sequence.length))]
-      .sort((left, right) => left - right),
+    lengths,
   };
 }
 
@@ -152,41 +162,84 @@ export function reverseComplement(sequence) {
   return output;
 }
 
+function createKmerCodec(length) {
+  const big = length > MAX_SAFE_KMER_LENGTH;
+  return {
+    big,
+    zero: big ? 0n : 0,
+    radix: big ? 4n : 4,
+    prefixModulus: big
+      ? 4n ** BigInt(length - 1)
+      : 4 ** (length - 1),
+  };
+}
+
+function appendBase(code, base, observedLength, codec) {
+  const value = codec.big ? BigInt(base) : base;
+  if (observedLength < codec.length) {
+    return code * codec.radix + value;
+  }
+  return (code % codec.prefixModulus) * codec.radix + value;
+}
+
+function encodeKmer(sequence, codec) {
+  let code = codec.zero;
+  for (const nucleotide of sequence) {
+    code = code * codec.radix +
+      (codec.big ? BigInt(BASE_CODE[nucleotide]) : BASE_CODE[nucleotide]);
+  }
+  return code;
+}
+
 export function buildLibraryIndex(library) {
-  const byLength = new Map();
+  const length = library.lengths[0];
+  const codec = { ...createKmerCodec(length), length };
+  const guideByCode = new Map();
   library.guides.forEach((guide, guideIndex) => {
-    if (!byLength.has(guide.sequence.length)) {
-      byLength.set(guide.sequence.length, {
-        forward: new Map(),
-        reverse: new Map(),
-      });
-    }
-    const index = byLength.get(guide.sequence.length);
-    index.forward.set(guide.sequence, guideIndex);
-    index.reverse.set(reverseComplement(guide.sequence), guideIndex);
+    guideByCode.set(encodeKmer(guide.sequence, codec), guideIndex);
   });
-  return { library, byLength };
+  return { library, length, codec, guideByCode };
+}
+
+function firstKmerHit(sequence, index, reverse = false) {
+  const { codec, guideByCode, length } = index;
+  let code = codec.zero;
+  let observedLength = 0;
+  for (let offset = 0; offset < sequence.length; offset += 1) {
+    const sequenceIndex = reverse ? sequence.length - offset - 1 : offset;
+    const base = BASE_CODE[sequence[sequenceIndex]];
+    if (base === undefined) {
+      code = codec.zero;
+      observedLength = 0;
+      continue;
+    }
+    const encodedBase = reverse ? COMPLEMENT_CODE[base] : base;
+    code = appendBase(code, encodedBase, observedLength, codec);
+    observedLength = Math.min(observedLength + 1, length);
+    if (observedLength === length) {
+      const guideIndex = guideByCode.get(code);
+      if (guideIndex !== undefined) {
+        return {
+          guideIndex,
+          orientation: reverse ? "-" : "+",
+          position: reverse
+            ? sequence.length - offset - 1
+            : offset - length + 1,
+        };
+      }
+    }
+  }
+  return null;
 }
 
 export function alignRead(read, index) {
   const sequence = read.trim().toUpperCase();
-  const hits = new Map();
-  for (const [length, lookup] of index.byLength) {
-    for (let position = 0; position <= sequence.length - length; position += 1) {
-      const window = sequence.slice(position, position + length);
-      const forward = lookup.forward.get(window);
-      const reverse = lookup.reverse.get(window);
-      if (forward !== undefined && !hits.has(forward)) {
-        hits.set(forward, { guideIndex: forward, orientation: "+", position });
-      }
-      if (reverse !== undefined && !hits.has(reverse)) {
-        hits.set(reverse, { guideIndex: reverse, orientation: "-", position });
-      }
-      if (hits.size > 1) return { status: "ambiguous" };
-    }
-  }
-  if (!hits.size) return { status: "unmapped" };
-  return { status: "mapped", ...hits.values().next().value };
+  const forward = firstKmerHit(sequence, index);
+  if (forward) return { status: "mapped", ...forward };
+  const reverse = firstKmerHit(sequence, index, true);
+  return reverse
+    ? { status: "mapped", ...reverse }
+    : { status: "unmapped" };
 }
 
 function gini(values) {
@@ -226,8 +279,6 @@ export function addReadToQuantification(sequence, index, result) {
       hit.position,
       (result.positionCounts.get(hit.position) || 0) + 1,
     );
-  } else if (hit.status === "ambiguous") {
-    result.ambiguousReads += 1;
   } else {
     result.unmappedReads += 1;
   }
@@ -276,22 +327,18 @@ export function determineLibrary(reads, libraries) {
   const scores = libraries.map((library) => {
     const index = buildLibraryIndex(library);
     let mapped = 0;
-    let ambiguous = 0;
     for (const read of reads) {
       const hit = alignRead(read, index);
       if (hit.status === "mapped") mapped += 1;
-      if (hit.status === "ambiguous") ambiguous += 1;
     }
     return {
       name: library.name,
       mapped,
-      ambiguous,
       sampledReads: reads.length,
       mappingRate: reads.length ? mapped / reads.length : 0,
     };
   }).sort((left, right) =>
     right.mapped - left.mapped ||
-    left.ambiguous - right.ambiguous ||
     left.name.localeCompare(right.name)
   );
   if (scores[0].mapped === 0) {

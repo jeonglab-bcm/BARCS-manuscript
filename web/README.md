@@ -33,17 +33,21 @@ FASTQ.gz file per independent sample. It:
 - parses FASTA or delimited `guide`, `sequence`, `gene`, and `control`
   annotations;
 - excludes repeated guide sequences that cannot be assigned uniquely;
-- samples the first FASTQ to rank candidate libraries by exact unique matches;
-- searches every read in both orientations and determines the dominant guide
-  position;
+- requires one guide length per candidate library, matching CB2's k-mer
+  contract;
+- encodes A/C/G/T as CB2's two-bit base-4 rolling k-mers rather than creating
+  substring copies;
+- samples the first FASTQ to rank candidate libraries by exact k-mer hits;
+- counts at most one guide per read: the first forward hit wins, and the
+  reverse complement is searched only if no forward hit exists;
 - streams gzip decompression and counting without uploading raw reads;
-- reports total, uniquely mapped, ambiguous, and unmapped reads, zero-guide
+- reports total, mapped, and unmapped reads, zero-guide
   fraction, count Gini coefficient, orientation, and guide position;
 - produces downloadable counts, QC, and a sample-metadata template.
 
-Exact uniquely mapped guide reads define the full-library totals supplied to
-BARCS. FASTQ basenames become sample identifiers and must match the `sample`
-column in metadata.
+Mapped guide reads define the full-library totals supplied to BARCS. FASTQ
+basenames become sample identifiers and must match the `sample` column in
+metadata.
 
 ## Input contract
 
@@ -78,15 +82,23 @@ libraries must exceed the number of fitted design columns.
 cd web
 npm run dev
 npm test
+npm run benchmark:fastq
 ```
 
-The test suite checks parsing, design coding, probability calculations,
-calibration, gene inference, the deployment artifact, and numerical parity
-with reference values produced by `R/bbreg.R`. The committed suite covers all
-48 guides under four supported design shapes (192 fits) and all nine
-shared-effect gene results in the example screen. It requires the same guide
-and gene order, convergence status, and FDR < 0.10 calls, while comparing
-reported statistics under explicit numerical tolerances.
+The test suite checks parsing, CB2-derived k-mer counting, design coding,
+probability calculations, calibration, gene inference, the deployment
+artifact, and numerical parity with reference values produced by `R/bbreg.R`.
+The FASTQ fixture requires all 150 guide-by-sample counts from six CB2 toy
+libraries to equal `CB2::quant()` exactly. The model suite covers all 48 guides
+under four supported design shapes (192 fits) and all nine shared-effect gene
+results in the example screen. It requires the same guide and gene order,
+convergence status, and FDR < 0.10 calls, while comparing reported statistics
+under explicit numerical tolerances.
+
+The FASTQ benchmark builds the complete 56,322-guide Liang index and counts one
+million exact guide-containing reads. It is a reproducible computational
+throughput check, not a biological benchmark; timing depends on the browser
+and hardware.
 
 The R implementation is the reference. The browser and R results are
 numerically equivalent, not bit-for-bit identical: independent IRLS stopping
@@ -134,9 +146,10 @@ For an article-matched raw-read reproduction, use:
 bash scripts/run_liang_hap1_real_case.sh
 ```
 
-That runner streams the real reads through the reported anchor trimming and
-Bowtie settings without retaining FASTQs. The browser's exact matcher is a
-faster local QC/counting path and is not claimed to reproduce Cutadapt plus
+That runner downloads one real FASTQ at a time with resume and published-MD5
+verification, applies the reported anchor trimming and Bowtie settings, and
+deletes the compressed file after counting. The browser's exact matcher is a
+CB2-derived local counting path and is not claimed to reproduce Cutadapt plus
 one-mismatch Bowtie exactly.
 
 The earlier 72-guide synthetic FASTQs remain only as committed automated-test
@@ -155,9 +168,16 @@ durable storage or server-side analysis bindings are declared.
 
 ## Scope
 
-The exact matcher is intended for pooled-screen amplicons containing the
-library spacer. It is not a genomic aligner, adapter trimmer, base-quality
-recalibrator, or approximate mismatch caller. The web implementation does not
-turn sequencing reads or multiple guides into biological replicates,
-reconstruct unobserved single-cell phenotypes, or model dependence among FACS
-bins derived from the same biological pool.
+The CB2-derived exact k-mer counter is intended for pooled-screen amplicons
+containing the library spacer. It is not a genomic aligner, adapter trimmer,
+base-quality recalibrator, or approximate mismatch caller. The web
+implementation does not turn sequencing reads or multiple guides into
+biological replicates, reconstruct unobserved single-cell phenotypes, or model
+dependence among FACS bins derived from the same biological pool.
+
+CB2's C++ search records reverse-complement hits in `cnt_rc`, but the current
+`CB2::quant()` return path reads only `cnt`. BARCS Web intentionally completes
+that path by accepting the first reverse-complement hit only when a read has no
+forward hit. Consequently, the six canonical forward-oriented CB2 fixtures
+match exactly, while a reverse-oriented FASTQ is a documented functional
+extension rather than literal output parity with the current CB2 return bug.
