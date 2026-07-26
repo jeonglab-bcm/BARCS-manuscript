@@ -1,18 +1,19 @@
 #!/usr/bin/env Rscript
 
-# Truth-based CRISPulator FACS benchmark for three BARCS gene statistics.
+# Truth-based CRISPulator FACS benchmark for four BARCS gene statistics.
 #
 # All methods receive the identical guide-level beta-binomial fits:
 #   1. BARCS-original: historical signed-z guide aggregation;
-#   2. BARCS-partial: random-effects partial pooling of guide coefficients;
-#   3. BARCS-EB: empirical-Bayes moderation of guide heterogeneity.
+#   2. BARCS-NORM: exchangeable normal guide coefficients;
+#   3. BARCS-partial: random-effects partial pooling of guide coefficients;
+#   4. BARCS-EB: empirical-Bayes moderation of guide heterogeneity.
 #
 # The benchmark deliberately excludes unrelated count methods. Its purpose is
 # to isolate the consequence of changing only the guide-to-gene statistic.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
-analysis_protocol <- "barcs-three-methods-v1"
+analysis_protocol <- "barcs-four-methods-v1"
 
 data_dir <- Sys.getenv(
   "CRISPULATOR_DATA_DIR",
@@ -86,16 +87,18 @@ sample_data$replicate <- factor(sample_data$replicate)
 
 method_labels <- c(
   original = "BARCS-original",
+  normal = "BARCS-NORM",
   partial = "BARCS-partial",
   eb = "BARCS-EB"
 )
 method_colours <- c(
   `BARCS-original` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
   `BARCS-partial` = "#009E73",
   `BARCS-EB` = "#D55E00"
 )
 
-fit_three_methods <- function(label, sample_index,
+fit_barcs_methods <- function(label, sample_index,
                               term = "phenotype_z") {
   design <- droplevels(sample_data[sample_index, , drop = FALSE])
   count_subset <- counts[, sample_index, drop = FALSE]
@@ -134,6 +137,13 @@ fit_three_methods <- function(label, sample_index,
   original <- bb_gene_original(calibrated, min_guides = 1L)
   original_seconds <- unname((proc.time() - method_start)[["elapsed"]])
   method_start <- proc.time()
+  normal <- bb_gene_normal(
+    guide_result,
+    min_guides = 3L,
+    reference = "student_t"
+  )
+  normal_seconds <- unname((proc.time() - method_start)[["elapsed"]])
+  method_start <- proc.time()
   partial <- bb_gene_partial_pool(
     guide_result,
     control = negative_control,
@@ -165,7 +175,12 @@ fit_three_methods <- function(label, sample_index,
     )),
     row.names = FALSE
   )
-  results <- list(original = original, partial = partial, eb = eb)
+  results <- list(
+    original = original,
+    normal = normal,
+    partial = partial,
+    eb = eb
+  )
   for (method in names(results)) {
     write.csv(
       results[[method]],
@@ -183,17 +198,22 @@ fit_three_methods <- function(label, sample_index,
       method = unname(method_labels),
       shared_guide_fit_seconds = guide_seconds,
       gene_aggregation_seconds = c(
-        original_seconds, partial_seconds, eb_seconds
+        original_seconds, normal_seconds, partial_seconds, eb_seconds
       ),
       converged_fraction = mean(guide_result$converged),
       guide_control_scale = attr(calibrated, "control_scale"),
       gene_null_scale = c(
         NA_real_,
+        NA_real_,
         attr(partial, "null_scale"),
         attr(eb, "null_scale")
       ),
-      prior_tau2 = c(NA_real_, NA_real_, attr(eb, "prior_tau2")),
-      prior_df = c(NA_real_, NA_real_, attr(eb, "prior_df"))
+      prior_tau2 = c(
+        NA_real_, NA_real_, NA_real_, attr(eb, "prior_tau2")
+      ),
+      prior_df = c(
+        NA_real_, NA_real_, NA_real_, attr(eb, "prior_df")
+      )
     ),
     file.path(result_dir, paste0(label, "_runtime.csv")),
     row.names = FALSE
@@ -206,15 +226,15 @@ tail_index <- sample_data$sample_type %in% c("low", "high")
 bulk_index <- sample_data$sample_type %in% c("input", "bulk")
 
 design_results <- list(
-  `Low + bulk + high` = fit_three_methods(
+  `Low + bulk + high` = fit_barcs_methods(
     "low_bulk_high", three_sample_index
   )
 )
 if (n_replicates >= 2L) {
-  design_results[["Two 25% tails"]] <- fit_three_methods(
+  design_results[["Two 25% tails"]] <- fit_barcs_methods(
     "two_tails", tail_index
   )
-  design_results[["Unsorted 0-100%"]] <- fit_three_methods(
+  design_results[["Unsorted 0-100%"]] <- fit_barcs_methods(
     "bulk_vs_input", bulk_index, term = "bulk_indicator"
   )
 }

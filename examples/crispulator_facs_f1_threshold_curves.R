@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# F1 and calibration curves across nominal gene-FDR thresholds for the seven
+# F1 and calibration curves across nominal gene-FDR thresholds for the eight
 # methods in the CRISPulator low + bulk + high comparison.
 
 options(stringsAsFactors = FALSE)
@@ -11,11 +11,12 @@ scenario_table <- read.csv(
   file.path("data", "derived", "crispulator_facs_parameter_grid.csv")
 )
 methods <- c(
-  "BARCS-original", "BARCS-partial", "BARCS-EB",
+  "BARCS-original", "BARCS-NORM", "BARCS-partial", "BARCS-EB",
   "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
 )
 method_file <- c(
   `BARCS-original` = "low_bulk_high_original_gene_results.csv",
+  `BARCS-NORM` = "low_bulk_high_normal_gene_results.csv",
   `BARCS-partial` = "low_bulk_high_partial_gene_results.csv",
   `BARCS-EB` = "low_bulk_high_eb_gene_results.csv",
   `MAGeCK-MLE` = "mageck_mle_low_bulk_high_gene_results.csv",
@@ -140,7 +141,9 @@ for (scenario_index in seq_len(nrow(scenario_table))) {
     result_paths <- c(
       file.path(
         current_dir,
-        method_file[c("BARCS-original", "BARCS-partial", "BARCS-EB")]
+        method_file[c(
+          "BARCS-original", "BARCS-NORM", "BARCS-partial", "BARCS-EB"
+        )]
       ),
       file.path(
         external_dir,
@@ -275,6 +278,7 @@ write.csv(
 
 method_colours <- c(
   `BARCS-original` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
   `BARCS-partial` = "#009E73",
   `BARCS-EB` = "#D55E00",
   `MAGeCK-MLE` = "#6A3D9A",
@@ -282,7 +286,7 @@ method_colours <- c(
   DESeq2 = "#56B4E9",
   `limma-voom` = "#666666"
 )
-method_pch <- c(16, 17, 15, 18, 19, 8, 4)
+method_pch <- c(16, 17, 15, 18, 19, 8, 4, 3)
 x_positions <- -log10(thresholds)
 x_labels <- format(thresholds, trim = TRUE, scientific = FALSE)
 

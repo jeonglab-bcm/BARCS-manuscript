@@ -219,7 +219,8 @@ Benjamini--Hochberg procedure \citep{benjamini1995controlling}.
 
 BARCS fits the count model guide by guide.  The primary HT-29, FACS,
 simulation, GSE70038, and A375 benchmark scripts then use an explicit
-directional Stouffer summary to obtain one gene-level statistic.
+directional Stouffer summary, denoted BARCS-ST below, to obtain one gene-level
+statistic.
 For the $j$th valid guide targeting gene $g$, the two-sided guide $p$-value is
 converted back to a signed standard-normal score,
 \begin{equation}
@@ -265,6 +266,91 @@ make the absence of a native CRISPR gene model explicit.  The exploratory
 DeWeirdt false-discovery audit used Fisher aggregation as stated in its
 Results description and is not pooled with these primary benchmark
 statistics.
+
+\paragraph{Exchangeable normal guide-beta statistic.}
+BARCS-NORM implements a different and deliberately simple model.  It does not
+transform guide $p$-values and does not use guide-specific standard errors.
+Instead, for the $m_g$ valid guides targeting gene $g$, it assumes
+\begin{equation}
+  \widehat{\beta}_{gj}
+  \mathrel{\overset{\mathrm{iid}}{\sim}}
+  N(\mu_g,\sigma_g^2).
+  \label{eq:genenormal}
+\end{equation}
+The gene effect and between-guide standard deviation are estimated directly:
+\begin{align}
+  \widehat{\mu}_g
+  &=
+  \frac{1}{m_g}\sum_{j=1}^{m_g}\widehat{\beta}_{gj},\\
+  s_g^2
+  &=
+  \frac{1}{m_g-1}
+  \sum_{j=1}^{m_g}
+  (\widehat{\beta}_{gj}-\widehat{\mu}_g)^2.
+\end{align}
+Testing $H_0:\mu_g=0$ gives
+\begin{equation}
+  T_g
+  =
+  \frac{\widehat{\mu}_g}{s_g/\sqrt{m_g}}
+  \sim t_{m_g-1}
+  \quad\text{under Equation~\eqref{eq:genenormal} and }H_0.
+  \label{eq:genenormalt}
+\end{equation}
+Thus normally distributed guide betas lead to a Student $t$ reference when
+their unknown $\sigma_g$ is estimated from the same guides.  The software also
+reports $2\Phi(-|T_g|)$ as a plug-in normal sensitivity value, but it is not
+the primary $p$-value because it treats the estimated spread as known.
+Multiple guides support this guide-consistency calculation; they do not become
+additional biological screen replicates.
+
+\paragraph{Random-effects and moderated random-effects statistics.}
+BARCS-RE (the implementation label \texttt{BARCS-partial}) retains each
+guide-specific regression standard error and models
+\begin{equation}
+  \widehat{\beta}_{gj}\mid\beta_g,\tau_g^2
+  \sim
+  N\!\left(
+    \beta_g,\,
+    \operatorname{SE}(\widehat{\beta}_{gj})^2+\tau_g^2
+  \right).
+  \label{eq:generandomeffects}
+\end{equation}
+It estimates $\tau_g^2$ by the nonnegative DerSimonian--Laird estimator and
+then pools guide effects with weights
+\begin{equation}
+  w_{gj}
+  =
+  \left\{
+    \operatorname{SE}(\widehat{\beta}_{gj})^2+
+    \widehat{\tau}_g^2
+  \right\}^{-1},
+  \qquad
+  \widehat{\beta}_g
+  =
+  \frac{\sum_jw_{gj}\widehat{\beta}_{gj}}{\sum_jw_{gj}}.
+  \label{eq:genere}
+\end{equation}
+BARCS-RE-EB (implementation label \texttt{BARCS-EB}) stabilizes the noisy
+gene-specific heterogeneity estimate by shrinking it toward the pooled
+screen-wide excess-$Q$ estimate $\tau_0^2$:
+\begin{equation}
+  \widetilde{\tau}_g^2
+  =
+  \frac{
+    (m_g-1)\widehat{\tau}_g^2+d_0\tau_0^2
+  }{
+    (m_g-1)+d_0
+  },
+  \qquad d_0=4.
+  \label{eq:geneeb}
+\end{equation}
+Both random-effects statistics are calibrated against prespecified
+negative-control genes when at least ten are available and otherwise against a
+robust whole-screen empirical null.  In contrast, BARCS-NORM obtains its
+spread and reference degrees of freedom entirely within each gene.  These
+three alternatives and BARCS-ST reuse exactly the same fitted guide
+coefficients; only the guide-to-gene inference changes.
 
 \paragraph{Guide-consistency statistic for the one-replicate boundary.}
 When sample replication is insufficient, converting a guide statistic through

@@ -1,12 +1,13 @@
 #!/usr/bin/env Rscript
 
-# Waterbear IL2RA FACS data benchmark for three BARCS gene statistics.
+# Waterbear IL2RA FACS data benchmark for four BARCS gene statistics.
 #
 # The same 12 low-coverage/high-MOI count columns, sample design, guide fits,
 # and negative-control definition are used for:
 #   1. BARCS-original;
-#   2. BARCS-partial;
-#   3. BARCS-EB.
+#   2. BARCS-NORM;
+#   3. BARCS-partial;
+#   4. BARCS-EB.
 #
 # The 26 directionally validated genes and the selected 33-gene follow-up
 # panel are supporting truth sets. The latter is not an unbiased genome-wide
@@ -14,7 +15,7 @@
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
-analysis_protocol <- "barcs-three-methods-v1"
+analysis_protocol <- "barcs-four-methods-v1"
 
 raw_dir <- file.path("data", "raw", "waterbear")
 result_dir <- file.path("results", "waterbear_facs", "three_methods")
@@ -115,6 +116,13 @@ aggregation_start <- proc.time()
 original <- bb_gene_original(calibrated)
 original_seconds <- unname((proc.time() - aggregation_start)[["elapsed"]])
 aggregation_start <- proc.time()
+normal <- bb_gene_normal(
+  guide_result,
+  min_guides = 3L,
+  reference = "student_t"
+)
+normal_seconds <- unname((proc.time() - aggregation_start)[["elapsed"]])
+aggregation_start <- proc.time()
 partial <- bb_gene_partial_pool(
   guide_result,
   control = negative_control,
@@ -134,11 +142,13 @@ eb_seconds <- unname((proc.time() - aggregation_start)[["elapsed"]])
 
 method_results <- list(
   `BARCS-original` = original,
+  `BARCS-NORM` = normal,
   `BARCS-partial` = partial,
   `BARCS-EB` = eb
 )
 method_colours <- c(
   `BARCS-original` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
   `BARCS-partial` = "#009E73",
   `BARCS-EB` = "#D55E00"
 )
@@ -168,14 +178,19 @@ write.csv(
     method = names(method_results),
     shared_guide_fit_seconds = guide_seconds,
     gene_aggregation_seconds = c(
-      original_seconds, partial_seconds, eb_seconds
+      original_seconds, normal_seconds, partial_seconds, eb_seconds
     ),
     guide_control_scale = attr(calibrated, "control_scale"),
     gene_null_scale = c(
-      NA_real_, attr(partial, "null_scale"), attr(eb, "null_scale")
+      NA_real_, NA_real_,
+      attr(partial, "null_scale"), attr(eb, "null_scale")
     ),
-    prior_tau2 = c(NA_real_, NA_real_, attr(eb, "prior_tau2")),
-    prior_df = c(NA_real_, NA_real_, attr(eb, "prior_df"))
+    prior_tau2 = c(
+      NA_real_, NA_real_, NA_real_, attr(eb, "prior_tau2")
+    ),
+    prior_df = c(
+      NA_real_, NA_real_, NA_real_, attr(eb, "prior_df")
+    )
   ),
   file.path(result_dir, "runtime.csv"),
   row.names = FALSE

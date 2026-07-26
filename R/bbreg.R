@@ -828,6 +828,118 @@ bb_gene_original <- function(result, min_guides = 1L) {
   gene_result
 }
 
+#' Test whether normally distributed guide coefficients have nonzero mean
+#'
+#' Treats the fitted guide coefficients within each gene as exchangeable
+#' observations
+#' \(\widehat\beta_{gj} \sim N(\mu_g, \sigma_g^2)\). The gene effect is the
+#' arithmetic mean, the guide-effect standard deviation is estimated by the
+#' ordinary sample standard deviation, and the standard error of the mean is
+#' \(s_g/\sqrt{m_g}\). Because \(\sigma_g\) is estimated rather than known,
+#' the default p-value uses a Student t reference with \(m_g-1\) degrees of
+#' freedom. A plug-in standard-normal p-value is returned separately and can
+#' be selected explicitly for sensitivity analysis.
+#'
+#' This is guide-consistency inference, not biological-replicate inference.
+#' It deliberately gives every valid guide equal weight and does not use the
+#' guide-specific regression standard errors.
+#'
+#' @param result Guide-level result returned by [bb_screen()].
+#' @param min_guides Minimum number of finite guide coefficients per gene.
+#' @param reference Reference distribution for the reported `p_value`:
+#'   `"student_t"` (default) or the plug-in `"normal"` approximation.
+#' @return One row per testable gene with the estimated normal mean and
+#'   standard deviation, standard error of the mean, t/z statistics, both
+#'   reference p-values, selected p-value, and FDR.
+#' @export
+bb_gene_normal <- function(result, min_guides = 3L,
+                           reference = c("student_t", "normal")) {
+  required <- c("gene", "estimate")
+  if (!is.data.frame(result) || !all(required %in% names(result))) {
+    .bb_stop("`result` must contain guide-level `gene` and `estimate` columns.")
+  }
+  if (anyNA(result$gene) || any(!nzchar(as.character(result$gene)))) {
+    .bb_stop("`result$gene` must contain non-missing gene identifiers.")
+  }
+  if (length(min_guides) != 1L || !is.finite(min_guides) ||
+      min_guides < 2) {
+    .bb_stop("`min_guides` must be an integer of at least two.")
+  }
+  reference <- match.arg(reference)
+  min_guides <- as.integer(min_guides)
+  valid <- is.finite(result$estimate)
+  if ("converged" %in% names(result)) {
+    valid <- valid & !is.na(result$converged) & result$converged
+  }
+
+  groups <- split(seq_len(nrow(result)), result$gene)
+  pieces <- lapply(names(groups), function(gene_name) {
+    all_index <- groups[[gene_name]]
+    index <- all_index[valid[all_index]]
+    n_guides <- length(index)
+    if (n_guides < min_guides) {
+      return(NULL)
+    }
+    guide_beta <- result$estimate[index]
+    mu <- mean(guide_beta)
+    sigma <- stats::sd(guide_beta)
+    standard_error <- sigma / sqrt(n_guides)
+    statistic <- if (standard_error > 0) {
+      mu / standard_error
+    } else if (mu == 0) {
+      0
+    } else {
+      sign(mu) * Inf
+    }
+    degrees_freedom <- n_guides - 1L
+    student_p_value <- 2 * stats::pt(
+      -abs(statistic), df = degrees_freedom
+    )
+    normal_p_value <- 2 * stats::pnorm(-abs(statistic))
+    data.frame(
+      gene = gene_name,
+      n_guides = n_guides,
+      estimate = mu,
+      sigma = sigma,
+      std_error = standard_error,
+      statistic = statistic,
+      df = degrees_freedom,
+      student_p_value = student_p_value,
+      normal_p_value = normal_p_value,
+      p_value = if (reference == "student_t") {
+        student_p_value
+      } else {
+        normal_p_value
+      },
+      guide_direction_agreement = if (mu == 0) {
+        NA_real_
+      } else {
+        mean(sign(guide_beta) == sign(mu))
+      },
+      converged_fraction = if ("converged" %in% names(result)) {
+        mean(result$converged[all_index], na.rm = TRUE)
+      } else {
+        NA_real_
+      },
+      method = paste0("normal_beta_", reference),
+      row.names = NULL
+    )
+  })
+  pieces <- Filter(Negate(is.null), pieces)
+  if (!length(pieces)) {
+    .bb_stop("No gene has enough finite guide coefficients.")
+  }
+  gene_result <- do.call(rbind, pieces)
+  rownames(gene_result) <- NULL
+  gene_result$fdr <- stats::p.adjust(gene_result$p_value, method = "BH")
+  attr(gene_result, "reference") <- reference
+  attr(gene_result, "null_assumption") <- paste(
+    "Exchangeable normally distributed guide coefficients;",
+    "not biological-replicate inference."
+  )
+  gene_result
+}
+
 .bb_gene_pooling_components <- function(inputs) {
   result <- inputs$result
   standard_error <- inputs$standard_error

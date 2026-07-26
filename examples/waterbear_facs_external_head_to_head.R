@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# GSE242880 head-to-head comparison. The three current BARCS results and two
+# GSE242880 head-to-head comparison. The four current BARCS results and two
 # independently rerun MAGeCK results are evaluated against the same selected
 # 33-gene follow-up panel. Waterbear and MAUDE are retained as literature
 # recovery references only because complete per-gene outputs for the panel
@@ -17,6 +17,9 @@ validation_path <- file.path(
 result_paths <- c(
   `BARCS-original` = file.path(
     barcs_root, "barcs_original_gene_results.csv"
+  ),
+  `BARCS-NORM` = file.path(
+    barcs_root, "barcs_norm_gene_results.csv"
   ),
   `BARCS-partial` = file.path(
     barcs_root, "barcs_partial_gene_results.csv"
@@ -61,7 +64,11 @@ stopifnot(
 )
 
 safe_ratio <- function(numerator, denominator) {
-  if (denominator > 0) numerator / denominator else NA_real_
+  if (is.finite(denominator) && denominator > 0) {
+    numerator / denominator
+  } else {
+    NA_real_
+  }
 }
 
 auroc <- function(truth, score) {
@@ -129,7 +136,7 @@ evaluate <- function(method, gene_result, bins_used, design) {
   precision <- safe_ratio(tp, tp + fp)
   recall <- safe_ratio(tp, tp + fn)
   specificity <- safe_ratio(tn, tn + fp)
-  f1 <- safe_ratio(2 * precision * recall, precision + recall)
+  f1 <- safe_ratio(2 * tp, 2 * tp + fp + fn)
   score <- -log10(pmax(assessed$p_value, .Machine$double.xmin))
 
   list(
@@ -167,9 +174,12 @@ evaluate <- function(method, gene_result, bins_used, design) {
 
 method_design <- data.frame(
   method = names(result_paths),
-  bins_used = c(4L, 4L, 4L, 4L, 2L),
+  bins_used = c(rep(4L, length(result_paths) - 1L), 2L),
   design = c(
-    rep("ordered four-bin trend + donor", 4L),
+    rep(
+      "ordered four-bin trend + donor",
+      length(result_paths) - 1L
+    ),
     "outer-bin Q1 versus Q4"
   ),
   stringsAsFactors = FALSE
@@ -263,6 +273,7 @@ write.csv(
 
 method_colours <- c(
   `BARCS-original` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
   `BARCS-partial` = "#009E73",
   `BARCS-EB` = "#D55E00",
   `MAGeCK-MLE` = "#6A3D9A",

@@ -1,23 +1,23 @@
-# Three BARCS guide-to-gene methods
+# Four BARCS guide-to-gene methods
 
-All three methods begin with the same guide-by-sample count matrix and the
+All four methods begin with the same guide-by-sample count matrix and the
 same beta-binomial regression. They differ only after one phenotype
 coefficient and standard error have been estimated for every guide.
 
-For clearer manuscript terminology, the proposed short labels are:
+The short labels and their mathematical meanings are:
 
-| Proposed label | Current benchmark label | Mathematical operation |
+| Label | Historical/internal label | Mathematical operation |
 |---|---|---|
 | BARCS-ST | BARCS-original | Directional Stouffer aggregation |
-| BARCS-NORM | BARCS-partial | Normal random-effects pooling |
-| BARCS-NORM-EB | BARCS-EB | Moderated normal random-effects pooling |
+| BARCS-NORM | `bb_gene_normal()` | Exchangeable normal guide-beta model |
+| BARCS-RE | BARCS-partial | Measurement-error random-effects pooling |
+| BARCS-RE-EB | BARCS-EB | Moderated random-effects pooling |
 
-The normal model is therefore already implemented; it is not an additional
-fourth method. If “BARCS-FS” is intended to mean Fisher aggregation, it is not
-recommended here. Ordinary Fisher aggregation combines evidence magnitude
-but loses effect direction, and it does not estimate guide-effect
-heterogeneity. A signed Fisher variant would require a new, nonstandard
-definition and separate calibration.
+If “BARCS-FS” is intended to mean Fisher aggregation, it is not included.
+Ordinary Fisher aggregation combines evidence magnitude but loses effect
+direction, and it does not estimate guide-effect heterogeneity. A signed
+Fisher variant would require a new, nonstandard definition and separate
+calibration.
 
 For a gene with four guides, the shared input might be:
 
@@ -51,7 +51,48 @@ Z_g=\frac{\sum_j z_{gj}}{\sqrt{m_g}}.
 This method uses each guide's direction and significance, but it does not
 estimate an explicit guide-disagreement variance.
 
-## 2. BARCS-NORM (currently BARCS-partial)
+## 2. BARCS-NORM
+
+BARCS-NORM treats the guide beta estimates themselves as exchangeable draws:
+
+\[
+\widehat b_{gj}\mid\mu_g,\sigma_g^2
+\sim N(\mu_g,\sigma_g^2).
+\]
+
+It estimates
+
+\[
+\widehat\mu_g=\frac{1}{m_g}\sum_j\widehat b_{gj},
+\qquad
+\widehat\sigma_g^2=
+\frac{1}{m_g-1}\sum_j
+(\widehat b_{gj}-\widehat\mu_g)^2.
+\]
+
+The standard error of the mean and gene statistic are
+
+\[
+\operatorname{SE}(\widehat\mu_g)
+=\frac{\widehat\sigma_g}{\sqrt{m_g}},
+\qquad
+T_g=\frac{\widehat\mu_g}
+{\widehat\sigma_g/\sqrt{m_g}}.
+\]
+
+Although the beta values are modeled as normal, \(\sigma_g\) is estimated
+from the guides. Therefore the default two-sided p-value is
+
+\[
+p_g=2\Pr\left(t_{m_g-1}\geq |T_g|\right),
+\]
+
+not a standard-normal p-value that assumes \(\sigma_g\) is already known.
+The implementation also reports that plug-in normal p-value as a sensitivity
+column. BARCS-NORM gives every valid guide equal weight and does not use the
+guide-specific regression standard errors.
+
+## 3. BARCS-RE (currently BARCS-partial)
 
 The partial-pooling model works with guide coefficients rather than guide
 p-values:
@@ -92,7 +133,7 @@ Consistent guides give \(\widehat\tau_g^2\) close to zero. Contradictory guides
 increase \(\widehat\tau_g^2\), reduce their weights, and increase the gene
 standard error.
 
-## 3. BARCS-NORM-EB (currently BARCS-EB)
+## 4. BARCS-RE-EB (currently BARCS-EB)
 
 With only three to six guides per gene, each
 \(\widehat\tau_g^2\) is noisy. BARCS-EB first estimates the typical
@@ -115,17 +156,18 @@ screen-wide estimate receive equal nominal weight. The prior scale
 \(\tau_0^2\) is estimated from the screen without using simulated truth or
 validation labels.
 
-BARCS-EB uses \(\widetilde\tau_g^2\) in the same weighted gene-effect formula
-as partial pooling. It is therefore a stabilized version of BARCS-partial,
-not a fourth guide-level regression.
+BARCS-RE-EB uses \(\widetilde\tau_g^2\) in the same weighted gene-effect
+formula as partial pooling. It is therefore a stabilized version of
+BARCS-RE, not a fifth guide-level regression.
 
 ## Calibration and diagnostics
 
 BARCS-original reproduces the historical guide-level control calibration
-followed by signed-score aggregation. BARCS-partial and BARCS-EB calibrate
-their gene statistics against negative-control genes when at least ten are
-available and otherwise use the robust center and scale of the whole
-gene-statistic distribution.
+followed by signed-score aggregation. BARCS-NORM uses its within-gene
+Student t reference directly. BARCS-partial and BARCS-EB calibrate their gene
+statistics against negative-control genes when at least ten are available
+and otherwise use the robust center and scale of the whole gene-statistic
+distribution.
 
 The two guide-effect methods report:
 
@@ -142,7 +184,7 @@ were summed before fitting.
 
 ## Benchmark scope
 
-The development branch evaluates these three gene statistics only in:
+The development branch evaluates these four gene statistics only in:
 
 1. `examples/crispulator_facs_benchmark.R`;
 2. `examples/crispulator_facs_repeated_benchmark.R`, which creates the

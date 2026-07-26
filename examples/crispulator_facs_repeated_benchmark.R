@@ -1,13 +1,13 @@
 #!/usr/bin/env Rscript
 
-# Repeat the three-method BARCS CRISPulator benchmark across prespecified
+# Repeat the four-method BARCS CRISPulator benchmark across prespecified
 # parameters and seeds. Per-run count matrices remain under git-ignored
 # `results/`; compact metrics and figures are versioned.
 
 options(stringsAsFactors = FALSE)
-analysis_protocol <- "barcs-three-methods-v1"
+analysis_protocol <- "barcs-four-methods-v1"
 expected_methods <- c(
-  "BARCS-original", "BARCS-partial", "BARCS-EB"
+  "BARCS-original", "BARCS-NORM", "BARCS-partial", "BARCS-EB"
 )
 
 parse_numeric_values <- function(name, default) {
@@ -414,8 +414,11 @@ primary <- all_metrics[
   drop = FALSE
 ]
 method_pairs <- list(
+  c("BARCS-NORM", "BARCS-original"),
   c("BARCS-partial", "BARCS-original"),
   c("BARCS-EB", "BARCS-original"),
+  c("BARCS-NORM", "BARCS-partial"),
+  c("BARCS-EB", "BARCS-NORM"),
   c("BARCS-EB", "BARCS-partial")
 )
 paired_rows <- list()
@@ -503,6 +506,7 @@ write.csv(
 
 method_colours <- c(
   `BARCS-original` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
   `BARCS-partial` = "#009E73",
   `BARCS-EB` = "#D55E00"
 )

@@ -1,5 +1,6 @@
 "analysis_protocol","method","result_type","source","md5","per_gene_results_available"
 "waterbear-external-headtohead-v1","BARCS-original","independent rerun","results/waterbear_facs/three_methods/barcs_original_gene_results.csv","d9a35c898109ebdc6a8faf868edf34fc",TRUE
+"waterbear-external-headtohead-v1","BARCS-NORM","independent rerun","results/waterbear_facs/three_methods/barcs_norm_gene_results.csv","7442aa01f47325291584c2c7e329d239",TRUE
 "waterbear-external-headtohead-v1","BARCS-partial","independent rerun","results/waterbear_facs/three_methods/barcs_partial_gene_results.csv","df754260dc8413a77ed78a91643a95ba",TRUE
 "waterbear-external-headtohead-v1","BARCS-EB","independent rerun","results/waterbear_facs/three_methods/barcs_eb_gene_results.csv","64697bed0f8eaa446d8110f768553d04",TRUE
 "waterbear-external-headtohead-v1","MAGeCK-MLE","independent rerun","results/waterbear_facs/mageck_mle_all_bins_gene_results.csv","0594c15747b5244068050d3fe51b562d",TRUE

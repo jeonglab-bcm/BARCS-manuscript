@@ -12,13 +12,14 @@ No method wins both questions in every benchmark.
 ## CRISPulator FACS simulations
 
 The comparison uses the same 50 primary low + bulk + high simulations as the
-three-method BARCS benchmark: ten one-at-a-time parameter scenarios and five
+four-method BARCS benchmark: ten one-at-a-time parameter scenarios and five
 fixed seeds. Every method receives the same guide counts, ordered-phenotype
 score, replicate adjustment, and gene truth.
 
 | Method | Average precision | AUROC | Directional recall at FDR 0.10 | Realized FDP | F1 | Negative-control $p<0.05$ |
 |---|---:|---:|---:|---:|---:|---:|
 | BARCS-original | 0.856 | 0.918 | 0.638 | 0.085 | 0.702 | **0.055** |
+| BARCS-NORM | 0.706 | 0.867 | 0.159 | 0.059 | 0.246 | 0.047 |
 | BARCS-partial | 0.779 | 0.885 | 0.390 | 0.052 | 0.525 | 0.016 |
 | BARCS-EB | 0.840 | 0.910 | 0.463 | **0.013** | 0.599 | 0.013 |
 | MAGeCK-MLE | 0.849 | 0.922 | 0.587 | 0.058 | 0.683 | 0.037 |
@@ -40,6 +41,9 @@ The result is a real trade-off:
 - BARCS-original is the strongest BARCS ranker and its nominal threshold is
   much closer to the intended operating point. Its average precision is
   about 0.022 below edgeR-QL, but its realized FDP is about 0.192 lower.
+- BARCS-NORM is well calibrated but underpowered. Estimating one standard
+  deviation from roughly five guide beta values gives only about four
+  reference degrees of freedom.
 - BARCS-EB is the safest method, but the cost is substantial recall.
 - MAGeCK-MLE is well calibrated and close to BARCS-original in ranking. On
   paired runs, its average-precision difference from BARCS-original is
@@ -84,10 +88,11 @@ guide-level count models comparable while holding the historical gene
 combiner fixed, but it is not a claim that signed-\(z\) aggregation is the
 only or canonical gene-level interface for those packages.
 
-The three BARCS methods reuse one shared beta-binomial guide fit:
-BARCS-original combines calibrated signed guide scores, BARCS-partial fits a
-random-effects gene mean, and BARCS-EB moderates guide heterogeneity toward an
-empirical prior.
+The four BARCS methods reuse one shared beta-binomial guide fit:
+BARCS-original combines calibrated signed guide scores; BARCS-NORM estimates
+the arithmetic mean and sample standard deviation of guide beta values;
+BARCS-partial fits a measurement-error random-effects gene mean; and BARCS-EB
+moderates guide heterogeneity toward an empirical prior.
 
 ## Waterbear GSE242880
 
@@ -99,6 +104,7 @@ literature-reported aggregates only.
 | Method | Design | Screen calls | Directionally validated | Selected-panel F1 | Average precision |
 |---|---|---:|---:|---:|---:|
 | BARCS-original | four-bin trend + donor | 49 | 22/26 | 0.863 | **0.945** |
+| BARCS-NORM | four-bin trend + donor | 0 | 0/26 | 0.000 | 0.897 |
 | BARCS-partial | four-bin trend + donor | 71 | 19/26 | 0.792 | 0.910 |
 | BARCS-EB | four-bin trend + donor | 60 | **23/26** | **0.885** | 0.940 |
 | MAGeCK-MLE | four-bin trend + donor | 72 | 17/26 | 0.723 | 0.872 |
@@ -106,9 +112,11 @@ literature-reported aggregates only.
 | Waterbear | published four-bin model | 79 | 24/26 | not available | not available |
 | MAUDE | published four-bin model | 406 | 25/26 | not available | not available |
 
-BARCS-EB is the best of the five rerun analyses for validated recovery and
+BARCS-EB is the best of the six rerun analyses for validated recovery and
 selected-panel F1. BARCS-original makes fewer calls and has the best selected-
-panel ranking. The reported Waterbear and MAUDE recoveries are higher, but
+panel ranking. BARCS-NORM retains useful ranking but makes no FDR-0.10 calls,
+which is consistent with its small-guide t-reference penalty. The reported
+Waterbear and MAUDE recoveries are higher, but
 they cannot be assigned F1 or average precision without their complete
 per-gene results for the seven non-validating candidates. MAUDE's 25/26
 recovery also accompanies 406 calls, so it is sensitivity rather than a

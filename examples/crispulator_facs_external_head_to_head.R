@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# Head-to-head comparison of the three BARCS gene statistics with four
+# Head-to-head comparison of the four BARCS gene statistics with four
 # established count-analysis methods. External fits are read from the
 # previously rerun `analysis/` directories only after the historical BARCS
 # effect vector is verified against the current BARCS-original result for
@@ -13,7 +13,7 @@ scenario_table <- read.csv(
   file.path("data", "derived", "crispulator_facs_parameter_grid.csv")
 )
 expected_methods <- c(
-  "BARCS-original", "BARCS-partial", "BARCS-EB",
+  "BARCS-original", "BARCS-NORM", "BARCS-partial", "BARCS-EB",
   "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
 )
 
@@ -115,6 +115,7 @@ evaluate <- function(method, gene_result, gene_truth) {
 
 method_file <- c(
   `BARCS-original` = "low_bulk_high_original_gene_results.csv",
+  `BARCS-NORM` = "low_bulk_high_normal_gene_results.csv",
   `BARCS-partial` = "low_bulk_high_partial_gene_results.csv",
   `BARCS-EB` = "low_bulk_high_eb_gene_results.csv",
   `MAGeCK-MLE` = "mageck_mle_low_bulk_high_gene_results.csv",
@@ -157,7 +158,9 @@ for (scenario_index in seq_len(nrow(scenario_table))) {
       historical_barcs_path,
       file.path(
         current_dir,
-        method_file[c("BARCS-original", "BARCS-partial", "BARCS-EB")]
+        method_file[c(
+          "BARCS-original", "BARCS-NORM", "BARCS-partial", "BARCS-EB"
+        )]
       ),
       file.path(
         historical_dir,
@@ -211,6 +214,9 @@ for (scenario_index in seq_len(nrow(scenario_table))) {
       tolower(as.character(gene_truth$active)) == "true"
     method_results <- list(
       `BARCS-original` = current_barcs,
+      `BARCS-NORM` = read.csv(file.path(
+        current_dir, method_file[["BARCS-NORM"]]
+      )),
       `BARCS-partial` = read.csv(file.path(
         current_dir, method_file[["BARCS-partial"]]
       )),
@@ -233,7 +239,9 @@ for (scenario_index in seq_len(nrow(scenario_table))) {
     source_paths <- c(
       file.path(
         current_dir,
-        method_file[c("BARCS-original", "BARCS-partial", "BARCS-EB")]
+        method_file[c(
+          "BARCS-original", "BARCS-NORM", "BARCS-partial", "BARCS-EB"
+        )]
       ),
       file.path(
         historical_dir,
@@ -261,7 +269,7 @@ for (scenario_index in seq_len(nrow(scenario_table))) {
         seed = seed,
         method = method,
         result_source = if (grepl("^BARCS", method)) {
-          "current three-method run"
+          "current four-method run"
         } else {
           "verified stored external fit"
         },
@@ -393,6 +401,7 @@ write.csv(
 
 method_colours <- c(
   `BARCS-original` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
   `BARCS-partial` = "#009E73",
   `BARCS-EB` = "#D55E00",
   `MAGeCK-MLE` = "#6A3D9A",

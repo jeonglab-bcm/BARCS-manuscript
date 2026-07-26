@@ -229,6 +229,59 @@ assert_close(
   message = "Original BARCS signed-z aggregation changed."
 )
 
+normal_gene <- bb_gene_normal(pooling_input, min_guides = 3L)
+normal_consistent <- normal_gene[
+  normal_gene$gene == "consistent", , drop = FALSE
+]
+expected_normal_beta <- pooling_input$estimate[consistent_index]
+expected_normal_mean <- mean(expected_normal_beta)
+expected_normal_sigma <- sd(expected_normal_beta)
+expected_normal_standard_error <-
+  expected_normal_sigma / sqrt(length(expected_normal_beta))
+expected_normal_statistic <-
+  expected_normal_mean / expected_normal_standard_error
+assert_close(normal_consistent$estimate, expected_normal_mean)
+assert_close(normal_consistent$sigma, expected_normal_sigma)
+assert_close(
+  normal_consistent$std_error,
+  expected_normal_standard_error
+)
+assert_close(
+  normal_consistent$statistic,
+  expected_normal_statistic
+)
+assert_close(
+  normal_consistent$student_p_value,
+  2 * pt(
+    -abs(expected_normal_statistic),
+    df = length(expected_normal_beta) - 1L
+  )
+)
+assert_close(
+  normal_consistent$normal_p_value,
+  2 * pnorm(-abs(expected_normal_statistic))
+)
+stopifnot(
+  normal_consistent$df == length(expected_normal_beta) - 1L,
+  normal_consistent$p_value == normal_consistent$student_p_value,
+  normal_consistent$normal_p_value <
+    normal_consistent$student_p_value,
+  attr(normal_gene, "reference") == "student_t"
+)
+normal_gene_plugin <- bb_gene_normal(
+  pooling_input,
+  min_guides = 3L,
+  reference = "normal"
+)
+normal_consistent_plugin <- normal_gene_plugin[
+  normal_gene_plugin$gene == "consistent", , drop = FALSE
+]
+stopifnot(
+  normal_consistent_plugin$p_value ==
+    normal_consistent_plugin$normal_p_value,
+  attr(normal_gene_plugin, "reference") == "normal"
+)
+
 partial_gene <- bb_gene_partial_pool(
   pooling_input,
   control = pooling_control,
