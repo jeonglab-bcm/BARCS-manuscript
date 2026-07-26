@@ -226,6 +226,108 @@ this is a stochastic per-guide failure, not a systematic depth effect ---
 across the library, variance inflation is uncorrelated with guide read depth
 (Spearman $-0.03$, flat across read quartiles).
 
+### Closing the gap: guide-dispersion moderation
+
+The deficits above have one cause. BARCS estimates a beta-binomial dispersion
+per guide from that guide's own residuals, on the $2R-1$ residual degrees of
+freedom the design supplies. That estimate is noisy in both directions, and the
+damaging direction is the quiet one: a few guides whose residuals happen to
+look unusually clean report standard errors their data do not support. Those
+guides drive the negative-control tail, and `bb_calibrate_controls()` can only
+answer that tail with a single scale applied to *every* guide in the screen.
+
+`bb_moderate_dispersion()` corrects those guides individually instead. It
+shrinks each guide's variance inflation --- the untruncated Pearson dispersion
+`pearson_null / df_residual` --- toward a trend fitted across the library, using
+the scaled-F moment estimator of Smyth (2004). Both the prior degrees of
+freedom and the shrinkage target are estimated from the screen, so there is no
+tuning constant that could be fitted to an outcome.
+
+The direction of the effect is worth stating plainly, because it is not the
+obvious one. Moderation makes genuinely noisy guides *stricter*. What buys the
+power is that the quiet guides stop inflating the empirical null, so the
+blanket penalty drops: on the baseline realization the control scale falls from
+1.238 to 1.172, and to 1.105 when the original tail-quantile estimator is kept.
+More discoveries at a lower realized FDP is the net result of testing most
+guides more sharply and a few more strictly.
+
+A second, smaller change targets the null-scale estimator itself.
+`bb_calibrate_controls()` matched one order statistic --- the empirical
+$1-\alpha$ quantile of the absolute control statistics --- to the corresponding
+$t$ cutoff. With a few hundred controls that is high-variance.
+`method = "qq_slope"` fits the slope of the control quantile-quantile plot
+against the $t$ reference over the 0.50--0.95 band instead, using many order
+statistics rather than one.
+
+#### How this was validated
+
+Tuning a method on the benchmark it is reported on is how methods get oversold,
+so the work was split three ways, with simulations regenerated from the pinned
+Julia environment in `julia/` (re-simulating the committed baseline reproduces
+`counts.tsv` byte for byte):
+
+- **Development** --- the baseline scenario at the five seeds already used in
+  this repository. Every design decision was made here.
+- **Held-out** --- the nine supported multi-replicate scenarios at three seeds
+  never inspected during development.
+- **Confirmatory** --- the same nine scenarios at three further fresh seeds,
+  generated and run only after the held-out split had overturned one default.
+
+Held-out means over 27 runs, and confirmatory means over 26:
+
+| Method | AP (held-out) | F1 (held-out) | FDP (held-out) | AP (confirm.) | F1 (confirm.) | FDP (confirm.) |
+|---|---:|---:|---:|---:|---:|---:|
+| BARCS-moderated | 0.8722 | **0.7852** | **0.0790** | **0.9077** | 0.8160 | **0.0852** |
+| edgeR-QL | 0.8718 | 0.7837 | 0.2137 | 0.9051 | 0.8141 | 0.1990 |
+| DESeq2 | **0.8724** | 0.7830 | 0.2315 | 0.9062 | 0.8113 | 0.2243 |
+| limma-voom | 0.8699 | 0.7813 | 0.2177 | 0.9040 | 0.8094 | 0.2137 |
+| BARCS-original | 0.8547 | 0.7289 | 0.0777 | 0.8898 | 0.7801 | 0.0803 |
+
+Against BARCS-original the gain is unambiguous and repeats on both splits:
+average precision $+0.018$ (95% interval $+0.013$ to $+0.022$ held-out,
+$+0.014$ to $+0.022$ confirmatory) and F1 $+0.056$ and $+0.036$, at no
+measurable cost in realized FDP.
+
+Against the count models the honest statement is a **tie on ranking and F1,
+won on calibration**. Paired F1 differences are within noise on both splits
+(largest interval $\pm0.025$), average-precision differences are at most
+$0.004$ and change sign between splits, and the realized-FDP difference is
+$0.11$ to $0.15$ in BARCS's favour on every comparison, always significant.
+BARCS now matches the count models where it used to trail them, and keeps a
+false-discovery proportion under the nominal 0.10 target while theirs sits at
+two to three times nominal. That is the result the earlier sections were
+missing.
+
+#### Two things the splits caught
+
+Neither would have been visible from a single evaluation, and both are recorded
+rather than folded away.
+
+- **A default chosen on development data was wrong.** The development split
+  favoured a conservative moderation --- one-way, so no guide variance is ever
+  lowered, and without claiming the prior degrees of freedom --- because
+  textbook two-sided moderation ran at FDP 0.163 on the baseline scenario. On
+  both fresh splits that caution proved unnecessary and expensive: two-sided
+  moderation held FDP at 0.079 and 0.085, while the conservative variant gave
+  up F1 (paired $-0.033$ held-out, $-0.020$ confirmatory, both significant).
+  The default is therefore the standard two-sided form, with `one_way` and
+  `borrow_df` retained as an explicitly conservative option. The confirmatory
+  split exists because that reversal was decided on held-out data.
+- **An empirical-null idea was discarded, not shipped.** Rescaling the gene
+  statistic against a central-window normal fit (Efron's empirical null) looked
+  strong on the baseline realization. It is not in the codebase: on synthetic
+  checks it is biased even with no active genes, and with one-sided activity
+  --- ordinary in a dropout screen --- it returned a scale of 10.97 against a
+  truth of 1.5. Its apparent success depended on this simulator's roughly
+  symmetric mix of increasing and decreasing genes.
+
+One caveat: three held-out scenarios (MOI 0.10, MOI 0.40, and the 100-gene
+library) run above nominal FDP for BARCS both before and after moderation, so
+the calibration claim is a screen-average one rather than a per-scenario
+guarantee. One confirmatory run is skipped entirely because a 100-gene library
+left fewer than the 20 negative-control guides `bb_calibrate_controls()`
+requires; that limit predates the moderation and stops BARCS-original equally.
+
 ### The one-replicate boundary, and why the count models lead there
 
 At $R=1$ the design has three samples (low, bulk, high) and the guide model
@@ -412,6 +514,17 @@ Rscript examples/crispulator_facs_f1_threshold_curves_aggregate.R
 - `examples/crispulator_facs_f1_threshold_curves_aggregate.R`
 - `data/derived/crispulator_facs_f1_by_fdr.csv`
 - `figures/crispulator_facs_f1_by_fdr.pdf`
+
+The moderation and its validation:
+
+- `examples/crispulator_facs_improved_barcs.R` (committed inputs only)
+- `data/derived/crispulator_facs_improved_barcs_baseline.csv`
+- `data/derived/crispulator_facs_improved_barcs_scales.csv`
+- `examples/crispulator_facs_improved_barcs_holdout.R` (`--simulate` first;
+  needs Julia and the pinned environment in `julia/`)
+- `data/derived/crispulator_facs_improved_barcs_holdout_metrics.csv`
+- `data/derived/crispulator_facs_improved_barcs_holdout_summary.csv`
+- `data/derived/crispulator_facs_improved_barcs_holdout_paired.csv`
 
 The per-gene case study runs entirely from committed inputs and needs
 edgeR, limma, and DESeq2:
