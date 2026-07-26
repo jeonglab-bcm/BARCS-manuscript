@@ -522,50 +522,91 @@ overlaps the tails, its apparent inferential gain may in any case partly
 reflect an independence approximation rather than new biological information;
 that reading is strengthened by its being replaceable.
 
-\paragraph{F1 across nominal FDR thresholds.}
-A single operating point cannot separate a method that ranks poorly from one
-that ranks well and calls too little, so we scanned the gene-FDR threshold
-from 0.001 to 0.50 and recorded F1 and realized FDP at each
-(Figure~\ref{fig:crispulator-moi10k-fdr}).  Thresholds above the nominal 0.10
-are a diagnostic, not a recommended operating point.
+\paragraph{Robustness of FDR control across cutoffs.}
+The realized-FDP column of Table~\ref{tab:crispulator} is a single point, so
+it cannot distinguish a method that controls the false-discovery rate from one
+that happens to land near 0.10.  We therefore repeated the calibration check
+at eight gene-FDR cutoffs from 0.001 to 0.50 in every run.  The quantity of
+interest is the ratio of realized FDP to the cutoff that was requested: a
+value of one is exact calibration, below one is conservative, and above one
+means the method returns more false discoveries than it advertised.
 
-The scan changes the reading of the F1 column, and it is worth stating
-plainly.  \emph{Peak} F1 is essentially tied across methods: 0.827 for
-BARCS-ST, 0.847 for BARCS-MOD, 0.853 for MAGeCK-MLE, and 0.844--0.847 for the
-three count models.  MAGeCK-MLE in fact attains the highest peak of any
-method.  BARCS-MOD does not have access to more attainable F1 than its
-competitors.
+\begin{table}[ht]
+\centering
+\caption{Realized FDP divided by the requested gene-FDR cutoff, MOI 0.20,
+means over three seeds on the common gene set.  One is exact calibration and
+values above one are violations.  The final column counts the
+cutoff-by-seed cells, of $8\times3=24$, in which realized FDP did not exceed
+the cutoff.}
+\label{tab:crispulator-fdr-robust}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Method & 0.001 & 0.005 & 0.01 & 0.05 & 0.10 & 0.20 & 0.30 & 0.50 &
+Cells held\\
+\midrule
+\methodswatch{barcsblue} BARCS-ST &
+0.59 & 0.73 & 0.59 & 0.61 & 0.65 & 0.67 & 0.66 & 0.72 & 22/24\\
+\methodswatch{mageckorange} BARCS-MOD &
+0.40 & 0.63 & 0.68 & 0.62 & 0.66 & 0.68 & 0.69 & 0.73 & 22/24\\
+\methodswatch{naivegray} MAGeCK-MLE &
+0.00 & 0.13 & 0.06 & 0.08 & 0.06 & 0.10 & 0.14 & 0.20 &
+\textcolor{black}{\textbf{24/24}}\\
+\methodswatch{chronosgreen} edgeR-QL + Stouffer &
+9.96 & 5.64 & 4.09 & 2.52 & 2.05 & 1.59 & 1.37 & 1.11 & 0/24\\
+\methodswatch{mageckpink} DESeq2 + Stouffer &
+17.15 & 7.77 & 5.86 & 3.19 & 2.39 & 1.77 & 1.50 & 1.15 & 0/24\\
+\methodswatch{bagelgold} limma-voom + Stouffer &
+10.92 & 5.47 & 4.76 & 2.73 & 2.14 & 1.66 & 1.41 & 1.12 & 0/24\\
+\bottomrule
+\end{tabular}
+\end{table}
 
-What differs is whether the nominal threshold delivers that peak, and at what
-realized error rate.  BARCS-MOD is already at its maximum at the nominal 0.10:
-its argmax is nominally 0.20, but the two are indistinguishable, 0.8470 against
-0.8468, so the shortfall at the reported threshold is 0.0002 and the realized
-FDP there is 0.066.  At MOI 0.30 the maximum falls exactly on 0.10.  MAGeCK-MLE requires a
-nominal 0.50 to reach its maximum and gives up 0.135 of F1 at 0.10, because
-its realized FDP there is 0.006, sixteen times below what it was permitted.
-edgeR-QL, DESeq2, and limma-voom peak at nominal 0.05, 0.01, and 0.05, giving
-up 0.021, 0.035, and 0.022 respectively at the nominal threshold, and they
-reach the nominal operating point only by running at realized FDP
-0.205--0.239.
+The direction of miscalibration is a property of the method rather than of the
+0.10 choice.  edgeR-QL, DESeq2, and limma-voom exceed the requested rate at
+every one of the eight cutoffs and in all 24 cutoff-by-seed cells, and the
+excess is largest exactly where a user is being most careful: at a requested
+0.001 they return 10 to 17 times that rate.  Their apparent convergence toward
+one at the loosest cutoffs is not improved calibration but the ceiling effect
+of a ratio whose numerator cannot exceed the fraction of inactive genes.
+MAGeCK-MLE holds in all 24 cells and never exceeds 0.21 of the requested rate.
+Both BARCS statistics sit between 0.40 and 0.73 of the requested rate at every
+cutoff, the low end being BARCS-MOD at the strictest 0.001, which is the
+behaviour a screen can plan around.
 
-$$
-\text{attainable F1} \approx \text{equal};\qquad
-\text{F1 you get by asking for FDR }0.10 \ne \text{equal}.
-$$
+The BARCS exceptions are worth naming rather than rounding away.  Both
+statistics miss in 2 of 24 cells, and every miss comes from one seed
+(20250725) at the 0.001 and 0.005 cutoffs, where the excess is a single false
+discovery: at a requested 0.001 with 840 calls, BARCS-MOD returns FDP 0.0012
+against an allowance of 0.84 genes.  These are Monte Carlo granularity at the
+strictest cutoffs, not a systematic failure, and they are the reason the
+calibration claim in this paper is stated as a screen-average rather than a
+finite-sample guarantee.  At MOI 0.30 the same pattern holds, with the one
+additional miss for BARCS-MOD at the 0.01 cutoff of the same seed.
 
-The practical consequence is that every method other than BARCS-MOD needs a
-threshold different from the one it is asked for, and the correct choice
-differs by method and cannot be read off without the truth.  This is the same
-point the realized-FDP column makes, seen from the power side rather than the
-error side.  Panel~B of Figure~\ref{fig:crispulator-moi10k-fdr} shows the
-calibration directly: a method whose curve follows the dashed identity line
-delivers the false-discovery rate it reports.
+\paragraph{The power side of the same picture.}
+Scanning the cutoff also shows what each method could achieve if its threshold
+were chosen with knowledge of the truth, which a real screen does not have.
+\emph{Peak} F1 is essentially tied: 0.827 for BARCS-ST, 0.847 for BARCS-MOD,
+0.853 for MAGeCK-MLE, and 0.844--0.847 for the three count models.  MAGeCK-MLE
+attains the highest peak of any method, so moderation does not give BARCS
+access to more recoverable genes than the alternatives.  What differs is
+whether the requested cutoff delivers that peak.  BARCS-MOD is already at its
+maximum at 0.10: its argmax is nominally 0.20, but the two are
+indistinguishable, 0.8470 against 0.8468, so the shortfall at the reported
+cutoff is 0.0002.  MAGeCK-MLE gives up 0.135 of F1 at 0.10 and needs a
+requested 0.50 to peak; edgeR-QL, DESeq2, and limma-voom give up 0.021, 0.035,
+and 0.022 and reach their peaks at 0.05, 0.01, and 0.05 respectively.  Every
+method other than BARCS-MOD needs a cutoff other than the one it was asked
+for, and the right choice differs by method and is not identifiable without
+the truth.
 
 \begin{figure}[!t]
 \centering
 \includegraphics[width=\textwidth]{figures/crispulator_facs_moi_10k_f1_by_fdr.pdf}
-\caption{F1 and calibration across nominal gene-FDR thresholds in the
-genome-scale simulation, means over three seeds on the common gene set.
+\caption{Calibration and F1 across gene-FDR cutoffs in the genome-scale
+simulation, means over three seeds on the common gene set.
 (A) F1 and (B) realized FDP at MOI 0.20; (C) and (D) the same at MOI 0.30.
 The dashed line in the FDP panels is realized equal to nominal, so a method
 tracking it reports the error rate it delivers.  Thresholds above 0.10 are a

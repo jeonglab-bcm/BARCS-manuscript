@@ -328,43 +328,67 @@ guarantee. One confirmatory run is skipped entirely because a 100-gene library
 left fewer than the 20 negative-control guides `bb_calibrate_controls()`
 requires; that limit predates the moderation and stops BARCS-original equally.
 
-### Genome scale: attainable F1 is equal, the honest threshold is not
+### Genome scale: is FDR control robust across cutoffs?
 
-The 400-gene threshold scan above compares BARCS-original with the count
-models. At 10,000 genes, with MAGeCK-MLE included and guide-dispersion
-moderation available, the scan says something sharper. Scanning gene FDR from
-0.001 to 0.50 (`examples/crispulator_facs_moi_10k_benchmark.R`, MOI 0.20,
-three seeds, common gene set):
+A single realized-FDP number cannot distinguish a method that controls the
+false-discovery rate from one that happens to land near 0.10. So the
+calibration check is repeated at eight cutoffs from 0.001 to 0.50 in every run
+(`examples/crispulator_facs_moi_10k_benchmark.R`, MOI 0.20, three seeds,
+common gene set). The quantity is realized FDP divided by the cutoff
+requested: one is exact, below one is conservative, above one means the
+method returns more false discoveries than it advertised.
 
-| Method | F1 at nominal 0.10 | Realized FDP at 0.10 | Peak F1 | at nominal | Shortfall at 0.10 |
-|---|---:|---:|---:|---:|---:|
-| BARCS-moderated | **0.847** | 0.066 | 0.847 | 0.20 | **0.0002** |
-| MAGeCK-MLE | 0.718 | 0.006 | **0.853** | 0.50 | 0.135 |
-| edgeR-QL | 0.825 | 0.205 | 0.846 | 0.05 | 0.021 |
-| limma-voom | 0.822 | 0.214 | 0.844 | 0.05 | 0.022 |
-| DESeq2 | 0.812 | 0.239 | 0.847 | 0.01 | 0.035 |
-| BARCS-original | 0.811 | 0.065 | 0.827 | 0.20 | 0.016 |
+| Method | 0.001 | 0.005 | 0.01 | 0.05 | 0.10 | 0.20 | 0.30 | 0.50 | Cells held |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BARCS-original | 0.59 | 0.73 | 0.59 | 0.61 | 0.65 | 0.67 | 0.66 | 0.72 | 22/24 |
+| BARCS-moderated | 0.40 | 0.63 | 0.68 | 0.62 | 0.66 | 0.68 | 0.69 | 0.73 | 22/24 |
+| MAGeCK-MLE | 0.00 | 0.13 | 0.06 | 0.08 | 0.06 | 0.10 | 0.14 | 0.20 | **24/24** |
+| edgeR-QL | 9.96 | 5.64 | 4.09 | 2.52 | 2.05 | 1.59 | 1.37 | 1.11 | 0/24 |
+| DESeq2 | 17.15 | 7.77 | 5.86 | 3.19 | 2.39 | 1.77 | 1.50 | 1.15 | 0/24 |
+| limma-voom | 10.92 | 5.47 | 4.76 | 2.73 | 2.14 | 1.66 | 1.41 | 1.12 | 0/24 |
 
-Two things follow, and the first is a caution against overselling the method.
+"Cells held" counts the cutoff-by-seed combinations, of 8 × 3 = 24, where
+realized FDP did not exceed the requested cutoff.
 
-**Attainable F1 is essentially tied.** Peak F1 spans 0.827 to 0.853, and the
-highest belongs to MAGeCK-MLE, not to BARCS. Any claim that moderation makes
-BARCS able to recover more genes than the alternatives is not supported;
-what it recovers *at the threshold it was asked for* is a different question.
+**The direction of miscalibration is a property of the method, not of the 0.10
+choice.** The three count models exceed the requested rate at every cutoff and
+in all 24 cells. The excess is worst exactly where a user is being most
+careful: asking for 0.001 returns 10 to 17 times that rate. Their drift toward
+1.0 at loose cutoffs is not improving calibration, it is the ceiling of a
+ratio whose numerator cannot exceed the inactive fraction.
 
-**Only BARCS-moderated reaches its peak at the threshold it reports.** Its
-argmax is nominally 0.20, but 0.10 and 0.20 are indistinguishable (0.8470
-against 0.8468), so the shortfall at the reported threshold is 0.0002, at
-realized FDP 0.066. At MOI 0.30 the maximum falls exactly on 0.10. MAGeCK-MLE gives up
-0.135 of F1 by running sixteen times more conservatively than permitted; the
-count models give up 0.021--0.035 and reach the nominal point only at realized
-FDP 0.205--0.239. Every method other than BARCS-moderated needs a threshold
-different from the one requested, and the right choice differs by method and
-cannot be identified without the truth.
+**BARCS is uniformly conservative but not extravagantly so**, 0.40 to 0.73 of
+the requested rate at every cutoff. MAGeCK-MLE holds everywhere but never
+spends more than 0.21 of its budget.
 
-That is the practical content of calibration, stated from the power side: not
-that a calibrated method finds more, but that asking it for 10% and getting
-6.6% means the number you set is the number you can reason with.
+**The BARCS exceptions, named rather than rounded away.** Both statistics miss
+2 of 24 cells, all from one seed (20250725) at the 0.001 and 0.005 cutoffs,
+and each miss is a single false discovery: at a requested 0.001 with 840
+calls, BARCS-moderated returns FDP 0.0012 against an allowance of 0.84 genes.
+That is Monte Carlo granularity at the strictest cutoffs, not systematic
+failure — and it is why the calibration claim here is a screen average, not a
+finite-sample guarantee. At MOI 0.30 BARCS-moderated holds 21 of 24, the extra
+miss being the 0.01 cutoff of the same seed.
+
+#### The power side of the same scan
+
+The scan also shows what each method could reach if its cutoff were chosen
+knowing the truth, which a real screen cannot do.
+
+| Method | F1 at 0.10 | Peak F1 | at cutoff | Shortfall at 0.10 |
+|---|---:|---:|---:|---:|
+| BARCS-moderated | **0.847** | 0.847 | 0.20 | **0.0002** |
+| MAGeCK-MLE | 0.718 | **0.853** | 0.50 | 0.135 |
+| edgeR-QL | 0.825 | 0.846 | 0.05 | 0.021 |
+| limma-voom | 0.822 | 0.844 | 0.05 | 0.022 |
+| DESeq2 | 0.812 | 0.847 | 0.01 | 0.035 |
+| BARCS-original | 0.811 | 0.827 | 0.20 | 0.016 |
+
+Attainable F1 is essentially tied, 0.827 to 0.853, and the highest belongs to
+MAGeCK-MLE. Moderation does not give BARCS access to more recoverable genes.
+What differs is whether the requested cutoff delivers the peak: BARCS-moderated
+is already there at 0.10, while every other method needs a different cutoff,
+and which one differs by method and is not identifiable without the truth.
 
 ### The one-replicate boundary, and why the count models lead there
 
