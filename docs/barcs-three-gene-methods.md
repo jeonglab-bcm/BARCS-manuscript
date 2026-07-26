@@ -4,6 +4,21 @@ All three methods begin with the same guide-by-sample count matrix and the
 same beta-binomial regression. They differ only after one phenotype
 coefficient and standard error have been estimated for every guide.
 
+For clearer manuscript terminology, the proposed short labels are:
+
+| Proposed label | Current benchmark label | Mathematical operation |
+|---|---|---|
+| BARCS-ST | BARCS-original | Directional Stouffer aggregation |
+| BARCS-NORM | BARCS-partial | Normal random-effects pooling |
+| BARCS-NORM-EB | BARCS-EB | Moderated normal random-effects pooling |
+
+The normal model is therefore already implemented; it is not an additional
+fourth method. If “BARCS-FS” is intended to mean Fisher aggregation, it is not
+recommended here. Ordinary Fisher aggregation combines evidence magnitude
+but loses effect direction, and it does not estimate guide-effect
+heterogeneity. A signed Fisher variant would require a new, nonstandard
+definition and separate calibration.
+
 For a gene with four guides, the shared input might be:
 
 | guide | phenotype coefficient | standard error | two-sided p-value |
@@ -15,7 +30,7 @@ For a gene with four guides, the shared input might be:
 
 No method treats these four guides as four biological samples.
 
-## 1. BARCS-original
+## 1. BARCS-ST (currently BARCS-original)
 
 The historical calculation converts every guide p-value to a signed normal
 score,
@@ -36,7 +51,7 @@ Z_g=\frac{\sum_j z_{gj}}{\sqrt{m_g}}.
 This method uses each guide's direction and significance, but it does not
 estimate an explicit guide-disagreement variance.
 
-## 2. BARCS-partial
+## 2. BARCS-NORM (currently BARCS-partial)
 
 The partial-pooling model works with guide coefficients rather than guide
 p-values:
@@ -77,7 +92,7 @@ Consistent guides give \(\widehat\tau_g^2\) close to zero. Contradictory guides
 increase \(\widehat\tau_g^2\), reduce their weights, and increase the gene
 standard error.
 
-## 3. BARCS-EB
+## 3. BARCS-NORM-EB (currently BARCS-EB)
 
 With only three to six guides per gene, each
 \(\widehat\tau_g^2\) is noisy. BARCS-EB first estimates the typical

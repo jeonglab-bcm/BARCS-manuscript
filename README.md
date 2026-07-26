@@ -126,9 +126,6 @@ commits the updated submodule pointer. See
   RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
   BARCS, edgeR-QL, DESeq2, and limma-voom on the same normalized
   day-0/day-14 values.
-- `examples/liang_cas13_top5_sensitivity.R`: outcome-independent comparison
-  of all valid guides with the five guides having the highest mean Day-0
-  abundance within each gene.
 - `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
   across p-value thresholds and matched BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
   and limma-voom volcano plots using the processed pseudo-count inputs.
@@ -169,7 +166,6 @@ Rscript examples/crispulator_facs_f1_threshold_curves.R
 Rscript examples/waterbear_facs_benchmark.R
 Rscript examples/waterbear_facs_external_head_to_head.R
 Rscript examples/liang_cas13_benchmark.R
-Rscript examples/liang_cas13_top5_sensitivity.R
 Rscript examples/liang_hap1_specificity_volcano.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
@@ -225,8 +221,8 @@ it does not improve BARCS: macro average precision falls from 0.776 to 0.638,
 and FDR-0.10 essential recall falls from 0.487 to 0.330. Selecting the five
 smallest observed p-values is not reported because it uses the outcome twice
 and would make significance anti-conservative. Mean BARCS--MAGeCK-MLE
-effect-rank correlation is 0.875 across cell lines. The versioned metrics,
-top-five sensitivity, and rounding audit are under `data/derived/`.
+effect-rank correlation is 0.875 across cell lines. The versioned metrics and
+rounding audit are under `data/derived/`.
 
 An optional raw-read confirmation remains available. It streams approximately
 14 GB of compressed endpoints without retaining FASTQs:
