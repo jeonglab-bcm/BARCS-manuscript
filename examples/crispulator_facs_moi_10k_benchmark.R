@@ -34,6 +34,11 @@
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "crispulator-moi-10k-v1"
 nominal_fdr <- 0.10
+# Threshold scan. The grid runs above the nominal 0.10 as well as below it,
+# because the single-threshold table cannot distinguish a method that ranks
+# badly from one that ranks well and simply calls too little. Thresholds above
+# 0.10 are a diagnostic, not a recommended operating point.
+thresholds <- c(0.001, 0.005, 0.01, 0.05, 0.10, 0.20, 0.30, 0.50)
 seeds <- c(20250724L, 20250725L, 20250726L)
 moi_levels <- c(0.20, 0.30)
 main_moi <- 0.20
@@ -298,7 +303,65 @@ fit_one_run <- function(directory) {
   common_genes <- Reduce(intersect, finite_genes)
   stopifnot(length(common_genes) > 0L)
 
-  do.call(rbind, lapply(names(gene_results), function(method) {
+  # Threshold scan on the same common gene set.
+  threshold_rows <- do.call(rbind, lapply(names(gene_results), function(method) {
+    scanned <- merge(
+      gene_truth[gene_truth$gene %in% common_genes, , drop = FALSE],
+      gene_results[[method]][, c("gene", "estimate", "p_value", "fdr")],
+      by = "gene", all.x = TRUE
+    )
+    scanned <- scanned[
+      is.finite(scanned$estimate) & is.finite(scanned$p_value) &
+        is.finite(scanned$fdr), , drop = FALSE
+    ]
+    active <- scanned$active
+    sign_match <- sign(scanned$estimate) == scanned$expected_sign
+    do.call(rbind, lapply(thresholds, function(threshold) {
+      called <- scanned$fdr < threshold
+      true_positive <- sum(called & active)
+      false_positive <- sum(called & !active)
+      false_negative <- sum(!called & active)
+      precision <- if ((true_positive + false_positive) > 0) {
+        true_positive / (true_positive + false_positive)
+      } else {
+        0
+      }
+      recall <- if ((true_positive + false_negative) > 0) {
+        true_positive / (true_positive + false_negative)
+      } else {
+        0
+      }
+      data.frame(
+        analysis_protocol = analysis_protocol,
+        method = sub(" \\(low-high\\)$", "", method),
+        design = if (grepl("low-high", method, fixed = TRUE)) {
+          "low-high"
+        } else {
+          "low-bulk-high"
+        },
+        nominal_fdr = threshold,
+        genes = nrow(scanned),
+        active_genes = sum(active),
+        calls = sum(called),
+        precision = precision,
+        recall = recall,
+        directional_recall = mean(called[active] & sign_match[active]),
+        realized_fdp = if (sum(called) > 0) {
+          false_positive / sum(called)
+        } else {
+          0
+        },
+        f1 = if ((precision + recall) > 0) {
+          2 * precision * recall / (precision + recall)
+        } else {
+          0
+        }
+      )
+    }))
+  }))
+  attr(threshold_rows, "is_threshold_scan") <- TRUE
+
+  point_rows <- do.call(rbind, lapply(names(gene_results), function(method) {
     # The negative-control diagnostic is a per-method property of the known
     # nulls, so it is taken from the method's own output rather than the
     # common set. MAGeCK-MLE omits control genes from its gene summary
@@ -367,9 +430,11 @@ fit_one_run <- function(directory) {
       control_scale_moderated = attr(moderated, "control_scale")
     )
   }))
+  list(point = point_rows, scan = threshold_rows)
 }
 
 metric_rows <- list()
+scan_rows <- list()
 for (moi in moi_levels) {
   for (seed in seeds) {
     directory <- run_directory(moi, seed)
@@ -380,7 +445,13 @@ for (moi in moi_levels) {
         call. = FALSE
       )
     }
-    run_metrics <- fit_one_run(directory)
+    fitted <- fit_one_run(directory)
+    run_metrics <- fitted$point
+    scan_metrics <- fitted$scan
+    scan_metrics$moi <- moi
+    scan_metrics$seed <- seed
+    scan_metrics$scope <- if (moi == main_moi) "main" else "supplementary"
+    scan_rows[[length(scan_rows) + 1L]] <- scan_metrics
     run_metrics$moi <- moi
     run_metrics$seed <- seed
     run_metrics$genes_simulated <- n_genes
@@ -394,6 +465,46 @@ metrics <- do.call(rbind, metric_rows)
 write.csv(
   metrics,
   file.path("data", "derived", "crispulator_facs_moi_10k_metrics.csv"),
+  row.names = FALSE
+)
+
+scan_metrics <- do.call(rbind, scan_rows)
+write.csv(
+  scan_metrics,
+  file.path("data", "derived", "crispulator_facs_moi_10k_f1_by_fdr.csv"),
+  row.names = FALSE
+)
+scan_summary <- do.call(rbind, lapply(
+  split(
+    scan_metrics,
+    list(scan_metrics$moi, scan_metrics$design, scan_metrics$method,
+         scan_metrics$nominal_fdr),
+    drop = TRUE
+  ),
+  function(group) {
+    data.frame(
+      analysis_protocol = analysis_protocol,
+      moi = group$moi[1L], design = group$design[1L],
+      method = group$method[1L], nominal_fdr = group$nominal_fdr[1L],
+      runs = nrow(group),
+      precision = mean(group$precision), recall = mean(group$recall),
+      directional_recall = mean(group$directional_recall),
+      realized_fdp = mean(group$realized_fdp),
+      realized_fdp_sd = sd(group$realized_fdp),
+      f1 = mean(group$f1), f1_sd = sd(group$f1),
+      calls = mean(group$calls)
+    )
+  }
+))
+scan_summary <- scan_summary[
+  order(scan_summary$moi, scan_summary$design, scan_summary$method,
+        scan_summary$nominal_fdr),
+]
+write.csv(
+  scan_summary,
+  file.path(
+    "data", "derived", "crispulator_facs_moi_10k_f1_by_fdr_summary.csv"
+  ),
   row.names = FALSE
 )
 
@@ -465,6 +576,70 @@ write.csv(
   file.path("data", "derived", "crispulator_facs_moi_10k_paired.csv"),
   row.names = FALSE
 )
+
+
+# ---- F1 and calibration across nominal FDR thresholds ----------------------
+method_colours <- c(
+  `BARCS-original` = "#0072B2",
+  `BARCS-moderated` = "#D55E00",
+  `MAGeCK-MLE` = "#6A3D9A",
+  `edgeR-QL` = "#CC79A7",
+  DESeq2 = "#56B4E9",
+  `limma-voom` = "#666666"
+)
+method_pch <- c(16, 17, 15, 8, 4, 3)
+names(method_pch) <- names(method_colours)
+curve_methods <- names(method_colours)
+x_positions <- -log10(thresholds)
+x_labels <- format(thresholds, trim = TRUE, scientific = FALSE)
+
+draw_curve <- function(moi, metric, title, ylim) {
+  panel <- scan_summary[
+    scan_summary$moi == moi & scan_summary$design == "low-bulk-high",
+    ,
+    drop = FALSE
+  ]
+  plot(
+    NA, xlim = range(x_positions), ylim = ylim, xaxt = "n",
+    xlab = "Nominal gene FDR",
+    ylab = if (metric == "f1") "F1 score" else "Realized FDP",
+    main = title, bty = "l"
+  )
+  axis(1, at = x_positions, labels = x_labels)
+  if (metric == "realized_fdp") {
+    # Realized equals nominal: a method on this line reports what it delivers.
+    lines(x_positions, thresholds, lty = 2, lwd = 1.5, col = "#333333")
+  }
+  for (method in curve_methods) {
+    rows <- panel[panel$method == method, , drop = FALSE]
+    rows <- rows[match(thresholds, rows$nominal_fdr), , drop = FALSE]
+    lines(
+      x_positions, rows[[metric]], type = "o", pch = method_pch[[method]],
+      lwd = 2, col = method_colours[[method]]
+    )
+  }
+}
+
+pdf(
+  file.path("figures", "crispulator_facs_moi_10k_f1_by_fdr.pdf"),
+  width = 10.5, height = 8, useDingbats = FALSE
+)
+layout(matrix(c(1, 2, 3, 4, 5, 5), nrow = 3, byrow = TRUE),
+       heights = c(1, 1, 0.22))
+par(mar = c(4.5, 4.3, 2.8, 1))
+draw_curve(main_moi, "f1", "A  F1: MOI 0.20", c(0.2, 0.95))
+draw_curve(main_moi, "realized_fdp", "B  Realized FDP: MOI 0.20", c(0, 0.62))
+draw_curve(0.30, "f1", "C  F1: MOI 0.30", c(0.2, 0.95))
+draw_curve(0.30, "realized_fdp", "D  Realized FDP: MOI 0.30", c(0, 0.62))
+par(mar = c(0, 0, 0, 0))
+plot.new()
+legend(
+  "center", legend = curve_methods,
+  col = unname(method_colours[curve_methods]),
+  pch = unname(method_pch[curve_methods]),
+  lty = 1, lwd = 2, horiz = TRUE, bty = "n", cex = 0.78
+)
+dev.off()
 
 cat("\nGenome-scale CRISPulator benchmark,", n_genes, "genes, gene FDR",
     nominal_fdr, "\n")

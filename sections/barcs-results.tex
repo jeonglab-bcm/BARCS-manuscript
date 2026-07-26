@@ -474,8 +474,10 @@ At genome scale the tradeoff sharpens into a three-way split rather than a
 single winner.  MAGeCK-MLE is the best ranker: it leads AUROC, average
 precision, and effect recovery.  The three general count models recover the
 most active genes at the nominal threshold, 0.857--0.869 directional recall.
-BARCS-MOD leads F1, and it is the only method that combines competitive
-ranking with a realized FDP below the nominal target.
+BARCS-MOD leads F1 at the nominal threshold, and it is the only method that
+combines competitive ranking with a realized FDP below the nominal target.
+The threshold scan below shows that this F1 lead is a property of the nominal
+operating point rather than of the achievable maximum.
 
 The reason the ranking leader is not the F1 leader is that MAGeCK-MLE
 converts almost none of its ranking into calls at gene FDR 0.10.  Its
@@ -520,12 +522,67 @@ overlaps the tails, its apparent inferential gain may in any case partly
 reflect an independence approximation rather than new biological information;
 that reading is strengthened by its being replaceable.
 
+\paragraph{F1 across nominal FDR thresholds.}
+A single operating point cannot separate a method that ranks poorly from one
+that ranks well and calls too little, so we scanned the gene-FDR threshold
+from 0.001 to 0.50 and recorded F1 and realized FDP at each
+(Figure~\ref{fig:crispulator-moi10k-fdr}).  Thresholds above the nominal 0.10
+are a diagnostic, not a recommended operating point.
+
+The scan changes the reading of the F1 column, and it is worth stating
+plainly.  \emph{Peak} F1 is essentially tied across methods: 0.827 for
+BARCS-ST, 0.847 for BARCS-MOD, 0.853 for MAGeCK-MLE, and 0.844--0.847 for the
+three count models.  MAGeCK-MLE in fact attains the highest peak of any
+method.  BARCS-MOD does not have access to more attainable F1 than its
+competitors.
+
+What differs is whether the nominal threshold delivers that peak, and at what
+realized error rate.  BARCS-MOD is already at its maximum at the nominal 0.10:
+its argmax is nominally 0.20, but the two are indistinguishable, 0.8470 against
+0.8468, so the shortfall at the reported threshold is 0.0002 and the realized
+FDP there is 0.066.  At MOI 0.30 the maximum falls exactly on 0.10.  MAGeCK-MLE requires a
+nominal 0.50 to reach its maximum and gives up 0.135 of F1 at 0.10, because
+its realized FDP there is 0.006, sixteen times below what it was permitted.
+edgeR-QL, DESeq2, and limma-voom peak at nominal 0.05, 0.01, and 0.05, giving
+up 0.021, 0.035, and 0.022 respectively at the nominal threshold, and they
+reach the nominal operating point only by running at realized FDP
+0.205--0.239.
+
+$$
+\text{attainable F1} \approx \text{equal};\qquad
+\text{F1 you get by asking for FDR }0.10 \ne \text{equal}.
+$$
+
+The practical consequence is that every method other than BARCS-MOD needs a
+threshold different from the one it is asked for, and the correct choice
+differs by method and cannot be read off without the truth.  This is the same
+point the realized-FDP column makes, seen from the power side rather than the
+error side.  Panel~B of Figure~\ref{fig:crispulator-moi10k-fdr} shows the
+calibration directly: a method whose curve follows the dashed identity line
+delivers the false-discovery rate it reports.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_moi_10k_f1_by_fdr.pdf}
+\caption{F1 and calibration across nominal gene-FDR thresholds in the
+genome-scale simulation, means over three seeds on the common gene set.
+(A) F1 and (B) realized FDP at MOI 0.20; (C) and (D) the same at MOI 0.30.
+The dashed line in the FDP panels is realized equal to nominal, so a method
+tracking it reports the error rate it delivers.  Thresholds above 0.10 are a
+diagnostic: they show what each method could attain if its threshold were
+chosen with knowledge of the truth, which a real screen does not have.}
+\label{fig:crispulator-moi10k-fdr}
+\end{figure}
+
 At MOI 0.30 every one of these conclusions is reproduced
 (Supplementary Table~\ref{tab:crispulator-moi03}): BARCS-MOD again leads F1 at
 FDP 0.070, the count models again run at 0.200--0.236, and MAGeCK-MLE again
-ranks marginally best while calling least, at FDP 0.003 and F1 0.708.  The one
-difference is that MAGeCK-MLE's average-precision margin over BARCS-MOD is
-resolvable at this MOI, 0.0033 (0.0017 to 0.0049).
+ranks marginally best while calling least, at FDP 0.003 and F1 0.708.  The
+threshold scan repeats too: peak F1 spans 0.825--0.855 across methods, and
+BARCS-MOD again attains its own peak at the nominal 0.10 while MAGeCK-MLE
+gives up 0.146 there.  The one difference is that MAGeCK-MLE's
+average-precision margin over BARCS-MOD is resolvable at this MOI, 0.0033
+(0.0017 to 0.0049).
 
 \begin{table}[ht]
 \centering

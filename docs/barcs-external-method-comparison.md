@@ -328,6 +328,44 @@ guarantee. One confirmatory run is skipped entirely because a 100-gene library
 left fewer than the 20 negative-control guides `bb_calibrate_controls()`
 requires; that limit predates the moderation and stops BARCS-original equally.
 
+### Genome scale: attainable F1 is equal, the honest threshold is not
+
+The 400-gene threshold scan above compares BARCS-original with the count
+models. At 10,000 genes, with MAGeCK-MLE included and guide-dispersion
+moderation available, the scan says something sharper. Scanning gene FDR from
+0.001 to 0.50 (`examples/crispulator_facs_moi_10k_benchmark.R`, MOI 0.20,
+three seeds, common gene set):
+
+| Method | F1 at nominal 0.10 | Realized FDP at 0.10 | Peak F1 | at nominal | Shortfall at 0.10 |
+|---|---:|---:|---:|---:|---:|
+| BARCS-moderated | **0.847** | 0.066 | 0.847 | 0.20 | **0.0002** |
+| MAGeCK-MLE | 0.718 | 0.006 | **0.853** | 0.50 | 0.135 |
+| edgeR-QL | 0.825 | 0.205 | 0.846 | 0.05 | 0.021 |
+| limma-voom | 0.822 | 0.214 | 0.844 | 0.05 | 0.022 |
+| DESeq2 | 0.812 | 0.239 | 0.847 | 0.01 | 0.035 |
+| BARCS-original | 0.811 | 0.065 | 0.827 | 0.20 | 0.016 |
+
+Two things follow, and the first is a caution against overselling the method.
+
+**Attainable F1 is essentially tied.** Peak F1 spans 0.827 to 0.853, and the
+highest belongs to MAGeCK-MLE, not to BARCS. Any claim that moderation makes
+BARCS able to recover more genes than the alternatives is not supported;
+what it recovers *at the threshold it was asked for* is a different question.
+
+**Only BARCS-moderated reaches its peak at the threshold it reports.** Its
+argmax is nominally 0.20, but 0.10 and 0.20 are indistinguishable (0.8470
+against 0.8468), so the shortfall at the reported threshold is 0.0002, at
+realized FDP 0.066. At MOI 0.30 the maximum falls exactly on 0.10. MAGeCK-MLE gives up
+0.135 of F1 by running sixteen times more conservatively than permitted; the
+count models give up 0.021--0.035 and reach the nominal point only at realized
+FDP 0.205--0.239. Every method other than BARCS-moderated needs a threshold
+different from the one requested, and the right choice differs by method and
+cannot be identified without the truth.
+
+That is the practical content of calibration, stated from the power side: not
+that a calibrated method finds more, but that asking it for 10% and getting
+6.6% means the number you set is the number you can reason with.
+
 ### The one-replicate boundary, and why the count models lead there
 
 At $R=1$ the design has three samples (low, bulk, high) and the guide model
