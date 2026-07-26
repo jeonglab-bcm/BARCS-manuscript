@@ -196,6 +196,77 @@ assert_close(
   message = "Gene consistency did not recover retained raw standard errors."
 )
 
+# The historical method must reproduce the signed-z calculation exactly,
+# while the two guide-aware methods retain and moderate heterogeneity.
+pooling_input <- data.frame(
+  gene = rep(
+    c("control_a", "control_b", "consistent", "discordant"),
+    each = 5
+  ),
+  estimate = c(
+    -0.04, 0.02, 0.01, -0.03, 0.04,
+    0.03, -0.02, 0.04, -0.01, -0.03,
+    -1.00, -0.90, -1.10, -1.00, -1.05,
+    -1.00, -0.90, 0.80, 1.00, 0.20
+  ),
+  std_error = rep(0.20, 20),
+  converged = TRUE
+)
+pooling_input$p_value <- 2 * pnorm(
+  -abs(pooling_input$estimate / pooling_input$std_error)
+)
+pooling_control <- pooling_input$gene %in% c("control_a", "control_b")
+
+original_gene <- bb_gene_original(pooling_input)
+consistent_index <- pooling_input$gene == "consistent"
+expected_original_z <- sum(
+  pooling_input$estimate[consistent_index] /
+    pooling_input$std_error[consistent_index]
+) / sqrt(sum(consistent_index))
+assert_close(
+  original_gene$statistic[original_gene$gene == "consistent"],
+  expected_original_z,
+  message = "Original BARCS signed-z aggregation changed."
+)
+
+partial_gene <- bb_gene_partial_pool(
+  pooling_input,
+  control = pooling_control,
+  min_control_genes = 2
+)
+moderated_gene <- bb_gene_eb_moderate(
+  pooling_input,
+  control = pooling_control,
+  min_control_genes = 2,
+  prior_df = 4
+)
+partial_consistent <- partial_gene[
+  partial_gene$gene == "consistent", , drop = FALSE
+]
+partial_discordant <- partial_gene[
+  partial_gene$gene == "discordant", , drop = FALSE
+]
+stopifnot(
+  partial_consistent$raw_tau2 < partial_discordant$raw_tau2,
+  partial_consistent$guide_direction_agreement == 1,
+  partial_discordant$guide_direction_agreement < 1,
+  partial_consistent$p_value < partial_discordant$p_value,
+  all(c(
+    "tau2", "raw_tau2", "i_squared", "max_weight_fraction",
+    "leave_one_out_max_change", "leave_one_out_sign_stable"
+  ) %in% names(partial_gene)),
+  attr(moderated_gene, "prior_df") == 4,
+  is.finite(attr(moderated_gene, "prior_tau2")),
+  all(moderated_gene$tau2 >= pmin(
+    moderated_gene$raw_tau2,
+    attr(moderated_gene, "prior_tau2")
+  )),
+  all(moderated_gene$tau2 <= pmax(
+    moderated_gene$raw_tau2,
+    attr(moderated_gene, "prior_tau2")
+  ))
+)
+
 bad_response_failed <- inherits(
   try(bbreg(c(2, 3), c(1, 4), ~ 1, data.frame(x = 1:2)), silent = TRUE),
   "try-error"
