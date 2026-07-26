@@ -331,102 +331,99 @@ requires; that limit predates the moderation and stops BARCS-original equally.
 ### Genome scale: is FDR control robust across cutoffs?
 
 A single realized-FDP number cannot distinguish a method that controls the
-false-discovery rate from one that happens to land near 0.10. So the
-calibration check is repeated at eight cutoffs from 0.001 to 0.50 in every run
+false-discovery rate from one that happens to land near 0.10 — and 0.10 is
+looser than a genome-wide screen would use anyway. So the check is repeated on
+a log-spaced grid of thirteen cutoffs from 1e-6 to 0.20
 (`examples/crispulator_facs_moi_10k_benchmark.R`, MOI 0.20, three seeds,
-common gene set). The quantity is realized FDP divided by the cutoff
-requested: one is exact, below one is conservative, above one means the
-method returns more false discoveries than it advertised.
+common gene set). The quantity is realized FDP ÷ requested cutoff: one is
+exact, above one means more false discoveries than advertised.
 
-| Method | 0.001 | 0.005 | 0.01 | 0.05 | 0.10 | 0.20 | 0.30 | 0.50 | Cells held |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| BARCS-original | 0.59 | 0.73 | 0.59 | 0.61 | 0.65 | 0.67 | 0.66 | 0.72 | 22/24 |
-| BARCS-moderated | 0.40 | 0.63 | 0.68 | 0.62 | 0.66 | 0.68 | 0.69 | 0.73 | 22/24 |
-| MAGeCK-MLE | 0.00 | 0.13 | 0.06 | 0.08 | 0.06 | 0.10 | 0.14 | 0.20 | **24/24** |
-| edgeR-QL | 9.96 | 5.64 | 4.09 | 2.52 | 2.05 | 1.59 | 1.37 | 1.11 | 0/24 |
-| DESeq2 | 17.15 | 7.77 | 5.86 | 3.19 | 2.39 | 1.77 | 1.50 | 1.15 | 0/24 |
-| limma-voom | 10.92 | 5.47 | 4.76 | 2.73 | 2.14 | 1.66 | 1.41 | 1.12 | 0/24 |
+| Method | 1e-6 | 1e-5 | 1e-4 | 1e-3 | 0.01 | 0.05 | 0.10 | Cells held |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| BARCS-original | 0.0 | 0.0 | 0.0 | 0.6 | 0.6 | 0.6 | 0.7 | 37/39 |
+| BARCS-moderated | 0.0 | 0.0 | 0.0 | 0.4 | 0.7 | 0.6 | 0.7 | 37/39 |
+| MAGeCK-MLE | 0.0 | 0.0 | 0.0 | 0.0 | 0.1 | 0.1 | 0.1 | **39/39** |
+| edgeR-QL | 556.5 | 43.7 | 17.2 | 10.0 | 4.1 | 2.5 | 2.0 | 9/39 |
+| DESeq2 | 431.8 | 105.7 | 51.7 | 17.2 | 5.9 | 3.2 | 2.4 | 5/39 |
+| limma-voom | 531.6 | 42.1 | 20.2 | 10.9 | 4.8 | 2.7 | 2.1 | 7/39 |
 
-"Cells held" counts the cutoff-by-seed combinations, of 8 × 3 = 24, where
-realized FDP did not exceed the requested cutoff.
+"Cells held" = cutoff-by-seed combinations, of 13 × 3 = 39, where realized FDP
+did not exceed the cutoff.
 
-**The direction of miscalibration is a property of the method, not of the 0.10
-choice.** The three count models exceed the requested rate at every cutoff and
-in all 24 cells. The excess is worst exactly where a user is being most
-careful: asking for 0.001 returns 10 to 17 times that rate. Their drift toward
-1.0 at loose cutoffs is not improving calibration, it is the ceiling of a
-ratio whose numerator cannot exceed the inactive fraction.
+**The count models have an error floor.** Their realized FDP stops descending
+below a requested 1e-4 and flattens near 5e-4, so asking for 1e-6 returns 430
+to 560 times the advertised rate. No cutoff reaches beneath the floor. The
+two-fold overshoot at 0.10 is the *mild* end of their behaviour, and the
+strict end is precisely the regime a genome-wide screen is read in.
 
-**BARCS is uniformly conservative but not extravagantly so**, 0.40 to 0.73 of
-the requested rate at every cutoff. MAGeCK-MLE holds everywhere but never
-spends more than 0.21 of its budget.
+Both BARCS statistics track the requested rate down to 1e-4 and return no
+false discoveries below it (37/39 cells). MAGeCK-MLE holds all 39 but never
+spends more than a tenth of its budget.
 
-**The BARCS exceptions, named rather than rounded away.** Both statistics miss
-2 of 24 cells, all from one seed (20250725) at the 0.001 and 0.005 cutoffs,
-and each miss is a single false discovery: at a requested 0.001 with 840
-calls, BARCS-moderated returns FDP 0.0012 against an allowance of 0.84 genes.
-That is Monte Carlo granularity at the strictest cutoffs, not systematic
-failure — and it is why the calibration claim here is a screen average, not a
-finite-sample guarantee. At MOI 0.30 BARCS-moderated holds 21 of 24, the extra
-miss being the 0.01 cutoff of the same seed.
+**BARCS exceptions, named not rounded away.** Both miss 2 of 39 cells, all
+from one seed (20250725) at the 3e-4 and 1e-3 cutoffs, each a single false
+discovery against an allowance below one gene. Monte Carlo granularity, not
+systematic failure — and the reason the calibration claim is a screen average
+rather than a finite-sample guarantee. At MOI 0.30, BARCS-moderated holds
+35/39.
 
-#### F1 across cutoffs: the F1 comparison is fragile
+#### F1 across cutoffs: the comparison reverses
 
-Reading F1 off the same scan exposes a weakness in the single-threshold F1
-column, which is worth stating rather than working around. **The ordering of
-methods by F1 is not robust to the cutoff.**
-
-| Method | 0.001 | 0.005 | 0.01 | 0.05 | 0.10 | 0.20 | 0.50 |
+| Method | 1e-6 | 1e-5 | 1e-4 | 1e-3 | 0.01 | 0.05 | 0.10 |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| BARCS-original | 0.456 | 0.591 | 0.653 | 0.774 | 0.811 | 0.827 | 0.747 |
-| BARCS-moderated | 0.607 | 0.707 | 0.748 | 0.827 | **0.847** | **0.847** | 0.747 |
-| MAGeCK-MLE | 0.306 | 0.396 | 0.403 | 0.622 | 0.718 | 0.796 | **0.853** |
-| edgeR-QL | 0.757 | 0.811 | 0.834 | **0.846** | 0.825 | 0.774 | 0.608 |
-| DESeq2 | **0.795** | **0.835** | **0.847** | 0.841 | 0.812 | 0.753 | 0.586 |
-| limma-voom | 0.763 | 0.818 | 0.834 | 0.844 | 0.822 | 0.768 | 0.602 |
+| BARCS-original | 0.046 | 0.126 | 0.262 | 0.456 | 0.653 | 0.774 | 0.811 |
+| BARCS-moderated | 0.248 | 0.354 | 0.479 | 0.607 | 0.748 | 0.827 | **0.847** |
+| MAGeCK-MLE | 0.306 | 0.306 | 0.306 | 0.306 | 0.403 | 0.622 | 0.718 |
+| edgeR-QL | 0.474 | 0.570 | 0.665 | 0.757 | 0.834 | **0.846** | 0.825 |
+| DESeq2 | **0.576** | **0.647** | **0.722** | **0.795** | **0.847** | 0.841 | 0.812 |
+| limma-voom | 0.491 | 0.583 | 0.675 | 0.763 | 0.834 | 0.844 | 0.822 |
 
-DESeq2 leads at 0.001 through 0.01, edgeR-QL at 0.05, BARCS-moderated at 0.10
-and 0.20, MAGeCK-MLE at 0.50. BARCS-moderated holds the top F1 only at cutoffs
-of 0.10 and above. Someone running a stricter screen would draw the opposite
-conclusion from the headline table.
+BARCS-moderated tops F1 **only at 0.10**. Everywhere stricter DESeq2 leads —
+by 0.33 at 1e-6. Anyone running a stricter screen would read the headline
+table backwards.
 
-The cause is the calibration table above: at a requested 0.001 the count
-models are running at 4 to 17 times that rate, so they are really operating
-near a realized 0.01–0.02 and calling many more genes. Comparing F1 at a fixed
-*requested* cutoff compares a liberal operating point against a conservative
-one.
+The cause is the table above: DESeq2 at a requested 1e-6 is running at 430×
+that rate, so it is really near a realized 4e-4, calling 787 genes where
+BARCS-moderated calls 276. Comparing F1 there compares a liberal operating
+point against a conservative one.
 
-#### Matched on realized FDP, F1 does not separate the methods
+#### Matched on realized FDP
 
-| Method | 0.01 | 0.02 | 0.05 | 0.10 | 0.20 |
-|---|---:|---:|---:|---:|---:|
-| BARCS-original | 0.673 | 0.722 | 0.795 | 0.819 | 0.816 |
-| BARCS-moderated | 0.759 | 0.792 | 0.838 | 0.847 | 0.828 |
-| MAGeCK-MLE | 0.739 | 0.792 | 0.830 | 0.853 | — |
-| edgeR-QL | 0.764 | 0.787 | 0.835 | 0.843 | 0.826 |
-| DESeq2 | — | 0.800 | 0.842 | 0.844 | 0.826 |
-| limma-voom | 0.764 | 0.794 | 0.834 | 0.840 | 0.826 |
-| **Spread** | 0.025 | 0.013 | 0.012 | 0.013 | 0.002 |
+| Method | 0.001 | 0.002 | 0.005 | 0.01 | 0.02 | 0.05 | 0.10 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BARCS-original | 0.491 | 0.529 | 0.631 | 0.678 | 0.738 | 0.795 | 0.819 |
+| BARCS-moderated | 0.640 | 0.677 | 0.724 | 0.764 | 0.808 | 0.838 | 0.847 |
+| MAGeCK-MLE | 0.469 | 0.509 | 0.666 | 0.739 | 0.789 | — | — |
+| edgeR-QL | 0.664 | 0.626 | 0.709 | 0.757 | 0.796 | 0.836 | 0.845 |
+| DESeq2 | 0.671 | 0.653 | 0.717 | 0.761 | 0.801 | 0.840 | 0.849 |
+| limma-voom | 0.656 | 0.637 | 0.707 | 0.759 | 0.801 | 0.835 | 0.848 |
+| **Spread** | 0.202 | 0.168 | 0.058 | 0.025 | 0.019 | 0.005 | 0.003 |
 
-Interpolated within each run before averaging; a dash marks a target outside
-the realized-FDP range a method reaches on the scanned grid. Spread excludes
-BARCS-original.
-
-At every matched error rate the five modern methods sit within 0.002 to 0.025
-of each other, and which is nominally highest changes row to row. **So we do
-not claim moderation recovers more genes than the alternatives** — at a common
-realized error rate it does not, and neither does anything else here. Peak F1
-says the same: 0.827 to 0.853 across methods, maximum to MAGeCK-MLE.
+From a matched 0.005 upward the methods converge to within 0.058 down to
+0.003, with the nominal leader changing row to row. **So moderation does not
+recover more genes than the alternatives at a common error rate.** Below 0.005
+the spread widens to 0.202, but that region is thinly covered — several
+methods reach a realized 0.001 only by extrapolating between distant grid
+points, and MAGeCK-MLE's quantized FDR makes its entry unreliable. The
+convergence above 0.005 is the robust statement; the two strictest rows are
+indicative only.
 
 Two claims survive:
 
-- **The BARCS-MOD over BARCS-ST gain is robust to the cutoff**, larger at every
-  matched realized FDP: +0.086, +0.070, +0.042, +0.028, +0.012. Moderation is a
-  real gain within the BARCS family, not a threshold artifact.
+- **BARCS-MOD over BARCS-ST is robust to the cutoff**, larger at every matched
+  realized FDP. Moderation is a real gain within the BARCS family.
 - **BARCS-moderated is the method whose requested cutoff lands where the F1
   curve is already flat and high while the realized error rate is still below
-  what was asked for.** F1 does not discriminate between these methods; whether
-  the number you set is the number you get does.
+  what was asked for.** F1 does not discriminate these methods; whether the
+  number you set is the number you get does.
+
+**A limitation that is ours, not MAGeCK's.** MAGeCK-MLE was run with
+`--permutation-round 1`, following the convention used elsewhere in this
+repository. That quantizes its gene FDR and gives it a floor: its call count
+is constant at 358 and its F1 constant at 0.306 across six orders of
+magnitude. Its strict-regime behaviour here is an artifact of that setting.
+Re-running with more permutation rounds would be needed to characterise it
+properly.
 
 ### The one-replicate boundary, and why the count models lead there
 

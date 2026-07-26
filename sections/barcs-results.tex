@@ -523,137 +523,177 @@ reflect an independence approximation rather than new biological information;
 that reading is strengthened by its being replaceable.
 
 \paragraph{Robustness of FDR control across cutoffs.}
-The realized-FDP column of Table~\ref{tab:crispulator} is a single point, so
-it cannot distinguish a method that controls the false-discovery rate from one
-that happens to land near 0.10.  We therefore repeated the calibration check
-at eight gene-FDR cutoffs from 0.001 to 0.50 in every run.  The quantity of
-interest is the ratio of realized FDP to the cutoff that was requested: a
-value of one is exact calibration, below one is conservative, and above one
-means the method returns more false discoveries than it advertised.
+The realized-FDP column of Table~\ref{tab:crispulator} is a single point, and
+0.10 is in any case looser than a genome-wide screen would use.  We therefore
+repeated the calibration check on a log-spaced grid of thirteen cutoffs from
+$10^{-6}$ to 0.20 in every run.  The quantity of interest is the ratio of
+realized FDP to the cutoff requested: one is exact calibration, below one is
+conservative, and above one means the method returns more false discoveries
+than it advertised.
 
 \begin{table}[ht]
 \centering
 \caption{Realized FDP divided by the requested gene-FDR cutoff, MOI 0.20,
-means over three seeds on the common gene set.  One is exact calibration and
-values above one are violations.  The final column counts the
-cutoff-by-seed cells, of $8\times3=24$, in which realized FDP did not exceed
-the cutoff.}
+means over three seeds on the common gene set; a decade-spaced subset of the
+scanned grid is shown.  One is exact calibration and values above one are
+violations.  The final column counts the cutoff-by-seed cells, of
+$13\times3=39$, in which realized FDP did not exceed the cutoff.}
 \label{tab:crispulator-fdr-robust}
 \small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrrrrrr}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrrrr}
 \toprule
-Method & 0.001 & 0.005 & 0.01 & 0.05 & 0.10 & 0.20 & 0.30 & 0.50 &
+Method & $10^{-6}$ & $10^{-5}$ & $10^{-4}$ & $10^{-3}$ & 0.01 & 0.05 & 0.10 &
 Cells held\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST &
-0.59 & 0.73 & 0.59 & 0.61 & 0.65 & 0.67 & 0.66 & 0.72 & 22/24\\
+0.0 & 0.0 & 0.0 & 0.6 & 0.6 & 0.6 & 0.7 & 37/39\\
 \methodswatch{mageckorange} BARCS-MOD &
-0.40 & 0.63 & 0.68 & 0.62 & 0.66 & 0.68 & 0.69 & 0.73 & 22/24\\
+0.0 & 0.0 & 0.0 & 0.4 & 0.7 & 0.6 & 0.7 & 37/39\\
 \methodswatch{naivegray} MAGeCK-MLE &
-0.00 & 0.13 & 0.06 & 0.08 & 0.06 & 0.10 & 0.14 & 0.20 &
-\textcolor{black}{\textbf{24/24}}\\
+0.0 & 0.0 & 0.0 & 0.0 & 0.1 & 0.1 & 0.1 &
+\textcolor{black}{\textbf{39/39}}\\
 \methodswatch{chronosgreen} edgeR-QL + Stouffer &
-9.96 & 5.64 & 4.09 & 2.52 & 2.05 & 1.59 & 1.37 & 1.11 & 0/24\\
+556.5 & 43.7 & 17.2 & 10.0 & 4.1 & 2.5 & 2.0 & 9/39\\
 \methodswatch{mageckpink} DESeq2 + Stouffer &
-17.15 & 7.77 & 5.86 & 3.19 & 2.39 & 1.77 & 1.50 & 1.15 & 0/24\\
+431.8 & 105.7 & 51.7 & 17.2 & 5.9 & 3.2 & 2.4 & 5/39\\
 \methodswatch{bagelgold} limma-voom + Stouffer &
-10.92 & 5.47 & 4.76 & 2.73 & 2.14 & 1.66 & 1.41 & 1.12 & 0/24\\
+531.6 & 42.1 & 20.2 & 10.9 & 4.8 & 2.7 & 2.1 & 7/39\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The direction of miscalibration is a property of the method rather than of the
-0.10 choice.  edgeR-QL, DESeq2, and limma-voom exceed the requested rate at
-every one of the eight cutoffs and in all 24 cutoff-by-seed cells, and the
-excess is largest exactly where a user is being most careful: at a requested
-0.001 they return 10 to 17 times that rate.  Their apparent convergence toward
-one at the loosest cutoffs is not improved calibration but the ceiling effect
-of a ratio whose numerator cannot exceed the fraction of inactive genes.
-MAGeCK-MLE holds in all 24 cells and never exceeds 0.21 of the requested rate.
-Both BARCS statistics sit between 0.40 and 0.73 of the requested rate at every
-cutoff, the low end being BARCS-MOD at the strictest 0.001, which is the
-behaviour a screen can plan around.
+The two-fold overshoot the count models show at 0.10 is the mild end of their
+behaviour.  Their realized FDP stops descending below a requested $10^{-4}$
+and flattens near $5\times10^{-4}$, so asking for $10^{-6}$ returns roughly
+430 to 560 times the advertised rate.  They have an error floor, and no
+choice of cutoff reaches beneath it.  This matters more than the behaviour at
+0.10 because it is the regime in which a genome-wide screen is read: a
+short, confident hit list is exactly what the strict cutoffs are for.  Both
+BARCS statistics instead track the requested rate down to $10^{-4}$ and
+return no false discoveries at all below it, holding 37 of 39 cells;
+MAGeCK-MLE holds all 39 but never spends more than a tenth of its budget.
 
 The BARCS exceptions are worth naming rather than rounding away.  Both
-statistics miss in 2 of 24 cells, and every miss comes from one seed
-(20250725) at the 0.001 and 0.005 cutoffs, where the excess is a single false
-discovery: at a requested 0.001 with 840 calls, BARCS-MOD returns FDP 0.0012
-against an allowance of 0.84 genes.  These are Monte Carlo granularity at the
-strictest cutoffs, not a systematic failure, and they are the reason the
-calibration claim in this paper is stated as a screen-average rather than a
-finite-sample guarantee.  At MOI 0.30 the same pattern holds, with the one
-additional miss for BARCS-MOD at the 0.01 cutoff of the same seed.
+statistics miss 2 of 39 cells, all from one seed (20250725) at the $3\times
+10^{-4}$ and $10^{-3}$ cutoffs, and each miss is a single false discovery
+against an allowance below one gene.  These are Monte Carlo granularity, not a
+systematic failure, and they are the reason the calibration claim in this
+paper is stated as a screen average rather than a finite-sample guarantee.  At
+MOI 0.30 the same pattern holds, with BARCS-MOD holding 35 of 39.
 
 \paragraph{F1 across cutoffs, and why the F1 comparison is fragile.}
 The same scan reports F1 at every cutoff, and doing so exposes a weakness in
 the single-threshold F1 column that we state rather than work around.
-\emph{The ordering of methods by F1 is not robust to the cutoff.}  At a
-requested 0.001 the ranking is DESeq2 0.795, limma-voom 0.763, edgeR-QL 0.757,
-then BARCS-MOD 0.607, BARCS-ST 0.456, and MAGeCK-MLE 0.306; at
-0.01 DESeq2 still leads at 0.847 against 0.748 for BARCS-MOD; at 0.10
-BARCS-MOD leads at 0.847; and by 0.50 MAGeCK-MLE leads at 0.853.  BARCS-MOD
-holds the top F1 only at cutoffs of 0.10 and above.  A reader who preferred a
-stricter screen would reach the opposite conclusion from
-Table~\ref{tab:crispulator}.
+\emph{The ordering of methods by F1 is not robust to the cutoff, and it
+reverses over the strict range.}
+
+\begin{table}[ht]
+\centering
+\caption{F1 across requested gene-FDR cutoffs, MOI 0.20, means over three
+seeds.  The leader changes with the cutoff: DESeq2 from $10^{-6}$ to 0.01,
+edgeR-QL at 0.05, BARCS-MOD at 0.10.}
+\label{tab:crispulator-f1-cutoffs}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Method & $10^{-6}$ & $10^{-5}$ & $10^{-4}$ & $10^{-3}$ & 0.01 & 0.05 & 0.10\\
+\midrule
+\methodswatch{barcsblue} BARCS-ST &
+0.046 & 0.126 & 0.262 & 0.456 & 0.653 & 0.774 & 0.811\\
+\methodswatch{mageckorange} BARCS-MOD &
+0.248 & 0.354 & 0.479 & 0.607 & 0.748 & 0.827 &
+\textcolor{mageckorange}{\textbf{0.847}}\\
+\methodswatch{naivegray} MAGeCK-MLE &
+0.306 & 0.306 & 0.306 & 0.306 & 0.403 & 0.622 & 0.718\\
+\methodswatch{chronosgreen} edgeR-QL + Stouffer &
+0.474 & 0.570 & 0.665 & 0.757 & 0.834 &
+\textcolor{chronosgreen}{\textbf{0.846}} & 0.825\\
+\methodswatch{mageckpink} DESeq2 + Stouffer &
+\textcolor{mageckpink}{\textbf{0.576}} &
+\textcolor{mageckpink}{\textbf{0.647}} &
+\textcolor{mageckpink}{\textbf{0.722}} &
+\textcolor{mageckpink}{\textbf{0.795}} &
+\textcolor{mageckpink}{\textbf{0.847}} & 0.841 & 0.812\\
+\methodswatch{bagelgold} limma-voom + Stouffer &
+0.491 & 0.583 & 0.675 & 0.763 & 0.834 & 0.844 & 0.822\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+BARCS-MOD holds the top F1 only at 0.10.  Everywhere stricter, DESeq2 leads,
+by 0.33 of F1 at $10^{-6}$.  A reader running a stricter screen would draw the
+opposite conclusion from Table~\ref{tab:crispulator}.
 
 The reason is that a fixed requested cutoff does not put these methods at the
-same place.  Table~\ref{tab:crispulator-fdr-robust} showed the count models
-running at 4 to 17 times their requested rate at strict cutoffs, so at a
-requested 0.001 they are in fact operating near a realized 0.01--0.02 and
-calling far more genes.  Comparing F1 there compares a liberal operating point
-with a conservative one.
+same place.  Table~\ref{tab:crispulator-fdr-robust} shows DESeq2 running at
+430 times its requested rate at $10^{-6}$, so it is really operating near a
+realized $4\times10^{-4}$ and calling 787 genes where BARCS-MOD calls 276.
+Comparing F1 there compares a liberal operating point with a conservative one,
+and the comparison says more about where each method sits than about how well
+it ranks.
 
-Matching on realized FDP instead removes the confound, and the result is that
-F1 does not separate these methods at all:
+Matching on realized FDP instead removes the confound, and F1 then does not
+separate the methods:
 
 \begin{table}[ht]
 \centering
 \caption{F1 at matched realized FDP, MOI 0.20, interpolated within each run
 before averaging over the three seeds.  A dash marks a target outside the
 realized-FDP range a method attains on the scanned grid.  Spread is the range
-across the five methods other than BARCS-ST.}
+across the methods other than BARCS-ST.}
 \label{tab:crispulator-matched-fdp}
 \small
 \setlength{\tabcolsep}{6pt}
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrrrrr}
 \toprule
-Method & 0.01 & 0.02 & 0.05 & 0.10 & 0.20\\
+Method & 0.001 & 0.002 & 0.005 & 0.01 & 0.02 & 0.05 & 0.10\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST &
-0.673 & 0.722 & 0.795 & 0.819 & 0.816\\
+0.491 & 0.529 & 0.631 & 0.678 & 0.738 & 0.795 & 0.819\\
 \methodswatch{mageckorange} BARCS-MOD &
-0.759 & 0.792 & 0.838 & 0.847 & 0.828\\
+0.640 & 0.677 & 0.724 & 0.764 & 0.808 & 0.838 & 0.847\\
 \methodswatch{naivegray} MAGeCK-MLE &
-0.739 & 0.792 & 0.830 & 0.853 & ---\\
+0.469 & 0.509 & 0.666 & 0.739 & 0.789 & --- & ---\\
 \methodswatch{chronosgreen} edgeR-QL + Stouffer &
-0.764 & 0.787 & 0.835 & 0.843 & 0.826\\
+0.664 & 0.626 & 0.709 & 0.757 & 0.796 & 0.836 & 0.845\\
 \methodswatch{mageckpink} DESeq2 + Stouffer &
---- & 0.800 & 0.842 & 0.844 & 0.826\\
+0.671 & 0.653 & 0.717 & 0.761 & 0.801 & 0.840 & 0.849\\
 \methodswatch{bagelgold} limma-voom + Stouffer &
-0.764 & 0.794 & 0.834 & 0.840 & 0.826\\
+0.656 & 0.637 & 0.707 & 0.759 & 0.801 & 0.835 & 0.848\\
 \midrule
-Spread & 0.025 & 0.013 & 0.012 & 0.013 & 0.002\\
+Spread & 0.202 & 0.168 & 0.058 & 0.025 & 0.019 & 0.005 & 0.003\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-At every matched error rate the five modern methods lie within 0.002 to 0.025
-of one another, and which one is nominally highest changes from one row to the
-next.  We therefore do not claim that guide-dispersion moderation recovers more
-genes than the alternatives: at a common realized error rate it does not, and
-neither does anything else here.  Peak F1 tells the same story, spanning only
-0.827 to 0.853 across methods with the maximum belonging to MAGeCK-MLE.
+From a matched realized FDP of 0.005 upward the methods converge, to within
+0.058, 0.025, 0.019, 0.005, and 0.003 of one another, and which one is
+nominally highest changes from row to row.  We therefore do not claim that
+guide-dispersion moderation recovers more genes than the alternatives at a
+common error rate: above 0.005 it does not, and neither does anything else
+here.  Below that the spread widens again, to 0.202 at a matched 0.001, but
+that region is thinly covered: several methods reach a realized 0.001 only by
+extrapolating between widely separated grid points, and MAGeCK-MLE's
+quantized FDR makes its entry there unreliable.  We read the convergence above
+0.005 as the robust statement and treat the two strictest rows as indicative.
 
 Two claims do survive the scan.  First, the improvement of BARCS-MOD over
-BARCS-ST is robust to the cutoff: it is larger at every matched realized FDP,
-by 0.086, 0.070, 0.042, 0.028, and 0.012 at the five levels, so moderation is
-a genuine gain within the BARCS family rather than a threshold artifact.
-Second, and this is the substantive result, BARCS-MOD is the method whose
-requested cutoff lands where the F1 curve is already flat and high while the
-realized error rate is still below what was asked for.  F1 does not
-discriminate between these methods; what discriminates them is whether the
+BARCS-ST is robust to the cutoff, being larger at every matched realized FDP,
+so moderation is a genuine gain within the BARCS family rather than a
+threshold artifact.  Second, and this is the substantive result, BARCS-MOD is
+the method whose requested cutoff lands where the F1 curve is already flat and
+high while the realized error rate is still below what was asked for.  F1 does
+not discriminate between these methods; what discriminates them is whether the
 number you set is the number you get.
+
+One limitation of this scan is ours rather than the method's.  MAGeCK-MLE was
+run with a single permutation round, following the convention used elsewhere
+in this repository, which quantizes its gene FDR and gives it a floor: its
+call count is constant at 358 and its F1 constant at 0.306 across six orders
+of magnitude.  Its behaviour in the strict regime should therefore be read as
+an artifact of that setting, not as a property of MAGeCK-MLE.
 
 \begin{figure}[!t]
 \centering

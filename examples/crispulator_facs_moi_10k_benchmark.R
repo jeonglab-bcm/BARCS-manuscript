@@ -34,15 +34,18 @@
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "crispulator-moi-10k-v1"
 nominal_fdr <- 0.10
-# Threshold scan. The grid runs above the nominal 0.10 as well as below it,
-# because the single-threshold table cannot distinguish a method that ranks
-# badly from one that ranks well and simply calls too little. Thresholds above
-# 0.10 are a diagnostic, not a recommended operating point.
-thresholds <- c(0.001, 0.005, 0.01, 0.05, 0.10, 0.20, 0.30, 0.50)
+# Threshold scan, log spaced over five orders of magnitude. A genome-wide
+# screen is not run at a gene FDR of 0.2, so the informative range is the
+# strict end: with 10,000 genes the question is how each method behaves when
+# asked for a handful of confident hits. The grid stops at 0.20, which is
+# already past any operating point a screen would use.
+thresholds <- c(
+  1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 0.01, 0.03, 0.05, 0.10, 0.20
+)
 # Comparing F1 at a matched *nominal* cutoff compares methods sitting at
 # different real error rates, so the ranking it produces depends on the cutoff.
 # These are the realized-FDP levels at which F1 is compared instead.
-matched_fdp_targets <- c(0.01, 0.02, 0.05, 0.10, 0.20)
+matched_fdp_targets <- c(0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.10)
 seeds <- c(20250724L, 20250725L, 20250726L)
 moi_levels <- c(0.20, 0.30)
 main_moi <- 0.20
@@ -306,6 +309,14 @@ fit_one_run <- function(directory) {
   })
   common_genes <- Reduce(intersect, finite_genes)
   stopifnot(length(common_genes) > 0L)
+
+  # Cache the per-gene results so a change of threshold grid costs nothing.
+  gene_cache <- file.path(directory, "gene_results.rds")
+  saveRDS(
+    list(gene_results = gene_results, common_genes = common_genes,
+         gene_truth = gene_truth),
+    gene_cache
+  )
 
   # Threshold scan on the same common gene set.
   threshold_rows <- do.call(rbind, lapply(names(gene_results), function(method) {
@@ -687,10 +698,10 @@ pdf(
 layout(matrix(c(1, 2, 3, 4, 5, 5), nrow = 3, byrow = TRUE),
        heights = c(1, 1, 0.22))
 par(mar = c(4.5, 4.3, 2.8, 1))
-draw_curve(main_moi, "f1", "A  F1: MOI 0.20", c(0.2, 0.95))
-draw_curve(main_moi, "realized_fdp", "B  Realized FDP: MOI 0.20", c(0, 0.62))
-draw_curve(0.30, "f1", "C  F1: MOI 0.30", c(0.2, 0.95))
-draw_curve(0.30, "realized_fdp", "D  Realized FDP: MOI 0.30", c(0, 0.62))
+draw_curve(main_moi, "f1", "A  F1: MOI 0.20", c(0, 0.95))
+draw_curve(main_moi, "realized_fdp", "B  Realized FDP: MOI 0.20", c(0, 0.30))
+draw_curve(0.30, "f1", "C  F1: MOI 0.30", c(0, 0.95))
+draw_curve(0.30, "realized_fdp", "D  Realized FDP: MOI 0.30", c(0, 0.30))
 par(mar = c(0, 0, 0, 0))
 plot.new()
 legend(
