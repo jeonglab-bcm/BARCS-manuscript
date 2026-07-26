@@ -37,6 +37,9 @@ For a code-first version with six progressively richer examples, use
 [`docs/cb2-generalization-computational-walkthrough.md`](docs/cb2-generalization-computational-walkthrough.md).
 For compact input-table → function-call → output-table examples, use
 [`docs/barcs-input-output-examples.md`](docs/barcs-input-output-examples.md).
+For the seven-method CRISPulator comparison and the real-data Waterbear
+comparison, including the ranking-versus-calibration trade-off, use
+[`docs/barcs-external-method-comparison.md`](docs/barcs-external-method-comparison.md).
 
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
@@ -87,6 +90,9 @@ commits the updated submodule pointer. See
 - `examples/crispulator_facs_repeated_benchmark.R`: the same three-method
   comparison over five seeds, MOI, guide quality, gene count, and replicate
   count.
+- `examples/crispulator_facs_external_head_to_head.R`: one-evaluator
+  comparison with official MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom,
+  including result and input hashes.
 - `docs/barcs-three-gene-methods.md`: equations, numerical interpretation,
   calibration, and diagnostics for the three guide-to-gene statistics.
 - `examples/cb2_generalization_proof.R`: numerical verification of the legacy
@@ -110,6 +116,9 @@ commits the updated submodule pointer. See
 - `examples/waterbear_facs_benchmark.R`: ordered four-bin GSE242880 IL2RA
   comparison of the same three BARCS gene statistics against the 26
   directionally validated genes and the selected 33-gene follow-up panel.
+- `examples/waterbear_facs_external_head_to_head.R`: comparison of the three
+  BARCS methods with rerun MAGeCK-MLE/MAGeCK test and the published
+  Waterbear/MAUDE recovery totals.
 - `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
   processed-count sensitivity analysis using Liang's deposited
   RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
@@ -146,7 +155,9 @@ Rscript examples/barcs_input_output_examples.R
 julia --project=julia -e 'using Pkg; Pkg.instantiate()'
 julia --project=julia julia/simulate_crispulator_facs.jl
 Rscript examples/crispulator_facs_repeated_benchmark.R
+Rscript examples/crispulator_facs_external_head_to_head.R
 Rscript examples/waterbear_facs_benchmark.R
+Rscript examples/waterbear_facs_external_head_to_head.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
@@ -257,6 +268,17 @@ and realized FDP 0.052. BARCS-original has the highest mean average precision
 in nine of ten scenarios; BARCS-EB leads one. Therefore the current results do
 not support replacing the historical statistic universally.
 
+Against external methods across the same 50 simulations, edgeR-QL has the
+highest mean average precision (0.877) and directional recall (0.822), while
+limma-voom has the highest F1 (0.772). Their nominal FDR 0.10 thresholds are
+anti-conservative in this simulation: realized FDP is 0.277 for edgeR-QL,
+0.233 for DESeq2, and 0.257 for limma-voom. BARCS-original has lower average
+precision (0.856) and F1 (0.702), but a realized FDP of 0.085 and the
+negative-control p-value rate closest to 0.05 (0.055). MAGeCK-MLE is the
+closest external compromise, with average precision 0.849, F1 0.683, and
+realized FDP 0.058. The complete interpretation and provenance audit are in
+`docs/barcs-external-method-comparison.md`.
+
 At the four-replicate baseline, mean average precision is 0.917, 0.842, and
 0.903 for original, partial, and EB, respectively. Their directional recalls
 are 0.764, 0.450, and 0.551, while realized FDPs are 0.086, 0.046, and 0.008.
@@ -330,6 +352,13 @@ and EB have F1 values 0.863, 0.792, and 0.885 and balanced accuracies 0.709,
 versus 0.940 for EB), whereas EB has the highest validated recovery, F1, and
 balanced accuracy. The selected panel is supporting evidence, not an unbiased
 genome-wide negative set.
+
+In the external GSE242880 comparison, MAGeCK-MLE recovers 17/26 validated
+genes with 72 calls and outer-bin MAGeCK test recovers 18/26 with 30 calls.
+Published Waterbear and MAUDE totals are 24/26 with 79 calls and 25/26 with
+406 calls. Those published aggregates do not provide complete per-gene
+scores for the selected 33-gene panel, so F1 and average precision are
+reported only for the five methods rerun from complete outputs.
 
 The shared raw guide fit is inflated among the 593 non-targeting guides:
 13.3% have nominal p-values below 0.05. Historical control calibration reduces
