@@ -37,6 +37,9 @@ For a code-first version with six progressively richer examples, use
 [`docs/cb2-generalization-computational-walkthrough.md`](docs/cb2-generalization-computational-walkthrough.md).
 For compact input-table → function-call → output-table examples, use
 [`docs/barcs-input-output-examples.md`](docs/barcs-input-output-examples.md).
+For the seven-method CRISPulator comparison and the real-data Waterbear
+comparison, including the ranking-versus-calibration trade-off, use
+[`docs/barcs-external-method-comparison.md`](docs/barcs-external-method-comparison.md).
 
 This is an additive path inside CB2, not a replacement for its existing
 two-group workflow:
@@ -76,15 +79,25 @@ commits the updated submodule pointer. See
 
 ## Contents
 
-- `R/bbreg.R`: dependency-free R implementation for one guide, contrasts, and
-  guide-by-guide screens.
+- `R/bbreg.R`: dependency-free R implementation for one guide, contrasts,
+  guide-by-guide screens, historical signed-score aggregation, exchangeable
+  normal guide-beta inference, random-effects guide partial pooling, and
+  empirical-Bayes heterogeneity moderation.
 - `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
   low 25%, high 25%, overlapping 0--100% bulk, and input samples.
-- `examples/crispulator_facs_benchmark.R`: one-seed BARCS/MAGeCK-MLE FACS
-  analysis with truth-based ranking, directional recovery, and null metrics.
-- `examples/crispulator_facs_repeated_benchmark.R`: five-seed manuscript
-  benchmark and aggregate figure. The older `examples/simulation.R` remains as
-  a beta-binomial calibration diagnostic but is no longer a main result.
+- `examples/crispulator_facs_benchmark.R`: one-seed comparison of
+  BARCS-original, BARCS-NORM, BARCS-partial, and BARCS-EB using one shared
+  set of guide-level fits.
+- `examples/crispulator_facs_repeated_benchmark.R`: the same four-method
+  comparison over five seeds, MOI, guide quality, gene count, and replicate
+  count.
+- `examples/crispulator_facs_external_head_to_head.R`: one-evaluator
+  comparison with official MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom,
+  including result and input hashes.
+- `examples/crispulator_facs_f1_threshold_curves.R`: standard gene-level F1,
+  recall, precision, and realized-FDP curves at five nominal FDR thresholds.
+- `docs/barcs-gene-methods.md`: equations, numerical interpretation,
+  calibration, and diagnostics for the four guide-to-gene statistics.
 - `examples/cb2_generalization_proof.R`: numerical verification of the legacy
   GLS representation and a local-equivalence illustration for the logit
   statistic.
@@ -104,12 +117,19 @@ commits the updated submodule pointer. See
   continuous-time MAGeCK-MLE fit and the deposited Chronos, MAGeCK, and BAGEL2
   results.
 - `examples/waterbear_facs_benchmark.R`: ordered four-bin GSE242880 IL2RA
-  FACS stress test against official all-bin MAGeCK-MLE, paper-matched
-  outer-bin MAGeCK, and the published Waterbear and MAUDE validation results.
+  comparison of the same four BARCS gene statistics against the 26
+  directionally validated genes and the selected 33-gene follow-up panel.
+- `examples/waterbear_facs_external_head_to_head.R`: comparison of the four
+  BARCS methods with rerun MAGeCK-MLE/MAGeCK test and the published
+  Waterbear/MAUDE recovery totals.
 - `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
   processed-count sensitivity analysis using Liang's deposited
   RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
-  BARCS on the same normalized day-0/day-14 values.
+  BARCS, edgeR-QL, DESeq2, and limma-voom on the same normalized
+  day-0/day-14 values.
+- `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
+  across p-value thresholds and matched BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
+  and limma-voom volcano plots using the processed pseudo-count inputs.
 - `scripts/prepare_liang_cas13.R`,
   `scripts/count_liang_cas13_run.sh`, and
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
@@ -142,15 +162,20 @@ Rscript examples/barcs_input_output_examples.R
 julia --project=julia -e 'using Pkg; Pkg.instantiate()'
 julia --project=julia julia/simulate_crispulator_facs.jl
 Rscript examples/crispulator_facs_repeated_benchmark.R
-Rscript examples/gse70038_comparison.R
-Rscript examples/sanson_benchmark.R
-Rscript examples/chronos_tzelepis_benchmark.R
+Rscript examples/crispulator_facs_external_head_to_head.R
+Rscript examples/crispulator_facs_f1_threshold_curves.R
 Rscript examples/waterbear_facs_benchmark.R
-Rscript scripts/prepare_liang_cas13.R
+Rscript examples/waterbear_facs_external_head_to_head.R
 Rscript examples/liang_cas13_benchmark.R
+Rscript examples/liang_hap1_specificity_volcano.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
+
+This branch intentionally uses only the CRISPulator FACS and Waterbear FACS
+workflows to compare the four BARCS guide-to-gene methods. Other historical
+benchmark scripts remain in the repository but do not define or tune these
+four-method results.
 
 The primary Liang comparison deliberately uses the deposited normalized
 guide-count values, as they make the processed-data comparison quick and fully
@@ -159,10 +184,13 @@ MAGeCK-RRA, so the benchmark keeps those as separate methods. The deposited
 values are fractional after median-ratio normalization, ComBat correction,
 and outlier processing. Because BARCS enforces integer counts, the script
 explicitly rounds them to nearest pseudo-counts and gives that identical
-matrix to the three newly fitted methods--BARCS, MAGeCK-RRA, and MAGeCK-MLE;
-it also records the rounding error. Consequently, this is labelled a
+matrix to the six newly fitted methods--BARCS, MAGeCK-RRA, MAGeCK-MLE,
+edgeR-QL, DESeq2, and limma-voom; it also records the rounding error. The
+general count methods use library-size offsets but no second
+composition-normalization step. Consequently, this is labelled a
 processed-count sensitivity analysis:
-neither BARCS nor MAGeCK has its literal raw-count sampling likelihood.
+none of the newly fitted methods has its literal raw-count sampling
+likelihood.
 Known-essential protein-coding controls are positives
 and cell-line-specific non-expressed lncRNAs are null controls. Published RRA
 calls are a comparator, not a circular definition of truth.
@@ -171,11 +199,31 @@ The processed-count result is intentionally not a BARCS win. Macro-averaged
 over the five cell lines, Liang RRA has the highest AUROC (0.970), average
 precision (0.891), essential recall at 5% null FPR (0.917), and directional
 essential recall at FDR 0.10 (0.823). BARCS reaches 0.939, 0.776, 0.823, and
-0.487, respectively. Every BARCS day-effect fit has only one residual degree
-of freedom after the available replicate block, so its main limitation is
-threshold power rather than a complete loss of biological ranking. Mean
-BARCS--MAGeCK-MLE effect-rank correlation is 0.875 across cell lines. The
-versioned metrics and rounding audit are under `data/derived/`.
+0.487, respectively. edgeR-QL, DESeq2, and limma-voom have average precision
+of 0.840, 0.839, and 0.841 and FDR-0.10 essential recall of 0.790, 0.783, and
+0.787. Their greater threshold recall accompanies inflated null-tail rates:
+0.122, 0.103, and 0.118 of non-expressed lncRNAs have nominal \(p<0.05\),
+versus 0.065 for BARCS. In HAP1 specifically, null specificity at nominal
+\(p<0.05\) is 95.7% for BARCS, 89.5% for MAGeCK-MLE, 93.1% for edgeR-QL,
+94.1% for DESeq2, and 92.9% for limma-voom. Every BARCS day-effect fit has
+only one residual degree of freedom after the available replicate block, so
+its main limitation is threshold power rather than a complete loss of
+biological ranking.
+
+BARCS-original, edgeR-QL, DESeq2, and limma-voom all use unweighted signed-\(z\)
+aggregation after their respective guide-level fits. This holds the historical
+gene combiner fixed while comparing guide-level models. MAGeCK-MLE instead
+uses its native joint gene model; BARCS-partial and BARCS-EB use
+inverse-variance random-effects pooling and are not signed-\(z\) methods.
+
+The primary Liang result uses every valid guide. Selecting the top five by
+mean Day-0 abundance is a pre-outcome, reproducible sensitivity analysis, but
+it does not improve BARCS: macro average precision falls from 0.776 to 0.638,
+and FDR-0.10 essential recall falls from 0.487 to 0.330. Selecting the five
+smallest observed p-values is not reported because it uses the outcome twice
+and would make significance anti-conservative. Mean BARCS--MAGeCK-MLE
+effect-rank correlation is 0.875 across cell lines. The versioned metrics and
+rounding audit are under `data/derived/`.
 
 An optional raw-read confirmation remains available. It streams approximately
 14 GB of compressed endpoints without retaining FASTQs:
@@ -221,12 +269,10 @@ julia --project=julia julia/simulate_crispulator_facs.jl \
   results/custom_facs 4 20250729 0.40 0.60 1000
 ```
 
-The multimethod benchmark requires the Bioconductor packages `edgeR`,
-`DESeq2`, and `limma` in addition to the official MAGeCK executable:
-
-```r
-BiocManager::install(c("edgeR", "DESeq2", "limma"))
-```
+The four-method benchmark does not require MAGeCK, edgeR, DESeq2, or limma.
+All four methods reuse the same dependency-free BARCS guide fits. The
+RcppArmadillo weighted-crossproduct kernels from the pinned CB2 submodule are
+used automatically when the compiled library is available.
 
 The GSE70038 script expects official MAGeCK 0.5.9.5 at
 `.venv/bin/mageck`. A project-local installation can be prepared with:
@@ -239,35 +285,58 @@ curl -L -o /tmp/mageck-0.5.9.5.tar.gz \
 .venv/bin/pip install /tmp/mageck-0.5.9.5.tar.gz
 ```
 
-The CRISPulator baseline uses five fixed seeds, 400 genes, five guides per
-gene, and four independent screen replicates. In the low--bulk--high design,
-MAGeCK-MLE slightly leads global average precision (0.924 versus 0.917), while
-BARCS leads directionally correct recall at gene FDR 0.10 (0.764 versus 0.717)
-and F1 (0.828 versus 0.817). Low--bulk--high and tail-only effect ranks are
-nearly identical (mean Spearman 0.9985 for BARCS and 0.9999 for MAGeCK-MLE).
-Bulk versus input remains null (mean AUROC 0.500 and effect Spearman 0.060).
-Thus bulk can stabilize variance and degrees of freedom but adds no directional
-FACS contrast; it also overlaps the tails and uses 50% more sequencing.
-The same continuous design is fitted with BARCS, MAGeCK-MLE, edgeR-QL,
-DESeq2, and limma-voom. The latter three use a common directional Stouffer
-guide-to-gene summary, whereas MAGeCK-MLE retains its native gene model.
-Across the nine supported scenarios with at least three replicates,
-BARCS-minus-MAGeCK average
-precision ranges from -0.015 to 0.022, showing no universal ranking advantage.
-The directional-recall difference is positive in seven of nine scenarios and
-ranges from -0.018 to 0.136; the F1 difference ranges from -0.022 to 0.080.
-Across those nine scenarios, realized FDP averages 0.094 for BARCS and 0.064
-for MAGeCK-MLE, versus 0.230-0.250 for the three general count-model pipelines.
-The additional one-replicate stress test is reported separately. Ordinary
-BARCS improves average precision over MAGeCK-MLE (0.633 versus 0.548) but
-makes no discoveries at gene FDR 0.10. The optional `bb_gene_consistency()`
-analysis (`BARCS-GC`) estimates a shared guide coefficient by inverse-variance
-weighting and calibrates its Wald statistic with a robust gene-level empirical
-null; it does not use Fisher or Stouffer aggregation. Across the same five
-seeds it raises average precision to 0.670, directional recall to 0.145, and
-F1 to 0.245, with mean realized FDP 0 in the simulation. This remains a
-hypothesis-ranking tool: multiple guides demonstrate perturbation
-reproducibility but do not replace biological replication.
+The four-method CRISPulator analysis contains ten one-at-a-time parameter
+scenarios, five fixed seeds per scenario, and one shared guide-level fit for
+all four gene statistics. Across the 50 low--bulk--high runs,
+BARCS-original has the strongest average ranking and threshold power:
+average precision 0.856, AUROC 0.918, directional recall 0.638, and F1 0.702.
+Its mean realized FDP is 0.085 and 5.5% of negative-control gene p-values fall
+below 0.05.
+
+BARCS-EB trades power for calibration. Its average precision is 0.840,
+directional recall 0.463, and F1 0.599, while realized FDP falls to 0.013 and
+the negative-control p-value frequency falls to 0.013. BARCS-partial is
+weaker overall: average precision 0.779, directional recall 0.390, F1 0.525,
+and realized FDP 0.052. BARCS-original has the highest mean average precision
+in nine of ten scenarios; BARCS-EB leads one. Therefore the current results do
+not support replacing the historical statistic universally.
+
+BARCS-NORM implements the exchangeable normal guide-beta model directly. Its
+average precision is 0.706, directional recall is 0.159, F1 is 0.246, and
+realized FDP is 0.059. Its negative-control \(p<0.05\) rate is well calibrated
+at 0.047, but estimating a separate standard deviation from roughly five
+guides leaves only about four reference degrees of freedom and sharply limits
+power. A plug-in standard-normal reference is also reported by the function
+but is not used for primary calls because it treats the estimated standard
+deviation as known.
+
+Against external methods across the same 50 simulations, edgeR-QL has the
+highest mean average precision (0.877) and directional recall (0.822), while
+limma-voom has the highest F1 (0.772). Their nominal FDR 0.10 thresholds are
+anti-conservative in this simulation: realized FDP is 0.277 for edgeR-QL,
+0.233 for DESeq2, and 0.257 for limma-voom. BARCS-original has lower average
+precision (0.856) and F1 (0.702), but a realized FDP of 0.085 and the
+negative-control p-value rate closest to 0.05 (0.055). MAGeCK-MLE is the
+closest external compromise, with average precision 0.849, F1 0.683, and
+realized FDP 0.058. The complete interpretation and provenance audit are in
+`docs/barcs-external-method-comparison.md`.
+
+The FDR-threshold scan shows that this is not only a nominal-threshold
+artifact. Across all 50 runs, edgeR-QL at nominal FDR 0.01 has mean F1 0.796
+and realized FDP 0.087, compared with BARCS-original at nominal FDR 0.10 with
+F1 0.702 and realized FDP 0.085. This post hoc matched-FDP observation
+identifies a real guide-level information-borrowing advantage in the
+simulation; it does not establish 0.01 as a prospectively calibrated edgeR
+threshold for other screens.
+
+At the four-replicate baseline, mean average precision is 0.917, 0.777, 0.842,
+and 0.903 for original, NORM, partial, and EB, respectively. Their directional
+recalls are 0.764, 0.209, 0.450, and 0.551, while realized FDPs are 0.086,
+0.049, 0.046, and 0.008.
+In the diagnostic one-replicate setting, original makes no FDR 0.10 calls;
+partial and EB reach directional recalls 0.128 and 0.117, respectively.
+These remain reagent-consistency results rather than biological-replicate
+inference.
 
 On GSE70038, beta-binomial versus official MAGeCK-MLE gene-effect Spearman
 correlations are 0.888-0.928 across the four terminal-condition coefficients;
@@ -321,32 +390,40 @@ requires multiple cell lines. The source effects, common evaluation universe,
 metrics, rank correlations, and CNV audit are under
 `results/chronos_tzelepis/`.
 
-The GSE242880 benchmark uses the low-coverage, high-MOI primary-T-cell arm:
+The GSE242880 comparison uses the low-coverage, high-MOI primary-T-cell arm:
 four ordered IL2RA FACS bins for each of three donors. The 26 evaluation genes
-were validated by individual knockout and flow cytometry. Raw all-bin
-BARCS recovers 23/26 at gene FDR 0.10 but calls 127 genes
-and is inflated among 593 non-targeting guides (13.3% have nominal
-guide-level p < 0.05). The new `bb_calibrate_controls()` tail-scale diagnostic
-restores that frequency to 4.9%; the calibrated result recovers 22/26 with 49
-discoveries. Official all-bin MAGeCK-MLE recovers 17/26 with 72 discoveries,
-and the independent paper-matched outer-bin `mageck test` rerun recovers 18/26
-with 32. Waterbear's published, not rerun, result is 24/26 with 79 calls;
-MAUDE's is 25/26 with 406 calls.
+were validated by individual knockout and flow cytometry. BARCS-original,
+BARCS-NORM, BARCS-partial, and BARCS-EB recover 22, 0, 19, and 23 of 26 genes
+in the expected direction at gene FDR 0.10, with 49, 0, 71, and 60 total
+screen discoveries.
 
 The deposited follow-up table also contains seven candidates that did not
-validate experimentally. In this selected 33-gene panel, calibrated all-bin
-BARCS has F1 0.863, Matthews correlation 0.398, balanced accuracy 0.709,
-AUROC 0.808, and average precision 0.945. All-bin MAGeCK-MLE has 0.723, 0.070,
-0.541, 0.626, and 0.872, respectively. These are supporting metrics from a
-small candidate-selected panel, not unbiased genome-wide accuracy estimates.
-They nevertheless show why the calibrated result is preferable to raw BARCS:
-the continuous-bin signal is retained while the null tail is repaired.
+validate experimentally. In this selected 33-gene panel, original, partial,
+and EB have F1 values 0.863, 0.792, and 0.885 and balanced accuracies 0.709,
+0.651, and 0.728; NORM has F1 0 because it makes no calls. Original retains
+the highest average precision (0.945
+versus 0.940 for EB), whereas EB has the highest validated recovery, F1, and
+balanced accuracy. The selected panel is supporting evidence, not an unbiased
+genome-wide negative set.
 
-FACS bins are correlated partitions. Waterbear models that joint structure and
-remains the best-fitting method for this experimental design; BARCS provides
-a fast, transparent trend analysis and a useful sensitivity check. Full tables
-are under `results/waterbear_facs/`, including
-`validation_panel_metrics.csv`.
+BARCS-NORM still ranks the selected panel above chance (average precision
+0.897) but makes no FDR-0.10 calls, again showing the small-guide
+standard-deviation penalty. In the external GSE242880 comparison, MAGeCK-MLE
+recovers 17/26 validated
+genes with 72 calls and outer-bin MAGeCK test recovers 18/26 with 30 calls.
+Published Waterbear and MAUDE totals are 24/26 with 79 calls and 25/26 with
+406 calls. Those published aggregates do not provide complete per-gene
+scores for the selected 33-gene panel, so F1 and average precision are
+reported only for the six methods rerun from complete outputs.
+
+The shared raw guide fit is inflated among the 593 non-targeting guides:
+13.3% have nominal p-values below 0.05. Historical control calibration reduces
+that fraction to 5.1%. Partial and EB instead use gene-statistic calibration;
+because all non-targeting guides share one deposited gene label, their
+gene-level null falls back to the robust whole-screen center and scale.
+FACS bins remain correlated partitions, so none of these methods replaces a
+specialist joint-bin model. Compact results are versioned under
+the legacy `data/derived/waterbear_facs_three_method_*` filenames.
 
 The CB2 package benchmark processes roughly 2,100 guides/second serially and
 7,375 guides/second with four forked workers on the current machine (about
@@ -361,8 +438,17 @@ independently sequenced library has a quantitative or multivariable
 sample-level design. Use a specialist joint model such as Waterbear when
 several bins are correlated partitions of the same biological pool.
 
+Within BARCS, the current evidence supports BARCS-original when ranking and
+recall are primary, and BARCS-EB when conservative null calibration is
+primary. BARCS-NORM is the most literal unweighted normal model of guide beta
+values, but its per-gene variance estimate is underpowered with three to six
+guides. BARCS-partial exposes guide heterogeneity and influence diagnostics
+but is not the best default in the present benchmarks. This choice must be
+made from the inferential goal or an external protocol, not selected
+retrospectively from whichever method gives the most favorable result.
+
 BARCS is not a model for a continuous phenotype measured per cell when guide
 identity and phenotype are not jointly observed. The current regression layer
-is a transparent research implementation; the manuscript lists the
-dispersion-shrinkage, gene-level hierarchy, and repeated-measure work still
-needed for broader production use.
+is a transparent research implementation. The guide hierarchy does not turn
+multiple reagents into biological replicates, and repeated bins or donors
+still require an appropriate dependence model.

@@ -5,6 +5,13 @@
 # and are distinguished by line type, point shape, or fill.
 barcs_method_colours <- c(
   BARCS = "#0072B2",
+  `BARCS-original` = "#0072B2",
+  `BARCS-ST` = "#0072B2",
+  `BARCS-NORM` = "#7A3E9D",
+  `BARCS-partial` = "#009E73",
+  `BARCS-RE` = "#009E73",
+  `BARCS-EB` = "#D55E00",
+  `BARCS-RE-EB` = "#D55E00",
   MAGeCK = "#D55E00",
   `MAGeCK-RRA` = "#D55E00",
   `Liang RRA` = "#CC79A7",

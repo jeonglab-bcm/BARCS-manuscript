@@ -368,9 +368,18 @@ interaction, or contrast rather than one group label.
   one-replicate diagnostic.  That fixed-effect construction assumes a common
   gene effect, while its all-gene MAD assumes that fewer than half of genes are
   active.  The direction-agreement output should be inspected for guide
-  heterogeneity.  A production hierarchical gene test should be benchmarked
-  separately, ideally with held-out controls or phenotype permutations that
-  preserve cross-guide dependence.
+  heterogeneity.  We additionally evaluated BARCS-NORM, which treats the
+  fitted guide coefficients within a gene as exchangeable draws
+  $\widehat\beta_{gj}\sim N(\mu_g,\sigma_g^2)$ and tests the sample mean with
+  a $t_{m_g-1}$ reference because $\sigma_g$ is estimated.  This literal
+  normal model was calibrated but underpowered with three to six guides:
+  across the 50 CRISPulator runs its average precision was 0.706 and its
+  directional recall at FDR 0.10 was 0.159.  Replacing the $t$ reference by a
+  plug-in normal tail would incorrectly treat the estimated $\sigma_g$ as
+  known.  A production hierarchical gene test should therefore borrow
+  variance information across genes and be benchmarked separately, ideally
+  with held-out controls or phenotype permutations that preserve cross-guide
+  dependence.
 
   \item \textbf{Comparator assumptions.}  MAGeCK-MLE offers information
   sharing and guide-efficiency estimation that the prototype lacks, but its
