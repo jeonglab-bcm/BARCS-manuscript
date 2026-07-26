@@ -370,25 +370,63 @@ failure — and it is why the calibration claim here is a screen average, not a
 finite-sample guarantee. At MOI 0.30 BARCS-moderated holds 21 of 24, the extra
 miss being the 0.01 cutoff of the same seed.
 
-#### The power side of the same scan
+#### F1 across cutoffs: the F1 comparison is fragile
 
-The scan also shows what each method could reach if its cutoff were chosen
-knowing the truth, which a real screen cannot do.
+Reading F1 off the same scan exposes a weakness in the single-threshold F1
+column, which is worth stating rather than working around. **The ordering of
+methods by F1 is not robust to the cutoff.**
 
-| Method | F1 at 0.10 | Peak F1 | at cutoff | Shortfall at 0.10 |
-|---|---:|---:|---:|---:|
-| BARCS-moderated | **0.847** | 0.847 | 0.20 | **0.0002** |
-| MAGeCK-MLE | 0.718 | **0.853** | 0.50 | 0.135 |
-| edgeR-QL | 0.825 | 0.846 | 0.05 | 0.021 |
-| limma-voom | 0.822 | 0.844 | 0.05 | 0.022 |
-| DESeq2 | 0.812 | 0.847 | 0.01 | 0.035 |
-| BARCS-original | 0.811 | 0.827 | 0.20 | 0.016 |
+| Method | 0.001 | 0.005 | 0.01 | 0.05 | 0.10 | 0.20 | 0.50 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BARCS-original | 0.456 | 0.591 | 0.653 | 0.774 | 0.811 | 0.827 | 0.747 |
+| BARCS-moderated | 0.607 | 0.707 | 0.748 | 0.827 | **0.847** | **0.847** | 0.747 |
+| MAGeCK-MLE | 0.306 | 0.396 | 0.403 | 0.622 | 0.718 | 0.796 | **0.853** |
+| edgeR-QL | 0.757 | 0.811 | 0.834 | **0.846** | 0.825 | 0.774 | 0.608 |
+| DESeq2 | **0.795** | **0.835** | **0.847** | 0.841 | 0.812 | 0.753 | 0.586 |
+| limma-voom | 0.763 | 0.818 | 0.834 | 0.844 | 0.822 | 0.768 | 0.602 |
 
-Attainable F1 is essentially tied, 0.827 to 0.853, and the highest belongs to
-MAGeCK-MLE. Moderation does not give BARCS access to more recoverable genes.
-What differs is whether the requested cutoff delivers the peak: BARCS-moderated
-is already there at 0.10, while every other method needs a different cutoff,
-and which one differs by method and is not identifiable without the truth.
+DESeq2 leads at 0.001 through 0.01, edgeR-QL at 0.05, BARCS-moderated at 0.10
+and 0.20, MAGeCK-MLE at 0.50. BARCS-moderated holds the top F1 only at cutoffs
+of 0.10 and above. Someone running a stricter screen would draw the opposite
+conclusion from the headline table.
+
+The cause is the calibration table above: at a requested 0.001 the count
+models are running at 4 to 17 times that rate, so they are really operating
+near a realized 0.01–0.02 and calling many more genes. Comparing F1 at a fixed
+*requested* cutoff compares a liberal operating point against a conservative
+one.
+
+#### Matched on realized FDP, F1 does not separate the methods
+
+| Method | 0.01 | 0.02 | 0.05 | 0.10 | 0.20 |
+|---|---:|---:|---:|---:|---:|
+| BARCS-original | 0.673 | 0.722 | 0.795 | 0.819 | 0.816 |
+| BARCS-moderated | 0.759 | 0.792 | 0.838 | 0.847 | 0.828 |
+| MAGeCK-MLE | 0.739 | 0.792 | 0.830 | 0.853 | — |
+| edgeR-QL | 0.764 | 0.787 | 0.835 | 0.843 | 0.826 |
+| DESeq2 | — | 0.800 | 0.842 | 0.844 | 0.826 |
+| limma-voom | 0.764 | 0.794 | 0.834 | 0.840 | 0.826 |
+| **Spread** | 0.025 | 0.013 | 0.012 | 0.013 | 0.002 |
+
+Interpolated within each run before averaging; a dash marks a target outside
+the realized-FDP range a method reaches on the scanned grid. Spread excludes
+BARCS-original.
+
+At every matched error rate the five modern methods sit within 0.002 to 0.025
+of each other, and which is nominally highest changes row to row. **So we do
+not claim moderation recovers more genes than the alternatives** — at a common
+realized error rate it does not, and neither does anything else here. Peak F1
+says the same: 0.827 to 0.853 across methods, maximum to MAGeCK-MLE.
+
+Two claims survive:
+
+- **The BARCS-MOD over BARCS-ST gain is robust to the cutoff**, larger at every
+  matched realized FDP: +0.086, +0.070, +0.042, +0.028, +0.012. Moderation is a
+  real gain within the BARCS family, not a threshold artifact.
+- **BARCS-moderated is the method whose requested cutoff lands where the F1
+  curve is already flat and high while the realized error rate is still below
+  what was asked for.** F1 does not discriminate between these methods; whether
+  the number you set is the number you get does.
 
 ### The one-replicate boundary, and why the count models lead there
 

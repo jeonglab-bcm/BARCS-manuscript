@@ -39,6 +39,10 @@ nominal_fdr <- 0.10
 # badly from one that ranks well and simply calls too little. Thresholds above
 # 0.10 are a diagnostic, not a recommended operating point.
 thresholds <- c(0.001, 0.005, 0.01, 0.05, 0.10, 0.20, 0.30, 0.50)
+# Comparing F1 at a matched *nominal* cutoff compares methods sitting at
+# different real error rates, so the ranking it produces depends on the cutoff.
+# These are the realized-FDP levels at which F1 is compared instead.
+matched_fdp_targets <- c(0.01, 0.02, 0.05, 0.10, 0.20)
 seeds <- c(20250724L, 20250725L, 20250726L)
 moi_levels <- c(0.20, 0.30)
 main_moi <- 0.20
@@ -474,6 +478,62 @@ write.csv(
   file.path("data", "derived", "crispulator_facs_moi_10k_f1_by_fdr.csv"),
   row.names = FALSE
 )
+# F1 at matched realized FDP, interpolated within each run before averaging.
+interpolate_at <- function(realized, f1, target) {
+  ordering <- order(realized)
+  realized <- realized[ordering]
+  f1 <- f1[ordering]
+  if (target < min(realized) || target > max(realized)) {
+    return(NA_real_)
+  }
+  stats::approx(realized, f1, xout = target, ties = "ordered")$y
+}
+matched_rows <- do.call(rbind, lapply(
+  split(scan_metrics,
+        list(scan_metrics$moi, scan_metrics$design, scan_metrics$method,
+             scan_metrics$seed),
+        drop = TRUE),
+  function(group) {
+    do.call(rbind, lapply(matched_fdp_targets, function(target) {
+      data.frame(
+        analysis_protocol = analysis_protocol,
+        moi = group$moi[1L], design = group$design[1L],
+        method = group$method[1L], seed = group$seed[1L],
+        matched_fdp = target,
+        f1 = interpolate_at(group$realized_fdp, group$f1, target)
+      )
+    }))
+  }
+))
+matched_summary <- do.call(rbind, lapply(
+  split(matched_rows,
+        list(matched_rows$moi, matched_rows$design, matched_rows$method,
+             matched_rows$matched_fdp),
+        drop = TRUE),
+  function(group) {
+    usable <- group$f1[is.finite(group$f1)]
+    data.frame(
+      analysis_protocol = analysis_protocol,
+      moi = group$moi[1L], design = group$design[1L],
+      method = group$method[1L], matched_fdp = group$matched_fdp[1L],
+      runs = length(usable),
+      f1 = if (length(usable)) mean(usable) else NA_real_,
+      f1_sd = if (length(usable) > 1L) sd(usable) else NA_real_
+    )
+  }
+))
+matched_summary <- matched_summary[
+  order(matched_summary$moi, matched_summary$design, matched_summary$method,
+        matched_summary$matched_fdp),
+]
+write.csv(
+  matched_summary,
+  file.path(
+    "data", "derived", "crispulator_facs_moi_10k_f1_at_matched_fdp.csv"
+  ),
+  row.names = FALSE
+)
+
 scan_summary <- do.call(rbind, lapply(
   split(
     scan_metrics,
