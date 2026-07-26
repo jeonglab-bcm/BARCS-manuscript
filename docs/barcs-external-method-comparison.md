@@ -46,6 +46,30 @@ The result is a real trade-off:
   $-0.0065$, with a 95% interval from $-0.0163$ to $0.0033$; its F1 is
   lower by 0.0191 (95% interval $-0.0345$ to $-0.0036$).
 
+### F1 across nominal FDR thresholds
+
+For a called gene set, the standard binary F1 score is
+
+$$
+\mathrm{F1}=\frac{2TP}{2TP+FP+FN}.
+$$
+
+Here a true positive is any simulated active gene passing the nominated
+gene-FDR threshold; direction is reported separately. The threshold scan uses
+0.10, 0.05, 0.01, 0.005, and 0.001 in every one of the 50 runs.
+
+The scan changes the interpretation. At nominal FDR 0.10, limma-voom has the
+largest mean F1 (0.772) but realized FDP 0.257. At nominal FDR 0.01, edgeR-QL
+has mean F1 0.796 and realized FDP 0.087. BARCS-original at nominal FDR 0.10
+has F1 0.702 and realized FDP 0.085. Thus the general count models retain a
+real power advantage after moving to a threshold with comparable empirical
+FDP in this simulator; their advantage is not explained entirely by the
+anti-conservative 0.10 operating point.
+
+This is a diagnostic, not permission to select a method-specific threshold
+from the known truth in new data. The selected 0.01 threshold would need
+independent calibration or negative controls before prospective use.
+
 At the four-replicate baseline, edgeR-QL has the highest mean average
 precision (0.932), whereas BARCS-original has 0.917. limma-voom has the
 highest F1 (0.832) and BARCS-original has 0.828, but their realized FDPs are
@@ -116,3 +140,8 @@ when large ignored result directories are not committed.
 - `data/derived/crispulator_facs_external_head_to_head_provenance.csv`
 - `examples/waterbear_facs_external_head_to_head.R`
 - `data/derived/waterbear_facs_external_head_to_head_metrics.csv`
+- `examples/crispulator_facs_f1_threshold_curves.R`
+- `data/derived/crispulator_facs_f1_by_fdr.csv`
+- `figures/crispulator_facs_f1_by_fdr.pdf`
+- `examples/liang_hap1_specificity_volcano.R`
+- `figures/liang_hap1_specificity_volcano.pdf`

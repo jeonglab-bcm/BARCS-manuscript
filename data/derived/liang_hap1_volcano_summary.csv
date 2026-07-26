@@ -1,0 +1,3 @@
+"analysis_protocol","cell_line","input_scale","method","genes","discoveries_fdr_0_10","depleted_discoveries_fdr_0_10","essential_genes","essential_depleted_recovered_fdr_0_10","null_controls","null_p_below_0_05"
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",8652,244,228,60,44,1570,0.043312101910828
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",8652,528,494,60,49,1570,0.105095541401274

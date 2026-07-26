@@ -1,0 +1,13 @@
+"analysis_protocol","cell_line","input_scale","method","p_value_threshold","null_controls","false_positive_nulls","specificity"
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",0.001,1570,0,1
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",0.005,1570,4,0.997452229299363
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",0.01,1570,6,0.996178343949045
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",0.05,1570,68,0.956687898089172
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",0.1,1570,150,0.904458598726115
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",0.2,1570,319,0.796815286624204
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",0.001,1570,3,0.998089171974522
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",0.005,1570,14,0.991082802547771
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",0.01,1570,32,0.979617834394904
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",0.05,1570,165,0.894904458598726
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",0.1,1570,298,0.810191082802548
+"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",0.2,1570,521,0.668152866242038

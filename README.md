@@ -93,6 +93,8 @@ commits the updated submodule pointer. See
 - `examples/crispulator_facs_external_head_to_head.R`: one-evaluator
   comparison with official MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom,
   including result and input hashes.
+- `examples/crispulator_facs_f1_threshold_curves.R`: standard gene-level F1,
+  recall, precision, and realized-FDP curves at five nominal FDR thresholds.
 - `docs/barcs-three-gene-methods.md`: equations, numerical interpretation,
   calibration, and diagnostics for the three guide-to-gene statistics.
 - `examples/cb2_generalization_proof.R`: numerical verification of the legacy
@@ -123,6 +125,9 @@ commits the updated submodule pointer. See
   processed-count sensitivity analysis using Liang's deposited
   RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
   BARCS on the same normalized day-0/day-14 values.
+- `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
+  across p-value thresholds and matched BARCS/MAGeCK-MLE volcano plots using
+  the processed pseudo-count sensitivity-analysis inputs.
 - `scripts/prepare_liang_cas13.R`,
   `scripts/count_liang_cas13_run.sh`, and
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
@@ -156,8 +161,11 @@ julia --project=julia -e 'using Pkg; Pkg.instantiate()'
 julia --project=julia julia/simulate_crispulator_facs.jl
 Rscript examples/crispulator_facs_repeated_benchmark.R
 Rscript examples/crispulator_facs_external_head_to_head.R
+Rscript examples/crispulator_facs_f1_threshold_curves.R
 Rscript examples/waterbear_facs_benchmark.R
 Rscript examples/waterbear_facs_external_head_to_head.R
+Rscript examples/liang_cas13_benchmark.R
+Rscript examples/liang_hap1_specificity_volcano.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
@@ -278,6 +286,14 @@ negative-control p-value rate closest to 0.05 (0.055). MAGeCK-MLE is the
 closest external compromise, with average precision 0.849, F1 0.683, and
 realized FDP 0.058. The complete interpretation and provenance audit are in
 `docs/barcs-external-method-comparison.md`.
+
+The FDR-threshold scan shows that this is not only a nominal-threshold
+artifact. Across all 50 runs, edgeR-QL at nominal FDR 0.01 has mean F1 0.796
+and realized FDP 0.087, compared with BARCS-original at nominal FDR 0.10 with
+F1 0.702 and realized FDP 0.085. This post hoc matched-FDP observation
+identifies a real guide-level information-borrowing advantage in the
+simulation; it does not establish 0.01 as a prospectively calibrated edgeR
+threshold for other screens.
 
 At the four-replicate baseline, mean average precision is 0.917, 0.842, and
 0.903 for original, partial, and EB, respectively. Their directional recalls
