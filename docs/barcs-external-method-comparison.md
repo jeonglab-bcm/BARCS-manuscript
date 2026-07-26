@@ -134,6 +134,98 @@ precision (0.932), whereas BARCS-original has 0.917. limma-voom has the
 highest F1 (0.832) and BARCS-original has 0.828, but their realized FDPs are
 0.218 and 0.086, respectively.
 
+### What the count models catch that BARCS misses
+
+Aggregate metrics do not say whether the count models find *different* genes or
+merely the *same* genes at a looser threshold. `examples/crispulator_facs_miss_cases.R`
+answers that on the committed baseline realization in
+`data/derived/crispulator_facs/` (seed 20250724, MOI 0.25, 90% high-quality
+guides, 400 genes, four replicates; the MD5s match the head-to-head
+provenance). BARCS is refit from scratch and reproduces the committed
+head-to-head row exactly --- 59 calls, AUROC 0.9614, average precision 0.9225,
+realized FDP 0.0678. edgeR-QL, DESeq2, and limma-voom are refit here rather
+than reused, and land within one to two calls of their stored values.
+
+**BARCS calls a strict subset.** Zero genes are called by BARCS and missed by
+edgeR-QL, DESeq2, or limma-voom. There is no complementarity to exploit: on
+this run the four methods order genes almost identically and differ only in
+where they stop.
+
+| Method | Calls | Extra over BARCS | Of which active | Precision of the extra calls |
+|---|---:|---:|---:|---:|
+| BARCS-original | 59 | --- | --- | --- |
+| edgeR-QL | 93 | 34 | 16 | 0.47 |
+| DESeq2 | 95 | 36 | 17 | 0.47 |
+| limma-voom | 92 | 33 | 16 | 0.48 |
+
+So "they have more false positives" is true but uninformative on its own: the
+extra calls are roughly a coin flip, not noise. The informative version is
+that the coin is not fair everywhere. Stratifying edgeR-QL's 34 extra calls by
+how close BARCS came to calling them:
+
+| BARCS gene FDR | Extra edgeR-QL calls | Active | Precision |
+|---|---:|---:|---:|
+| 0.10--0.15 | 8 | 5 | 0.63 |
+| 0.15--0.25 | 14 | 9 | 0.64 |
+| 0.25--0.50 | 11 | 2 | 0.18 |
+| above 0.50 | 1 | 0 | 0.00 |
+
+The extra discoveries separate cleanly into a recoverable band and a junk
+tail. Genes sitting at BARCS FDR 0.10--0.25 are about 63% likely to be truly
+active; past 0.25 the count models are mostly picking up noise. A BARCS screen
+reporting genes in the 0.10--0.25 band as a clearly labelled secondary tier
+would recover most of the difference without adopting the count models'
+calibration.
+
+**The 16 genes all three catch and BARCS misses are real but weak.** Their
+median absolute simulated phenotype is 0.389, against 0.625 for the 55 actives
+BARCS does call (0.581 across all 79 actives). Fourteen of the 16 sit at BARCS
+FDR between 0.11 and 0.25 --- just over the line, not far from it. They are
+not a distinct biological class: 12 linear and 4 sigmoidal, against 40 and 15
+among the genes BARCS catches.
+
+**Most of the gap is the calibration ratchet, not the count model.** On this
+run `bb_calibrate_controls()` estimates a scale of 1.238, which is real work:
+the uncalibrated negative-control $p<0.05$ rate is 0.08 rather than 0.05.
+But sweeping the scale shows it overshoots at gene level:
+
+| Control scale | Calls | True positives | Realized FDP | Missed genes recovered |
+|---:|---:|---:|---:|---:|
+| 1.00 (none) | 87 | 71 | 0.184 | 14 of 16 |
+| 1.08 | 71 | 61 | 0.141 | 6 |
+| 1.16 | 67 | 60 | **0.104** | 5 |
+| 1.24 (applied) | 59 | 55 | 0.068 | 0 |
+| 1.40 | 53 | 52 | 0.019 | 0 |
+
+At the applied scale BARCS spends its whole FDR budget and then some: it lands
+at realized FDP 0.068 when 0.10 was permitted. A scale of 1.16 would sit on the
+nominal target and return five more true positives. Removing calibration
+entirely recovers 14 of the 16 but pushes FDP to 0.184, so the ratchet is
+buying something --- it is simply set tighter than the nominal threshold
+requires. This is the clearest actionable finding in the comparison: the
+`alpha = 0.05` control-calibration target and the 0.10 gene-FDR target are not
+consistent with each other.
+
+**Two genes resist even that.** GENE0063 and GENE0314 stay uncalled with no
+calibration at all, and both fail for the guide-level reason:
+
+- GENE0314 (phenotype $+0.672$) has two guides with essentially no knockdown
+  (0.002 and 0.009) that contribute noise, and among its three real guides
+  `g01570` carries a strong correct-signed effect ($\widehat\beta=+0.295$) that
+  BARCS scores at $p=0.230$ because its own dispersion estimate came out high
+  (variance inflation 10.3 against a library median of 2.7). edgeR-QL, which
+  borrows dispersion across the library, scores the same guide at $p=0.080$.
+- GENE0063 loses one guide to the `min_total_count = 30` filter and has one
+  genuinely discordant guide, leaving three concordant guides against an
+  equal-weight signed-$z$ combination.
+
+These are the per-guide-dispersion mechanism made concrete: with seven
+residual degrees of freedom the unshared estimate is noisy, and when it draws
+high on an informative guide that guide's evidence is thrown away. Note that
+this is a stochastic per-guide failure, not a systematic depth effect ---
+across the library, variance inflation is uncorrelated with guide read depth
+(Spearman $-0.03$, flat across read quartiles).
+
 ### The one-replicate boundary, and why the count models lead there
 
 At $R=1$ the design has three samples (low, bulk, high) and the guide model
@@ -320,5 +412,14 @@ Rscript examples/crispulator_facs_f1_threshold_curves_aggregate.R
 - `examples/crispulator_facs_f1_threshold_curves_aggregate.R`
 - `data/derived/crispulator_facs_f1_by_fdr.csv`
 - `figures/crispulator_facs_f1_by_fdr.pdf`
+
+The per-gene case study runs entirely from committed inputs and needs
+edgeR, limma, and DESeq2:
+
+- `examples/crispulator_facs_miss_cases.R`
+- `data/derived/crispulator_facs_miss_cases.csv`
+- `data/derived/crispulator_facs_miss_marginal_value.csv`
+- `data/derived/crispulator_facs_miss_precision_bands.csv`
+- `data/derived/crispulator_facs_calibration_scale_sweep.csv`
 - `examples/liang_hap1_specificity_volcano.R`
 - `figures/liang_hap1_specificity_volcano.pdf`

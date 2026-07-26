@@ -1,0 +1,5 @@
+"analysis_protocol","barcs_fdr_lower","barcs_fdr_upper","extra_calls","extra_active","extra_precision"
+"crispulator-miss-cases-v1",0.1,0.15,8,5,0.625
+"crispulator-miss-cases-v1",0.15,0.25,14,9,0.642857142857143
+"crispulator-miss-cases-v1",0.25,0.5,11,2,0.181818181818182
+"crispulator-miss-cases-v1",0.5,1.01,1,0,0

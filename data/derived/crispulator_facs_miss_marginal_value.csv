@@ -1,0 +1,4 @@
+"analysis_protocol","method","calls","extra_over_barcs","extra_active","extra_precision","barcs_only_calls"
+"crispulator-miss-cases-v1","edgeR-QL",93,34,16,0.470588235294118,0
+"crispulator-miss-cases-v1","DESeq2",95,36,17,0.472222222222222,0
+"crispulator-miss-cases-v1","limma-voom",92,33,16,0.484848484848485,0
