@@ -438,15 +438,31 @@ simulation seed, one CRISPRn guide library was constructed and reused across
 four independently seeded transfection, sorting, and sequencing replicates.
 The default CRISPulator phenotype mixture was retained: 75\% inactive, 5\%
 negative-control, 10\% phenotype-increasing, and 10\%
-phenotype-decreasing genes.  Screens contained 400 genes and five guides per
-gene.  The default guide-quality mixture---90\% complete-knockout guides and
-10\% low-activity guides---was retained.  Transfection representation was 500
-cells per guide, multiplicity of infection was 0.25, Gaussian phenotype noise
+phenotype-decreasing genes.  The headline screens contained 10,000 genes and
+five guides per gene, so 50,000 guides, which is the order of a genome-wide
+library rather than a pilot.  The default guide-quality mixture---90\%
+complete-knockout guides and 10\% low-activity guides---was retained.
+Transfection representation was 500 cells per guide, Gaussian phenotype noise
 was 2, sorting representation was 50 cells per guide, and sequencing depth was
-50 reads per guide per sample.  Both multiplicity of infection and the
+50 reads per guide per sample.  Multiplicity of infection was 0.20 for the
+main analysis and 0.30 for the supplementary analysis; 0.20 is the point at
+which the single-integration approximation these guide-level models share is
+most defensible, and 0.30 stresses it.  Both multiplicity of infection and the
 high-quality-guide fraction are exposed as simulation parameters, as is the
 number of genes and the number of independent screen replicates.
-The five benchmark seeds were 20250724 through 20250728.
+The three genome-scale benchmark seeds were 20250724 through 20250726; the
+supporting 400-gene analyses below use 20250724 through 20250728.
+
+Two BARCS gene statistics are carried through the genome-scale benchmark.
+BARCS-ST is the historical calibrated signed-$z$ statistic.  BARCS-MOD reuses
+the identical guide fits after guide-dispersion moderation, so the two differ
+only in how the guide variance is estimated, not in the gene combiner.  The
+exchangeable-normal, random-effects, and moderated random-effects statistics
+are retained for the real-data comparisons but are not carried through the
+genome-scale simulation, where the question is whether moderation changes the
+calibration--power tradeoff rather than which of several pooling rules is
+best.  MAGeCK-MLE could not be installed in the analysis environment used for
+the genome-scale runs and is reported in the 400-gene comparisons only.
 
 We additionally performed a one-factor-at-a-time sensitivity analysis around
 the baseline $(\mathrm{MOI},q,G,R)=(0.25,0.90,400,4)$, where $q$ is the
@@ -466,8 +482,8 @@ five seeds) when interaction effects are the target.
 The $R=1$ setting was prespecified as a diagnostic boundary rather than a
 confirmatory design.  Its three low--bulk--high samples and two regression
 coefficients leave only one residual degree of freedom.  The corresponding
-two-tail and bulk-versus-input fits have two samples and two coefficients,
-leave zero residual degrees of freedom, and were therefore not fitted.  All
+two-tail fit has two samples and two coefficients, leaves zero residual
+degrees of freedom, and was therefore not fitted.  All
 pairwise-design comparisons and the primary performance interpretation use
 $R\geq3$; the one-replicate result is shown separately to expose the
 consequence of insufficient replication.  BARCS-GC was evaluated only at
@@ -507,10 +523,7 @@ between the inferred gene effect and CRISPulator's median theoretical guide
 phenotype among active genes.  Directional recall is the fraction of active
 genes with gene FDR below 0.10 and an effect sign matching the simulated
 class.  Realized FDP is the fraction of called genes that were inactive, and
-F1 uses active versus inactive status at the same FDR threshold.  The
-bulk-versus-input analysis intentionally applies the active labels to a
-contrast containing no sorted-phenotype information; AUROC 0.5 and zero effect
-correlation are therefore the expected result.
+F1 uses active versus inactive status at the same FDR threshold.
 
 \subsubsection{Liang Cas13 fitness benchmark}
 
