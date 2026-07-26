@@ -1,85 +1,169 @@
-"analysis_protocol","method","reference","metric","runs","mean_difference","sd_difference","lower_95","upper_95"
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-original","auroc",50,-0.051044811854959,0.0223196263315042,-0.0573879794742122,-0.0447016442357059
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-original","average_precision",50,-0.149523396177639,0.0558401383021471,-0.165392987893556,-0.133653804461722
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-original","directional_recall_fdr_0_10",50,-0.479534697646944,0.196896608031123,-0.535492094507164,-0.423577300786724
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-original","empirical_fdp_fdr_0_10",50,-0.02615694171832,0.100173506637616,-0.054625937308711,0.00231205387207108
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-original","f1_fdr_0_10",50,-0.455590735066649,0.20145582221996,-0.512843846262868,-0.398337623870429
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-original","negative_control_p_below_0_05",50,-0.00799729583851603,0.0686839696926115,-0.0275170640481202,0.0115224723710882
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-original","auroc",50,-0.0326862507004591,0.0187057412321342,-0.0380023635383485,-0.0273701378625698
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-original","average_precision",50,-0.0769222849117202,0.0412631868878499,-0.0886491528729798,-0.0651954169504606
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-original","directional_recall_fdr_0_10",50,-0.248029340376681,0.165965500677064,-0.295196213789877,-0.200862466963485
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-original","empirical_fdp_fdr_0_10",50,-0.033212324769359,0.082667221261458,-0.0567060891044351,-0.00971856043428291
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-original","f1_fdr_0_10",50,-0.176678951175611,0.170162153103331,-0.225038500011961,-0.128319402339262
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-original","negative_control_p_below_0_05",50,-0.0394524680313361,0.0599659180084116,-0.0564945933662414,-0.0224103426964308
-"barcs-external-headtohead-v1","BARCS-EB","BARCS-original","auroc",50,-0.00796013766235783,0.0101761029822646,-0.0108521541311181,-0.00506812119359752
-"barcs-external-headtohead-v1","BARCS-EB","BARCS-original","average_precision",50,-0.0150888665171369,0.0191567136714398,-0.0205331443041921,-0.00964458873008164
-"barcs-external-headtohead-v1","BARCS-EB","BARCS-original","directional_recall_fdr_0_10",50,-0.174843067602306,0.13789816487148,-0.214033292437413,-0.1356528427672
-"barcs-external-headtohead-v1","BARCS-EB","BARCS-original","empirical_fdp_fdr_0_10",50,-0.0722259059076496,0.0521800190853564,-0.0870553032514151,-0.0573965085638842
-"barcs-external-headtohead-v1","BARCS-EB","BARCS-original","f1_fdr_0_10",50,-0.102922774095075,0.14427295773323,-0.143924695015928,-0.0619208531742231
-"barcs-external-headtohead-v1","BARCS-EB","BARCS-original","negative_control_p_below_0_05",50,-0.0427023425529498,0.0639042237628271,-0.0608637219992407,-0.0245409631066588
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-original","auroc",50,0.00401756213607065,0.0119447766352079,0.000622894176745715,0.00741223009539559
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-original","average_precision",50,-0.00650530437442781,0.0344072674058666,-0.0162837415773758,0.0032731328285202
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-original","directional_recall_fdr_0_10",50,-0.0510662646185634,0.0808318005433099,-0.0740384081570301,-0.0280941210800967
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-original","empirical_fdp_fdr_0_10",50,-0.0269434283837673,0.056339685615474,-0.042954989875303,-0.0109318668922316
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-original","f1_fdr_0_10",50,-0.019079942205869,0.0544139932805555,-0.0345442279911686,-0.00361565642056933
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-original","negative_control_p_below_0_05",50,-0.0182339427451973,0.0586201604955294,-0.0348936080266817,-0.00157427746371283
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-original","auroc",50,0.0106284669511018,0.00946128393702137,0.0079395998072481,0.0133173340949556
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-original","average_precision",50,0.021567983150743,0.0199224081856412,0.0159060973904814,0.0272298689110046
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-original","directional_recall_fdr_0_10",50,0.184345559883332,0.198320355259566,0.127983538537767,0.240707581228897
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-original","empirical_fdp_fdr_0_10",50,0.192498505803941,0.131428611431878,0.155146907712831,0.229850103895051
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-original","f1_fdr_0_10",50,0.0631872532156599,0.183708056632131,0.0109780011915767,0.115396505239743
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-original","negative_control_p_below_0_05",50,0.0823361202993884,0.0824259673575069,0.0589109195651913,0.105761321033586
-"barcs-external-headtohead-v1","DESeq2","BARCS-original","auroc",50,0.00951585609541158,0.00861593378919357,0.00706723480536336,0.0119644773854598
-"barcs-external-headtohead-v1","DESeq2","BARCS-original","average_precision",50,0.0214687438190673,0.019774663285482,0.0158488466948465,0.0270886409432882
-"barcs-external-headtohead-v1","DESeq2","BARCS-original","directional_recall_fdr_0_10",50,0.157156603182399,0.129807427974022,0.120265740332194,0.194047466032605
-"barcs-external-headtohead-v1","DESeq2","BARCS-original","empirical_fdp_fdr_0_10",50,0.147710617245775,0.0748393772867437,0.126441501553624,0.168979732937926
-"barcs-external-headtohead-v1","DESeq2","BARCS-original","f1_fdr_0_10",50,0.0668239483918886,0.181456533050012,0.0152545722899183,0.118393324493859
-"barcs-external-headtohead-v1","DESeq2","BARCS-original","negative_control_p_below_0_05",50,0.056975252994814,0.0762535245478112,0.0353042410978597,0.0786462648917684
-"barcs-external-headtohead-v1","limma-voom","BARCS-original","auroc",50,0.0104825370764796,0.0100299128635781,0.00763206737975452,0.0133330067732046
-"barcs-external-headtohead-v1","limma-voom","BARCS-original","average_precision",50,0.0211948418479913,0.0211436979390801,0.0151858693801532,0.0272038143158294
-"barcs-external-headtohead-v1","limma-voom","BARCS-original","directional_recall_fdr_0_10",50,0.175164673075993,0.191251907072855,0.120811482478326,0.22951786367366
-"barcs-external-headtohead-v1","limma-voom","BARCS-original","empirical_fdp_fdr_0_10",50,0.17224092590773,0.128760581384942,0.135647573566328,0.208834278249133
-"barcs-external-headtohead-v1","limma-voom","BARCS-original","f1_fdr_0_10",50,0.0699981885824322,0.182983128788487,0.017994958771974,0.12200141839289
-"barcs-external-headtohead-v1","limma-voom","BARCS-original","negative_control_p_below_0_05",50,0.072552078709215,0.0809333151290096,0.0495510850447054,0.0955530723737245
-"barcs-external-headtohead-v1","BARCS-original","BARCS-EB","auroc",50,0.00796013766235783,0.0101761029822646,0.00506812119359752,0.0108521541311181
-"barcs-external-headtohead-v1","BARCS-original","BARCS-EB","average_precision",50,0.0150888665171369,0.0191567136714398,0.00964458873008164,0.0205331443041921
-"barcs-external-headtohead-v1","BARCS-original","BARCS-EB","directional_recall_fdr_0_10",50,0.174843067602306,0.13789816487148,0.1356528427672,0.214033292437413
-"barcs-external-headtohead-v1","BARCS-original","BARCS-EB","empirical_fdp_fdr_0_10",50,0.0722259059076496,0.0521800190853564,0.0573965085638842,0.0870553032514151
-"barcs-external-headtohead-v1","BARCS-original","BARCS-EB","f1_fdr_0_10",50,0.102922774095075,0.14427295773323,0.0619208531742231,0.143924695015928
-"barcs-external-headtohead-v1","BARCS-original","BARCS-EB","negative_control_p_below_0_05",50,0.0427023425529498,0.0639042237628271,0.0245409631066588,0.0608637219992407
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-EB","auroc",50,-0.0430846741926012,0.0197141428225947,-0.0486873715915763,-0.0374819767936261
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-EB","average_precision",50,-0.134434529660502,0.0490759809828501,-0.148381769136196,-0.120487290184808
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-EB","directional_recall_fdr_0_10",50,-0.304691630044638,0.128500069936866,-0.341210945851676,-0.268172314237599
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-EB","empirical_fdp_fdr_0_10",50,0.0460689641893297,0.0986422230510258,0.0180351545791197,0.0741027737995396
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-EB","f1_fdr_0_10",50,-0.352667960971573,0.140522147023428,-0.39260391328314,-0.312732008660006
-"barcs-external-headtohead-v1","BARCS-NORM","BARCS-EB","negative_control_p_below_0_05",50,0.0347050467144337,0.0491841089393407,0.0207270776135137,0.0486830158153538
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-EB","auroc",50,-0.0247261130381013,0.0121016994134166,-0.0281653779575488,-0.0212868481186538
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-EB","average_precision",50,-0.0618334183945833,0.0274055446102796,-0.0696219879959727,-0.0540448487931939
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-EB","directional_recall_fdr_0_10",50,-0.0731862727743744,0.0769265065362078,-0.0950485440362363,-0.0513240015125124
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-EB","empirical_fdp_fdr_0_10",50,0.0390135811382906,0.049239998959833,0.0250197282692931,0.0530074340072882
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-EB","f1_fdr_0_10",50,-0.0737561770805359,0.0809532836157018,-0.0967628457261723,-0.0507495084348995
-"barcs-external-headtohead-v1","BARCS-partial","BARCS-EB","negative_control_p_below_0_05",50,0.00324987452161365,0.0280932721219063,-0.00473414507601796,0.0112338941192453
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-EB","auroc",50,0.0119776997984285,0.0176713139261539,0.00695556794813766,0.0169998316487193
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-EB","average_precision",50,0.00858356214270908,0.0434219092303395,-0.00375680792017442,0.0209239322055926
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-EB","directional_recall_fdr_0_10",50,0.123776802983743,0.128170794117859,0.0873510663290568,0.160202539638429
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-EB","empirical_fdp_fdr_0_10",50,0.0452824775238824,0.0445346291702788,0.0326258759530207,0.057939079094744
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-EB","f1_fdr_0_10",50,0.0838428318892064,0.134650405307756,0.0455756101095166,0.122110053668896
-"barcs-external-headtohead-v1","MAGeCK-MLE","BARCS-EB","negative_control_p_below_0_05",50,0.0244683998077525,0.0521887055152525,0.00963653380792505,0.0393002658075799
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-EB","auroc",50,0.0185886046134597,0.0139376673755094,0.0146275633723945,0.0225496458545248
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-EB","average_precision",50,0.0366568496678799,0.0293511242918418,0.0283153524388741,0.0449983468968857
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-EB","directional_recall_fdr_0_10",50,0.359188627485639,0.133531085742772,0.321239512806612,0.397137742164665
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-EB","empirical_fdp_fdr_0_10",50,0.264724411711591,0.105672978915115,0.234692483393049,0.294756340030133
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-EB","f1_fdr_0_10",50,0.166110027310735,0.147558597810045,0.124174337811761,0.208045716809709
-"barcs-external-headtohead-v1","edgeR-QL","BARCS-EB","negative_control_p_below_0_05",50,0.125038462852338,0.0918564955256374,0.0989331356670945,0.151143790037582
-"barcs-external-headtohead-v1","DESeq2","BARCS-EB","auroc",50,0.0174759937577694,0.0136355053099524,0.0136008260255856,0.0213511614899532
-"barcs-external-headtohead-v1","DESeq2","BARCS-EB","average_precision",50,0.0365576103362042,0.0301298812324128,0.0279947928334927,0.0451204278389157
-"barcs-external-headtohead-v1","DESeq2","BARCS-EB","directional_recall_fdr_0_10",50,0.331999670784706,0.110783805571395,0.300515261601465,0.363484079967946
-"barcs-external-headtohead-v1","DESeq2","BARCS-EB","empirical_fdp_fdr_0_10",50,0.219936523153424,0.0659397430539448,0.201196655525297,0.238676390781552
-"barcs-external-headtohead-v1","DESeq2","BARCS-EB","f1_fdr_0_10",50,0.169746722486964,0.146792116060924,0.128028864690885,0.211464580283043
-"barcs-external-headtohead-v1","DESeq2","BARCS-EB","negative_control_p_below_0_05",50,0.0996775955477638,0.100117206356717,0.0712246003201676,0.12813059077536
-"barcs-external-headtohead-v1","limma-voom","BARCS-EB","auroc",50,0.0184426747388374,0.0144758131160696,0.0143286941705066,0.0225566553071682
-"barcs-external-headtohead-v1","limma-voom","BARCS-EB","average_precision",50,0.0362837083651282,0.0296887275458287,0.0278462653529342,0.0447211513773222
-"barcs-external-headtohead-v1","limma-voom","BARCS-EB","directional_recall_fdr_0_10",50,0.3500077406783,0.128451728161416,0.313502163451833,0.386513317904766
-"barcs-external-headtohead-v1","limma-voom","BARCS-EB","empirical_fdp_fdr_0_10",50,0.24446683181538,0.104346226487431,0.214811962364807,0.274121701265953
-"barcs-external-headtohead-v1","limma-voom","BARCS-EB","f1_fdr_0_10",50,0.172920962677508,0.148128704304541,0.1308232507055,0.215018674649515
-"barcs-external-headtohead-v1","limma-voom","BARCS-EB","negative_control_p_below_0_05",50,0.115254421262165,0.081321773054078,0.0921430290768584,0.138365813447471
+"analysis_protocol","scope","method","reference","metric","runs","mean_difference","sd_difference","lower_95","upper_95"
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-original","auroc",45,-0.0520234374103842,0.0215198969520801,-0.0584887302009738,-0.0455581446197945
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-original","average_precision",45,-0.153271987783147,0.0556146727426374,-0.169980485204609,-0.136563490361684
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-original","directional_recall_fdr_0_10",45,-0.533622430936692,0.115086830814592,-0.568198342671505,-0.499046519201878
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-original","empirical_fdp_fdr_0_10",45,-0.0290632685759111,0.105302681596297,-0.0606996964672858,0.00257315931546366
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-original","f1_fdr_0_10",45,-0.507795226156442,0.131487120379108,-0.547298330345808,-0.468292121967076
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-original","negative_control_p_below_0_05",45,-0.0120742900621193,0.0708557903564361,-0.0333617261303816,0.00921314600614307
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-original","auroc",45,-0.0333598469225082,0.0186612446622363,-0.0389663054871959,-0.0277533883578205
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-original","average_precision",45,-0.0775914016555676,0.0420887185025616,-0.0902362525535858,-0.0649465507575494
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-original","directional_recall_fdr_0_10",45,-0.289848404438424,0.112716641325081,-0.323712232418701,-0.255984576458147
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-original","empirical_fdp_fdr_0_10",45,-0.0469243695694403,0.0699606973632244,-0.0679428899319813,-0.0259058492068993
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-original","f1_fdr_0_10",45,-0.221235037774604,0.108249918122749,-0.253756913542846,-0.188713162006361
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-original","negative_control_p_below_0_05",45,-0.0459133702763638,0.0593089880262818,-0.0637317628810005,-0.0280949776717271
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-EB","BARCS-original","auroc",45,-0.00901796620156855,0.00979397406503574,-0.0119604017557396,-0.0060755306473975
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-EB","BARCS-original","average_precision",45,-0.0167206781919966,0.0188606853867706,-0.0223870553836811,-0.0110543010003121
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-EB","BARCS-original","directional_recall_fdr_0_10",45,-0.20730178283335,0.0984543983496332,-0.236880758665305,-0.177722807001396
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-EB","BARCS-original","empirical_fdp_fdr_0_10",45,-0.0802510065640552,0.0487185695766585,-0.0948876852318573,-0.065614327896253
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-EB","BARCS-original","f1_fdr_0_10",45,-0.136733829293696,0.0990573065010768,-0.166493938786913,-0.10697371980048
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-EB","BARCS-original","negative_control_p_below_0_05",45,-0.0474470472810553,0.0657082464367949,-0.0671879899498833,-0.0277061046122274
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-original","auroc",45,0.00558069487179051,0.01115061411662,0.0022306795246277,0.00893071021895333
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-original","average_precision",45,0.00219646159008181,0.0212390099860972,-0.00418444341369904,0.00857736659386267
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-original","directional_recall_fdr_0_10",45,-0.0582507881875135,0.0819642045840208,-0.0828755613527151,-0.0336260150223119
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-original","empirical_fdp_fdr_0_10",45,-0.0299371426486303,0.0586787870708038,-0.0475662019259213,-0.0123080833713393
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-original","f1_fdr_0_10",45,-0.0241246415470279,0.0540969159400425,-0.0403771543447941,-0.00787212874926169
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-original","negative_control_p_below_0_05",45,-0.0211026631683083,0.0598269064609443,-0.0390766556965503,-0.00312867064006635
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-original","auroc",45,0.00899821936985986,0.00792263242355441,0.00661799708512689,0.0113784416545928
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-original","average_precision",45,0.0169662295488435,0.0127179175864057,0.0131453441112506,0.0207871149864363
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-original","directional_recall_fdr_0_10",45,0.126192119984885,0.0930418603618758,0.098239250584061,0.154144989385709
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-original","empirical_fdp_fdr_0_10",45,0.155473507699628,0.0698559609996207,0.134486453624218,0.176460561775038
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-original","f1_fdr_0_10",45,0.00752232237087216,0.0757494225273784,-0.0152353235624766,0.0302799683042209
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-original","negative_control_p_below_0_05",45,0.0673944009767762,0.0669875845390106,0.0472691025915895,0.0875196993619628
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-original","auroc",45,0.00793959418290708,0.00696739420284451,0.00584635723065055,0.0100328311351636
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-original","average_precision",45,0.0170670496698763,0.0130536556303632,0.0131452973573185,0.0209888019824342
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-original","directional_recall_fdr_0_10",45,0.128023143966749,0.0939025533401164,0.0998116937688363,0.156234594164661
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-original","empirical_fdp_fdr_0_10",45,0.148442082277156,0.0769841519287234,0.125313482564864,0.171570681989448
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-original","f1_fdr_0_10",45,0.0126474039077442,0.0748139575924318,-0.00982919724582578,0.0351240050613141
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-original","negative_control_p_below_0_05",45,0.0612285419749141,0.0789320720559929,0.0375147222690727,0.0849423616807556
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-original","auroc",45,0.00876447430695533,0.00837080405818342,0.00624960635710761,0.0112793422568031
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-original","average_precision",45,0.01633207874797,0.012879851796666,0.0124625428877251,0.0202016146082149
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-original","directional_recall_fdr_0_10",45,0.118622212309385,0.08577798111287,0.0928516538296999,0.14439277078907
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-original","empirical_fdp_fdr_0_10",45,0.135086079700735,0.0649874527675865,0.115561687423547,0.154610471977922
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-original","f1_fdr_0_10",45,0.0143379767386902,0.0745493102325866,-0.0080591155458798,0.0367350690232602
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-original","negative_control_p_below_0_05",45,0.0586005383403516,0.0672673627387735,0.0383911852786058,0.0788098914020973
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-original","BARCS-EB","auroc",45,0.00901796620156855,0.00979397406503574,0.0060755306473975,0.0119604017557396
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-original","BARCS-EB","average_precision",45,0.0167206781919966,0.0188606853867706,0.0110543010003121,0.0223870553836811
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-original","BARCS-EB","directional_recall_fdr_0_10",45,0.20730178283335,0.0984543983496332,0.177722807001396,0.236880758665305
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-original","BARCS-EB","empirical_fdp_fdr_0_10",45,0.0802510065640552,0.0487185695766585,0.065614327896253,0.0948876852318573
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-original","BARCS-EB","f1_fdr_0_10",45,0.136733829293696,0.0990573065010768,0.10697371980048,0.166493938786913
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-original","BARCS-EB","negative_control_p_below_0_05",45,0.0474470472810553,0.0657082464367949,0.0277061046122274,0.0671879899498833
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-EB","auroc",45,-0.0430054712088156,0.0180186044134667,-0.0484188592687251,-0.0375920831489061
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-EB","average_precision",45,-0.13655130959115,0.0498616860307276,-0.151531418461511,-0.121571200720789
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-EB","directional_recall_fdr_0_10",45,-0.326320648103341,0.113197815714474,-0.360329036873927,-0.292312259332755
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-EB","empirical_fdp_fdr_0_10",45,0.0511877379881441,0.102800920794473,0.020302922249552,0.0820725537267362
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-EB","f1_fdr_0_10",45,-0.371061396862745,0.128871236244367,-0.409778602454408,-0.332344191271082
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-NORM","BARCS-EB","negative_control_p_below_0_05",45,0.035372757218936,0.0512482745480848,0.0199760710403869,0.0507694433974851
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-EB","auroc",45,-0.0243418807209397,0.0114947318952645,-0.0277952804940753,-0.0208884809478041
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-EB","average_precision",45,-0.060870723463571,0.0280798277465121,-0.0693068376464029,-0.0524346092807391
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-EB","directional_recall_fdr_0_10",45,-0.0825466216050735,0.0721988370627849,-0.104237553573308,-0.0608556896368392
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-EB","empirical_fdp_fdr_0_10",45,0.0333266369946149,0.039702912226913,0.0213985616530988,0.045254712336131
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-EB","f1_fdr_0_10",45,-0.0845012084809077,0.0711062472519589,-0.105863890130716,-0.0631385268310989
+"barcs-external-headtohead-v1","multi-replicate settings","BARCS-partial","BARCS-EB","negative_control_p_below_0_05",45,0.0015336770046915,0.0280843868818787,-0.0069038068940402,0.00997116090342319
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-EB","auroc",45,0.0145986610733591,0.0164316772769155,0.00966203870605405,0.0195352834406641
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-EB","average_precision",45,0.0189171397820784,0.0310719277646575,0.00958209923732598,0.0282521803268309
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-EB","directional_recall_fdr_0_10",45,0.149050994645837,0.105529861737354,0.117346314284136,0.180755675007538
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-EB","empirical_fdp_fdr_0_10",45,0.0503138639154249,0.0441566541140045,0.0370477363807277,0.063579991450122
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-EB","f1_fdr_0_10",45,0.112609187746668,0.101484345722365,0.0821199149486824,0.143098460544654
+"barcs-external-headtohead-v1","multi-replicate settings","MAGeCK-MLE","BARCS-EB","negative_control_p_below_0_05",45,0.026344384112747,0.0532333078571465,0.0103513279064633,0.0423374403190306
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-EB","auroc",45,0.0180161855714284,0.0142487712023702,0.013735380791806,0.0222969903510508
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-EB","average_precision",45,0.0336869077408401,0.0279549027097222,0.0252883251940341,0.042085490287646
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-EB","directional_recall_fdr_0_10",45,0.333493902818235,0.106056207137833,0.301631090792119,0.365356714844352
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-EB","empirical_fdp_fdr_0_10",45,0.235724514263683,0.0591455556706671,0.217955222174391,0.253493806352975
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-EB","f1_fdr_0_10",45,0.144256151664568,0.134204206444956,0.103936744451445,0.184575558877692
+"barcs-external-headtohead-v1","multi-replicate settings","edgeR-QL","BARCS-EB","negative_control_p_below_0_05",45,0.114841448257832,0.0868190587939604,0.0887581154167736,0.140924781098889
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-EB","auroc",45,0.0169575603844756,0.0138274605113306,0.0128033313491257,0.0211117894198256
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-EB","average_precision",45,0.033787727861873,0.028831176193921,0.0251258836157852,0.0424495721079608
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-EB","directional_recall_fdr_0_10",45,0.335324926800099,0.112327348987986,0.301578055185647,0.369071798414551
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-EB","empirical_fdp_fdr_0_10",45,0.228693088841211,0.061258263369828,0.210289069090981,0.247097108591441
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-EB","f1_fdr_0_10",45,0.14938123320144,0.136191653808964,0.108464730698185,0.190297735704696
+"barcs-external-headtohead-v1","multi-replicate settings","DESeq2","BARCS-EB","negative_control_p_below_0_05",45,0.108675589255969,0.101362627869626,0.0782228845492506,0.139128293962688
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-EB","auroc",45,0.0177824405085239,0.0148700045410765,0.0133149965718946,0.0222498844451532
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-EB","average_precision",45,0.0330527569399666,0.0277296480148545,0.0247218483954116,0.0413836654845217
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-EB","directional_recall_fdr_0_10",45,0.325923995142735,0.102639457796912,0.295087688258828,0.356760302026643
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-EB","empirical_fdp_fdr_0_10",45,0.21533708626479,0.0576697113356208,0.198011186899945,0.232662985629635
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-EB","f1_fdr_0_10",45,0.151071806032386,0.133690138023375,0.110906842070888,0.191236769993885
+"barcs-external-headtohead-v1","multi-replicate settings","limma-voom","BARCS-EB","negative_control_p_below_0_05",45,0.106047585621407,0.0756231379468183,0.0833278797762508,0.128767291466563
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-original","auroc",5,-0.0422371818561328,0.030010369944834,-0.0794999777894095,-0.00497438592285605
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-original","average_precision",5,-0.11578607172807,0.0509237626394514,-0.17901627445055,-0.0525558690055892
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-original","directional_recall_fdr_0_10",5,0.00725490196078432,0.00998845931525493,-0.00514740836849075,0.0196572122900594
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-original","empirical_fdp_fdr_0_10",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-original","f1_fdr_0_10",5,0.014249684741488,0.0196150593218408,-0.0101056282410729,0.0386049977240489
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-original","negative_control_p_below_0_05",5,0.028695652173913,0.0263303859628518,-0.00399784013496974,0.0613891444827958
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-original","auroc",5,-0.0266238847020182,0.0201153135219422,-0.0516003453147952,-0.00164742408924115
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-original","average_precision",5,-0.0709002342170934,0.036346101438359,-0.116029879848166,-0.025770588586021
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-original","directional_recall_fdr_0_10",5,0.128342236179006,0.030354800253222,0.0906517735319141,0.166032698826099
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-original","empirical_fdp_fdr_0_10",5,0.0901960784313724,0.0933977551785424,-0.0257725516868728,0.206164708549618
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-original","f1_fdr_0_10",5,0.224325828215322,0.0496200695134709,0.162714374312077,0.285937282118567
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-original","negative_control_p_below_0_05",5,0.018695652173913,0.0257037065284477,-0.0132197148428556,0.0506110191906817
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-EB","BARCS-original","auroc",5,0.00156031919053861,0.00935394493918244,-0.0100541374816245,0.0131747758627017
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-EB","BARCS-original","average_precision",5,-0.000402561443400029,0.0168212671075084,-0.0212889232149623,0.0204838003281623
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-EB","BARCS-original","directional_recall_fdr_0_10",5,0.117285369477088,0.0882748349978552,0.00767768491287384,0.226893054041303
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-EB","BARCS-original","empirical_fdp_fdr_0_10",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-EB","BARCS-original","f1_fdr_0_10",5,0.201376722692512,0.135777278517816,0.0327869641828545,0.36996648120217
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-EB","BARCS-original","negative_control_p_below_0_05",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-original","auroc",5,-0.0100506324854088,0.0102578188385509,-0.0227873968373337,0.00268613186651617
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-original","average_precision",5,-0.0848211980550144,0.0319632975957103,-0.124508873943481,-0.045133522166548
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-original","directional_recall_fdr_0_10",5,0.0135944475019874,0.0182321269180492,-0.00904372810283604,0.0362326231068108
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-original","empirical_fdp_fdr_0_10",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-original","f1_fdr_0_10",5,0.0263223518645619,0.0348792438171074,-0.0169859494677116,0.0696306531968353
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-original","negative_control_p_below_0_05",5,0.00758454106280192,0.0423944353826706,-0.045055103076036,0.0602241852016399
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-original","auroc",5,0.0253006951822794,0.0103502894285541,0.0124491134278548,0.038152276936704
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-original","average_precision",5,0.0629837655678376,0.0264676922485683,0.0301197849872536,0.0958477461484216
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-original","directional_recall_fdr_0_10",5,0.707726518969356,0.0782597956989531,0.610554148143185,0.804898889795528
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-original","empirical_fdp_fdr_0_10",5,0.525723488742763,0.0608361827487173,0.450185390835535,0.60126158664999
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-original","f1_fdr_0_10",5,0.56417163081875,0.0413821103987997,0.512788954166867,0.615554307470634
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-original","negative_control_p_below_0_05",5,0.216811594202898,0.0935419960229297,0.100663865421107,0.33295932298469
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-original","auroc",5,0.0237022133079516,0.00979092824172578,0.0115451702012042,0.035859256414699
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-original","average_precision",5,0.061083991161786,0.0271321269825381,0.0273950058928755,0.0947729764306965
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-original","directional_recall_fdr_0_10",5,0.419357736123251,0.118034751043841,0.27279823521517,0.565917237031333
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-original","empirical_fdp_fdr_0_10",5,0.141127431963345,0.0579575151061566,0.0691636720306797,0.213091191896011
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-original","f1_fdr_0_10",5,0.554412848749189,0.107621402846498,0.420783227398508,0.68804247009987
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-original","negative_control_p_below_0_05",5,0.018695652173913,0.0257037065284477,-0.0132197148428556,0.0506110191906817
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-original","auroc",5,0.025945102002198,0.0113795840097959,0.0118154822226992,0.0400747217816968
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-original","average_precision",5,0.064959709748183,0.0314866928555405,0.0258638168069586,0.104055602689407
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-original","directional_recall_fdr_0_10",5,0.684046819975468,0.0864131569401513,0.57675071403175,0.791342925919185
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-original","empirical_fdp_fdr_0_10",5,0.506634541770689,0.036536534296895,0.461268442515097,0.55200064102628
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-original","f1_fdr_0_10",5,0.570940095176111,0.0223463008603915,0.543193497904733,0.598686692447489
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-original","negative_control_p_below_0_05",5,0.198115942028985,0.0925660467443213,0.083180014330515,0.313051869727456
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-original","BARCS-EB","auroc",5,-0.00156031919053861,0.00935394493918244,-0.0131747758627017,0.0100541374816245
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-original","BARCS-EB","average_precision",5,0.000402561443400029,0.0168212671075084,-0.0204838003281623,0.0212889232149623
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-original","BARCS-EB","directional_recall_fdr_0_10",5,-0.117285369477088,0.0882748349978552,-0.226893054041303,-0.00767768491287384
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-original","BARCS-EB","empirical_fdp_fdr_0_10",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-original","BARCS-EB","f1_fdr_0_10",5,-0.201376722692512,0.135777278517816,-0.36996648120217,-0.0327869641828545
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-original","BARCS-EB","negative_control_p_below_0_05",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-EB","auroc",5,-0.0437975010466714,0.0344797636780223,-0.0866097822722454,-0.000985219821097311
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-EB","average_precision",5,-0.11538351028467,0.0406372443085929,-0.16584131352886,-0.0649257070404792
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-EB","directional_recall_fdr_0_10",5,-0.110030467516304,0.093246768712496,-0.225811623175443,0.00575068814283546
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-EB","empirical_fdp_fdr_0_10",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-EB","f1_fdr_0_10",5,-0.187127037951024,0.145422569845393,-0.367693007454321,-0.00656106844772733
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-NORM","BARCS-EB","negative_control_p_below_0_05",5,0.028695652173913,0.0263303859628518,-0.00399784013496974,0.0613891444827958
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-EB","auroc",5,-0.0281842038925568,0.0179999992618539,-0.0505341549436951,-0.00583425284141847
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-EB","average_precision",5,-0.0704976727736934,0.0205675852330804,-0.0960357028875967,-0.0449596426597901
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-EB","directional_recall_fdr_0_10",5,0.0110568667019182,0.0727699339686573,-0.0792989404586288,0.101412673862465
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-EB","empirical_fdp_fdr_0_10",5,0.0901960784313724,0.0933977551785424,-0.0257725516868728,0.206164708549618
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-EB","f1_fdr_0_10",5,0.02294910552281,0.108044988140374,-0.111206466437445,0.157104677483065
+"barcs-external-headtohead-v1","one-replicate boundary","BARCS-partial","BARCS-EB","negative_control_p_below_0_05",5,0.018695652173913,0.0257037065284477,-0.0132197148428556,0.0506110191906817
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-EB","auroc",5,-0.0116109516759474,0.00908630230085222,-0.0228930861197116,-0.000328817232183162
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-EB","average_precision",5,-0.0844186366116144,0.0215344445346262,-0.111157181111576,-0.0576800921116532
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-EB","directional_recall_fdr_0_10",5,-0.103690921975101,0.0829132849614532,-0.206641362884547,-0.000740481065654844
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-EB","empirical_fdp_fdr_0_10",5,0,0,0,0
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-EB","f1_fdr_0_10",5,-0.17505437082795,0.125369664253165,-0.330721369397998,-0.0193873722579022
+"barcs-external-headtohead-v1","one-replicate boundary","MAGeCK-MLE","BARCS-EB","negative_control_p_below_0_05",5,0.00758454106280192,0.0423944353826706,-0.045055103076036,0.0602241852016399
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-EB","auroc",5,0.0237403759917408,0.0104643712852335,0.0107471429030291,0.0367336090804525
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-EB","average_precision",5,0.0633863270112376,0.0310592853573041,0.0248211305731359,0.101951523449339
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-EB","directional_recall_fdr_0_10",5,0.590441149492268,0.142907364098228,0.412998220413302,0.767884078571235
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-EB","empirical_fdp_fdr_0_10",5,0.525723488742763,0.0608361827487173,0.450185390835535,0.60126158664999
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-EB","f1_fdr_0_10",5,0.362794908126238,0.121976704787861,0.211340825171623,0.514248991080854
+"barcs-external-headtohead-v1","one-replicate boundary","edgeR-QL","BARCS-EB","negative_control_p_below_0_05",5,0.216811594202898,0.0935419960229297,0.100663865421107,0.33295932298469
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-EB","auroc",5,0.022141894117413,0.0120076444423767,0.00723243431008233,0.0370513539247437
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-EB","average_precision",5,0.061486552605186,0.0333757010573021,0.0200451461875227,0.102927959022849
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-EB","directional_recall_fdr_0_10",5,0.302072366646163,0.10153406240292,0.176001176769083,0.428143556523243
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-EB","empirical_fdp_fdr_0_10",5,0.141127431963345,0.0579575151061566,0.0691636720306797,0.213091191896011
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-EB","f1_fdr_0_10",5,0.353036126056677,0.115206437927075,0.209988439721331,0.496083812392023
+"barcs-external-headtohead-v1","one-replicate boundary","DESeq2","BARCS-EB","negative_control_p_below_0_05",5,0.018695652173913,0.0257037065284477,-0.0132197148428556,0.0506110191906817
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-EB","auroc",5,0.0243847828116594,0.00925473397011295,0.0128935128280168,0.035876052795302
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-EB","average_precision",5,0.065362271191583,0.0341283120873368,0.0229863747532745,0.107738167629892
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-EB","directional_recall_fdr_0_10",5,0.56676145049838,0.144867743385218,0.386884389035932,0.746638511960827
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-EB","empirical_fdp_fdr_0_10",5,0.506634541770689,0.036536534296895,0.461268442515097,0.55200064102628
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-EB","f1_fdr_0_10",5,0.369563372483599,0.135946373576674,0.200763654727084,0.538363090240114
+"barcs-external-headtohead-v1","one-replicate boundary","limma-voom","BARCS-EB","negative_control_p_below_0_05",5,0.198115942028985,0.0925660467443213,0.083180014330515,0.313051869727456

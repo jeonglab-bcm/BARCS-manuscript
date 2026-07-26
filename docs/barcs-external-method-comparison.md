@@ -11,21 +11,32 @@ No method wins both questions in every benchmark.
 
 ## CRISPulator FACS simulations
 
-The comparison uses the same 50 primary low + bulk + high simulations as the
+The comparison draws on the same primary low + bulk + high simulations as the
 four-method BARCS benchmark: ten one-at-a-time parameter scenarios and five
 fixed seeds. Every method receives the same guide counts, ordered-phenotype
 score, replicate adjustment, and gene truth.
 
+**Analysis scope.** The headline comparison covers the 45 runs from the nine
+settings with more than one independent screen replicate. The one-replicate
+setting is a prespecified diagnostic boundary, not a supported operating
+point, and it is reported separately below. At $R=1$ the low + bulk + high
+design leaves a single residual degree of freedom per guide, so BARCS-original
+makes no calls in any seed; pooling those five zeros into the mean reports a
+boundary failure as if it were average performance. The scope is set by
+`min_replicates` in
+`examples/crispulator_facs_external_head_to_head_aggregate.R`, and every
+derived table carries a `scope` column.
+
 | Method | Average precision | AUROC | Directional recall at FDR 0.10 | Realized FDP | F1 | Negative-control $p<0.05$ |
 |---|---:|---:|---:|---:|---:|---:|
-| BARCS-original | 0.856 | 0.918 | 0.638 | 0.085 | 0.702 | **0.055** |
-| BARCS-NORM | 0.706 | 0.867 | 0.159 | 0.059 | 0.246 | 0.047 |
-| BARCS-partial | 0.779 | 0.885 | 0.390 | 0.052 | 0.525 | 0.016 |
-| BARCS-EB | 0.840 | 0.910 | 0.463 | **0.013** | 0.599 | 0.013 |
-| MAGeCK-MLE | 0.849 | 0.922 | 0.587 | 0.058 | 0.683 | 0.037 |
-| edgeR-QL | **0.877** | **0.928** | **0.822** | 0.277 | 0.765 | 0.138 |
-| DESeq2 | 0.877 | 0.927 | 0.795 | 0.233 | 0.769 | 0.112 |
-| limma-voom | 0.877 | 0.928 | 0.813 | 0.257 | **0.772** | 0.128 |
+| BARCS-original | 0.880 | 0.932 | 0.709 | 0.094 | 0.780 | 0.060 |
+| BARCS-NORM | 0.727 | 0.880 | 0.175 | 0.065 | 0.272 | **0.048** |
+| BARCS-partial | 0.803 | 0.899 | 0.419 | 0.047 | 0.559 | 0.014 |
+| BARCS-EB | 0.864 | 0.923 | 0.502 | **0.014** | 0.643 | 0.013 |
+| MAGeCK-MLE | 0.883 | 0.937 | 0.651 | 0.064 | 0.756 | 0.039 |
+| edgeR-QL | 0.897 | **0.941** | 0.835 | 0.250 | 0.787 | 0.128 |
+| DESeq2 | **0.897** | 0.940 | **0.837** | 0.243 | 0.793 | 0.122 |
+| limma-voom | 0.897 | 0.941 | 0.828 | 0.229 | **0.794** | 0.119 |
 
 Bold identifies the largest ranking, recall, or F1 value, the smallest
 realized FDP, and the negative-control rate closest to its nominal 0.05
@@ -37,18 +48,55 @@ The result is a real trade-off:
 - edgeR-QL, DESeq2, and limma-voom rank simulated active genes slightly
   better and recover many more at their nominal threshold.
 - Their nominal FDR 0.10 calls are anti-conservative here: mean realized FDP
-  is 0.23--0.28, and 0.11--0.14 of negative controls have \(p<0.05\).
-- BARCS-original is the strongest BARCS ranker and its nominal threshold is
-  much closer to the intended operating point. Its average precision is
-  about 0.022 below edgeR-QL, but its realized FDP is about 0.192 lower.
+  is 0.23--0.25, and 0.12--0.13 of negative controls have \(p<0.05\).
+- BARCS-original's ranking deficit is small but real: paired average
+  precision is 0.017 below edgeR-QL (95% interval 0.013 to 0.021). Its
+  realized FDP is 0.156 lower (0.135 to 0.176).
+- **On F1 the three count models are not distinguishable from
+  BARCS-original once the boundary setting is removed.** Paired F1
+  differences are $+0.008$ for edgeR-QL (95% interval $-0.015$ to $+0.030$),
+  $+0.013$ for DESeq2 ($-0.010$ to $+0.035$), and $+0.014$ for limma-voom
+  ($-0.008$ to $+0.037$). Pooling the one-replicate setting inflated the same
+  three differences to $+0.063$, $+0.067$, and $+0.070$, all nominally
+  significant. The apparent F1 gap was an artifact of the boundary.
 - BARCS-NORM is well calibrated but underpowered. Estimating one standard
   deviation from roughly five guide beta values gives only about four
   reference degrees of freedom.
 - BARCS-EB is the safest method, but the cost is substantial recall.
-- MAGeCK-MLE is well calibrated and close to BARCS-original in ranking. On
-  paired runs, its average-precision difference from BARCS-original is
-  $-0.0065$, with a 95% interval from $-0.0163$ to $0.0033$; its F1 is
-  lower by 0.0191 (95% interval $-0.0345$ to $-0.0036$).
+- MAGeCK-MLE is well calibrated and indistinguishable from BARCS-original in
+  ranking. On paired runs, its average-precision difference from
+  BARCS-original is $+0.0022$, with a 95% interval from $-0.0042$ to
+  $+0.0086$; its F1 is lower by 0.0241 (95% interval $-0.0404$ to
+  $-0.0079$).
+
+### Why the ranking gap persists
+
+The gene combiner is not the source of the difference. edgeR-QL, DESeq2, and
+limma-voom are fitted guide by guide and then aggregated with the same
+signed-$z$ rule as BARCS-original, so the comparison isolates the guide-level
+count model.
+
+Two properties of that model explain the two halves of the trade-off:
+
+- `.bb_estimate_rho()` in `R/bbreg.R` fits the beta-binomial overdispersion
+  separately for each guide, from that guide's own residuals. edgeR-QL,
+  limma-voom, and DESeq2 shrink each guide's dispersion toward a trend fitted
+  across the whole library. With $2R-1$ residual degrees of freedom per guide
+  --- seven at the four-replicate baseline --- the unshared estimate is noisy,
+  and that noise propagates into the standard error and degrades the ranking.
+  This is the source of the residual average-precision gap.
+- Shared shrinkage assumes a common dispersion--abundance trend. CRISPulator
+  generates heterogeneous guide noise, so genuinely noisy guides are shrunk
+  toward the pool and their variance is understated. That is what produces
+  the 0.23--0.25 realized FDP and the 0.12--0.13 negative-control rate.
+- `bb_calibrate_controls()` is a one-way ratchet: its scale is
+  `max(min_scale, empirical/reference)` with `min_scale = 1`, so it can only
+  inflate standard errors. It buys calibration at a cost in power. Because
+  every guide shares the same residual degrees of freedom, this single global
+  scale is rank-preserving at guide level and therefore does *not* contribute
+  to the average-precision gap. Note also that the external methods receive
+  no comparable step; part of the FDP difference is this method component
+  rather than an intrinsic property of the count models.
 
 ### F1 across nominal FDR thresholds
 
@@ -60,15 +108,22 @@ $$
 
 Here a true positive is any simulated active gene passing the nominated
 gene-FDR threshold; direction is reported separately. The threshold scan uses
-0.10, 0.05, 0.01, 0.005, and 0.001 in every one of the 50 runs.
+0.10, 0.05, 0.01, 0.005, and 0.001 in each of the 45 multi-replicate runs.
 
-The scan changes the interpretation. At nominal FDR 0.10, limma-voom has the
-largest mean F1 (0.772) but realized FDP 0.257. At nominal FDR 0.01, edgeR-QL
-has mean F1 0.796 and realized FDP 0.087. BARCS-original at nominal FDR 0.10
-has F1 0.702 and realized FDP 0.085. Thus the general count models retain a
-real power advantage after moving to a threshold with comparable empirical
-FDP in this simulator; their advantage is not explained entirely by the
-anti-conservative 0.10 operating point.
+The scan separates calibration from power. BARCS-original's realized FDP
+tracks its nominal threshold at every point (0.000, 0.004, 0.009, 0.054,
+0.094 against nominal 0.001 through 0.10). The three count models overshoot
+at every point, by 2.3- to 2.5-fold at nominal 0.10 and by 10- to 14-fold at
+nominal 0.001. So the nominal FDR knob means what it says for BARCS and
+does not for them.
+
+Matching on *realized* FDP rather than the nominal label, the power gap is
+smaller but does not vanish. At realized FDP near 0.06, BARCS-original scores
+F1 0.753 (nominal 0.05) against 0.817 for edgeR-QL and 0.819 for DESeq2 (both
+nominal 0.01). Thus the general count models retain a real power advantage
+after moving to a threshold with comparable empirical FDP in this simulator;
+their advantage is not explained entirely by the anti-conservative 0.10
+operating point.
 
 This is a diagnostic, not permission to select a method-specific threshold
 from the known truth in new data. The selected 0.01 threshold would need
@@ -78,6 +133,69 @@ At the four-replicate baseline, edgeR-QL has the highest mean average
 precision (0.932), whereas BARCS-original has 0.917. limma-voom has the
 highest F1 (0.832) and BARCS-original has 0.828, but their realized FDPs are
 0.218 and 0.086, respectively.
+
+### The one-replicate boundary, and why the count models lead there
+
+At $R=1$ the design has three samples (low, bulk, high) and the guide model
+drops to `~ phenotype_z`, leaving **one residual degree of freedom**. This
+setting is excluded from the headline comparison above; the numbers below are
+the `one-replicate boundary` scope, five seeds.
+
+| Method | Average precision | AUROC | Directional recall | Realized FDP | F1 |
+|---|---:|---:|---:|---:|---:|
+| BARCS-original | 0.633 | 0.790 | 0.000 | 0.000 | 0.000 |
+| BARCS-EB | 0.632 | 0.792 | 0.117 | 0.000 | 0.201 |
+| MAGeCK-MLE | 0.548 | 0.780 | 0.014 | 0.000 | 0.026 |
+| edgeR-QL | 0.696 | 0.815 | 0.708 | 0.526 | 0.564 |
+| DESeq2 | 0.694 | 0.814 | 0.419 | 0.141 | 0.554 |
+| limma-voom | 0.698 | 0.816 | 0.684 | 0.507 | 0.571 |
+
+Two different things are happening, and only one of them is a genuine
+advantage.
+
+**The F1 and recall lead is mostly not real.** edgeR-QL calls with realized
+FDP 0.526 and limma-voom with 0.507: more than half of their discoveries are
+false. Their negative-control $p<0.05$ rates are 0.228 and 0.209, four times
+nominal. An F1 of 0.564 purchased at FDP 0.526 is not a usable operating
+point, it is a method that has stopped controlling anything. DESeq2 is the
+honest exception, holding FDP to 0.141, and it is the only count model whose
+$R=1$ calls are defensible.
+
+**The ranking lead is real, and it is instructive.** Average precision is
+0.696 for edgeR-QL against 0.633 for BARCS-original, a paired difference of
+$+0.063$ (95% interval $+0.030$ to $+0.096$) --- nearly four times the
+$+0.017$ gap in the multi-replicate settings. Two mechanisms compound:
+
+1. *The dispersion estimate collapses.* BARCS estimates each guide's
+   overdispersion from that guide's own residuals. The relative variance of
+   such an estimate scales roughly as $2/d$ in the residual degrees of
+   freedom $d$: about 0.29 at the four-replicate baseline ($d=7$), but about
+   2.0 at $R=1$ ($d=1$). The standard error is then nearly pure noise, and
+   the ranking it induces degrades with it. edgeR-QL, limma-voom, and DESeq2
+   borrow dispersion from the whole library, so their per-guide variance is
+   dominated by the prior and barely moves as $d$ falls. Information sharing
+   is merely helpful at $d=7$; at $d=1$ it is what keeps the ranking alive.
+2. *The $t_1$ reference compresses the evidence.* With one residual degree of
+   freedom the guide reference distribution is Cauchy, so even $|t|=10$ gives
+   $p\approx0.06$. No guide can contribute a small $p$-value, the dynamic
+   range of the guide evidence is squashed into a narrow band before the
+   signed-$z$ combination, and relative differences between strong and weak
+   guides are flattened. The transform is monotone within a guide but the
+   Stouffer sum across guides is not, so gene-level ranking is genuinely
+   lost. This is the effect that motivates the separate BARCS-GC
+   guide-consistency statistic.
+
+The zero calls follow from the same place: a one-degree-of-freedom $t$ test
+cannot produce $p$-values small enough to survive Benjamini--Hochberg across
+400 genes. BARCS-GC is the prespecified response, raising average precision to
+0.670, directional recall to 0.145, and F1 to 0.245 at realized FDP 0. Its
+calls are hypothesis-generating rather than confirmatory.
+
+The practical reading is that $R=1$ is not a regime where the count models are
+better calibrated --- two of the three are far worse. It is a regime where
+borrowing variance across guides is the only way to retain a usable gene
+ranking, and where no method in this comparison should be trusted to control
+FDR.
 
 ### What is being compared at gene level?
 
@@ -182,12 +300,24 @@ The provenance table records the MD5 hashes of every count matrix, design,
 truth table, and result file. Thus the compact comparison can be audited even
 when large ignored result directories are not committed.
 
+Each analysis is split into a fitting stage, which needs the ignored
+`results/` tree, and an aggregation stage, which reads only the committed
+per-run table. The aggregation stage owns the scope rule and can be re-run on
+its own to rebuild the summary tables and figures:
+
+```
+Rscript examples/crispulator_facs_external_head_to_head_aggregate.R
+Rscript examples/crispulator_facs_f1_threshold_curves_aggregate.R
+```
+
 - `examples/crispulator_facs_external_head_to_head.R`
+- `examples/crispulator_facs_external_head_to_head_aggregate.R`
 - `data/derived/crispulator_facs_external_head_to_head_metrics.csv`
 - `data/derived/crispulator_facs_external_head_to_head_provenance.csv`
 - `examples/waterbear_facs_external_head_to_head.R`
 - `data/derived/waterbear_facs_external_head_to_head_metrics.csv`
 - `examples/crispulator_facs_f1_threshold_curves.R`
+- `examples/crispulator_facs_f1_threshold_curves_aggregate.R`
 - `data/derived/crispulator_facs_f1_by_fdr.csv`
 - `figures/crispulator_facs_f1_by_fdr.pdf`
 - `examples/liang_hap1_specificity_volcano.R`
