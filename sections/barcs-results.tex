@@ -420,12 +420,13 @@ against the seven residual degrees of freedom the design itself supplies.
 \centering
 \caption{Genome-scale CRISPulator FACS benchmark at MOI 0.20, 10,000 genes
 and 50,000 guides, over three fixed simulation seeds (mean $\pm$ standard
-deviation).  Recall counts active genes called at gene FDR 0.10 with the
+deviation).  All methods are scored on the genes every method returned a
+finite result for (9,475--9,517 per run); MAGeCK-MLE omits negative-control
+genes from its gene summary once their sgRNAs are declared, so the common set
+excludes them.  Recall counts active genes called at gene FDR 0.10 with the
 correct direction.  FDP is the realized fraction of inactive genes among
 calls; the nominal target is 0.10.  Column maxima for ranking, effect
-recovery, recall, and F1 are highlighted, as is the FDP closest to nominal
-from below.  MAGeCK-MLE could not be refitted at these settings in the
-analysis environment and is reported at 400 genes elsewhere.}
+recovery, recall, and F1 are highlighted.}
 \label{tab:crispulator}
 \small
 \setlength{\tabcolsep}{3pt}
@@ -436,54 +437,71 @@ Method & Samples & AUROC & Avg.\ precision & Effect $\rho_s$ &
 Directional recall & FDP & F1\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Low--bulk--high &
-0.947$\pm$.004 & 0.899$\pm$.007 & 0.924$\pm$.004 &
-0.716$\pm$.022 & 0.068$\pm$.006 & 0.810$\pm$.012\\
+0.947$\pm$.004 & 0.902$\pm$.007 & 0.924$\pm$.004 &
+0.716$\pm$.022 & 0.065$\pm$.006 & 0.811$\pm$.012\\
 \methodswatch{mageckorange} BARCS-MOD & Low--bulk--high &
-\textcolor{mageckorange}{\textbf{0.954$\pm$.003}} &
-\textcolor{mageckorange}{\textbf{0.916$\pm$.005}} &
-\textcolor{mageckorange}{\textbf{0.924$\pm$.004}} &
-0.774$\pm$.014 & 0.071$\pm$.002 &
-\textcolor{mageckorange}{\textbf{0.845$\pm$.008}}\\
+0.954$\pm$.003 & 0.919$\pm$.005 & 0.924$\pm$.004 &
+0.774$\pm$.014 & 0.066$\pm$.002 &
+\textcolor{mageckorange}{\textbf{0.847$\pm$.008}}\\
+\methodswatch{naivegray} MAGeCK-MLE & Low--bulk--high &
+\textcolor{black}{\textbf{0.957$\pm$.002}} &
+\textcolor{black}{\textbf{0.921$\pm$.003}} &
+\textcolor{black}{\textbf{0.933$\pm$.002}} &
+0.563$\pm$.030 & 0.006$\pm$.002 & 0.718$\pm$.024\\
 \methodswatch{chronosgreen} edgeR-QL + Stouffer & Low--bulk--high &
-0.953$\pm$.003 & 0.913$\pm$.005 & 0.923$\pm$.003 &
-0.857$\pm$.012 & 0.216$\pm$.002 & 0.819$\pm$.005\\
+0.953$\pm$.003 & 0.916$\pm$.005 & 0.923$\pm$.003 &
+0.857$\pm$.012 & 0.205$\pm$.001 & 0.825$\pm$.005\\
 \methodswatch{mageckpink} DESeq2 + Stouffer & Low--bulk--high &
-0.953$\pm$.003 & 0.914$\pm$.005 & 0.923$\pm$.003 &
+0.953$\pm$.003 & 0.917$\pm$.005 & 0.923$\pm$.003 &
 \textcolor{mageckpink}{\textbf{0.869$\pm$.012}} &
-0.252$\pm$.002 & 0.804$\pm$.004\\
+0.239$\pm$.001 & 0.812$\pm$.005\\
 \methodswatch{bagelgold} limma-voom + Stouffer & Low--bulk--high &
-0.954$\pm$.003 & 0.914$\pm$.004 & 0.924$\pm$.003 &
-0.862$\pm$.011 & 0.227$\pm$.002 & 0.815$\pm$.004\\
+0.954$\pm$.003 & 0.917$\pm$.004 & 0.924$\pm$.003 &
+0.862$\pm$.011 & 0.214$\pm$.003 & 0.822$\pm$.004\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Low--high &
-0.941$\pm$.004 & 0.883$\pm$.009 & 0.923$\pm$.004 &
-0.615$\pm$.013 & 0.043$\pm$.001 & 0.749$\pm$.010\\
+0.941$\pm$.004 & 0.887$\pm$.008 & 0.923$\pm$.004 &
+0.615$\pm$.013 & 0.041$\pm$.001 & 0.749$\pm$.010\\
 \methodswatch{mageckorange} BARCS-MOD & Low--high &
-0.955$\pm$.003 & 0.917$\pm$.005 & 0.923$\pm$.004 &
-0.776$\pm$.012 & 0.068$\pm$.004 & 0.847$\pm$.007\\
+0.955$\pm$.003 & 0.920$\pm$.004 & 0.923$\pm$.004 &
+0.776$\pm$.012 & 0.063$\pm$.003 & 0.849$\pm$.006\\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-At genome scale the tradeoff resolves rather than persisting.  Guide-dispersion
-moderation makes BARCS-MOD the best method on every truth-recovery metric in
-the low--bulk--high design while leaving its realized FDP below the nominal
-target.  Paired over the three seeds, BARCS-MOD exceeds edgeR-QL in average
-precision by 0.0027 (95\% interval 0.0020 to 0.0034) and in F1 by 0.026 (0.014
-to 0.038); the corresponding F1 margins are 0.040 over DESeq2 and 0.030 over
-limma-voom, and every one of these intervals excludes zero.  The three general
-count models still recover more active genes in raw directional recall,
-0.857--0.869 against 0.774, but they do so at realized FDP 0.216--0.252, more
-than twice the nominal 0.10 target after the common Stouffer gene summary.
-Their extra recall is therefore not a calibrated win, and it costs them F1.
-BARCS-MOD holds FDP at 0.071 and a negative-control gene $p<0.05$ frequency of
-0.053, against 0.125--0.135 for the count models.
+At genome scale the tradeoff sharpens into a three-way split rather than a
+single winner.  MAGeCK-MLE is the best ranker: it leads AUROC, average
+precision, and effect recovery.  The three general count models recover the
+most active genes at the nominal threshold, 0.857--0.869 directional recall.
+BARCS-MOD leads F1, and it is the only method that combines competitive
+ranking with a realized FDP below the nominal target.
 
-The gain over the historical statistic is also unambiguous, and it is a gain
-in ranking rather than a threshold effect: average precision rises from 0.899
-to 0.916, a paired difference of 0.017 (0.011 to 0.023), and F1 from 0.810 to
-0.845, with realized FDP statistically unchanged.  This is the expected
+The reason the ranking leader is not the F1 leader is that MAGeCK-MLE
+converts almost none of its ranking into calls at gene FDR 0.10.  Its
+realized FDP is 0.006, sixteen times below the 0.10 it was allowed, and its
+directional recall is 0.563 against 0.774 for BARCS-MOD.  Paired over the
+three seeds its average-precision advantage over BARCS-MOD is 0.0024 (95\%
+interval $-0.0029$ to $0.0077$, not resolvable at MOI 0.20), while its F1
+deficit is 0.129 ($-0.180$ to $-0.078$).  It is an accurate but extremely
+conservative caller here.  The count models make the opposite error: their
+extra recall is bought at realized FDP 0.205--0.239, two to more than two
+times the nominal target, and it still leaves them behind BARCS-MOD on F1 by
+0.022 to 0.035, every interval excluding zero.
+
+BARCS-MOD therefore occupies the operating point the threshold is meant to
+deliver.  It spends most of its FDR budget without exceeding it, 0.066
+against the nominal 0.10, and turns that into the highest F1 of any method
+compared.  Its negative-control gene $p<0.05$ frequency is 0.053 against
+0.125--0.135 for the count models.  MAGeCK-MLE cannot be scored on that
+diagnostic: it omits negative-control genes from its gene summary once their
+sgRNAs are declared, which is also why the common gene set here is
+9,475--9,517 rather than 10,000.
+
+The gain over the historical statistic is unambiguous and is a gain in
+ranking rather than a threshold effect: average precision rises from 0.902 to
+0.919, a paired difference of 0.017 (0.011 to 0.022), and F1 from 0.811 to
+0.847, with realized FDP statistically unchanged.  This is the expected
 consequence of estimating the moderation prior from 50,000 guides: a guide
 whose own seven residual degrees of freedom understate its variance is
 corrected individually, so the negative-control calibration no longer has to
@@ -493,9 +511,9 @@ Bulk does not supply a new directional contrast.  Across seeds, the
 low--bulk--high and tail-only gene effects have mean Spearman correlation
 above 0.998.  For the historical statistic its practical contribution is to
 the fitted baseline, dispersion, and residual degrees of freedom: mean
-directional recall rises from 0.615 to 0.716 and F1 from 0.749 to 0.810, at
+directional recall rises from 0.615 to 0.716 and F1 from 0.749 to 0.811, at
 50\% more reads.  Moderation largely removes that dependence.  BARCS-MOD
-reaches F1 0.847 on the two tails alone against 0.845 with bulk added, so the
+reaches F1 0.849 on the two tails alone against 0.847 with bulk added, so the
 information the bulk sample was supplying to the variance model is recovered
 more cheaply by borrowing it across the library.  Because the bulk pool
 overlaps the tails, its apparent inferential gain may in any case partly
@@ -503,9 +521,11 @@ reflect an independence approximation rather than new biological information;
 that reading is strengthened by its being replaceable.
 
 At MOI 0.30 every one of these conclusions is reproduced
-(Supplementary Table~\ref{tab:crispulator-moi03}): BARCS-MOD again leads
-average precision and F1 with all paired intervals excluding zero, at FDP
-0.074 against 0.212--0.249 for the count models.
+(Supplementary Table~\ref{tab:crispulator-moi03}): BARCS-MOD again leads F1 at
+FDP 0.070, the count models again run at 0.200--0.236, and MAGeCK-MLE again
+ranks marginally best while calling least, at FDP 0.003 and F1 0.708.  The one
+difference is that MAGeCK-MLE's average-precision margin over BARCS-MOD is
+resolvable at this MOI, 0.0033 (0.0017 to 0.0049).
 
 \begin{table}[ht]
 \centering
@@ -513,7 +533,7 @@ average precision and F1 with all paired intervals excluding zero, at FDP
 MOI 0.30 rather than 0.20, over the same three seeds (mean $\pm$ standard
 deviation).  A higher multiplicity of infection stresses the
 single-integration approximation shared by every guide-level model compared
-here.  Column highlighting follows Table~\ref{tab:crispulator}.}
+here.  Scoring and highlighting follow Table~\ref{tab:crispulator}.}
 \label{tab:crispulator-moi03}
 \small
 \setlength{\tabcolsep}{3pt}
@@ -524,31 +544,34 @@ Method & Samples & AUROC & Avg.\ precision & Effect $\rho_s$ &
 Directional recall & FDP & F1\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Low--bulk--high &
-0.947$\pm$.001 & 0.900$\pm$.003 & 0.923$\pm$.003 &
-0.742$\pm$.007 & 0.078$\pm$.009 & 0.822$\pm$.001\\
+0.947$\pm$.001 & 0.903$\pm$.003 & 0.923$\pm$.003 &
+0.742$\pm$.007 & 0.074$\pm$.009 & 0.823$\pm$.001\\
 \methodswatch{mageckorange} BARCS-MOD & Low--bulk--high &
-\textcolor{mageckorange}{\textbf{0.955$\pm$.002}} &
-\textcolor{mageckorange}{\textbf{0.917$\pm$.003}} &
-\textcolor{mageckorange}{\textbf{0.923$\pm$.003}} &
-0.784$\pm$.008 & 0.074$\pm$.004 &
-\textcolor{mageckorange}{\textbf{0.849$\pm$.003}}\\
+0.955$\pm$.002 & 0.920$\pm$.003 & 0.923$\pm$.003 &
+0.784$\pm$.008 & 0.070$\pm$.004 &
+\textcolor{mageckorange}{\textbf{0.851$\pm$.003}}\\
+\methodswatch{naivegray} MAGeCK-MLE & Low--bulk--high &
+\textcolor{black}{\textbf{0.959$\pm$.002}} &
+\textcolor{black}{\textbf{0.923$\pm$.003}} &
+\textcolor{black}{\textbf{0.932$\pm$.001}} &
+0.550$\pm$.009 & 0.003$\pm$.002 & 0.708$\pm$.008\\
 \methodswatch{chronosgreen} edgeR-QL + Stouffer & Low--bulk--high &
-0.954$\pm$.002 & 0.915$\pm$.002 & 0.922$\pm$.003 &
-0.855$\pm$.002 & 0.212$\pm$.006 & 0.820$\pm$.003\\
+0.954$\pm$.002 & 0.917$\pm$.002 & 0.922$\pm$.003 &
+0.855$\pm$.002 & 0.200$\pm$.003 & 0.826$\pm$.001\\
 \methodswatch{mageckpink} DESeq2 + Stouffer & Low--bulk--high &
-0.954$\pm$.002 & 0.916$\pm$.003 & 0.921$\pm$.003 &
+0.954$\pm$.002 & 0.918$\pm$.003 & 0.921$\pm$.003 &
 \textcolor{mageckpink}{\textbf{0.871$\pm$.003}} &
-0.249$\pm$.011 & 0.807$\pm$.005\\
+0.236$\pm$.009 & 0.814$\pm$.004\\
 \methodswatch{bagelgold} limma-voom + Stouffer & Low--bulk--high &
-0.954$\pm$.002 & 0.915$\pm$.003 & 0.923$\pm$.003 &
-0.858$\pm$.007 & 0.224$\pm$.001 & 0.815$\pm$.004\\
+0.954$\pm$.002 & 0.918$\pm$.003 & 0.923$\pm$.003 &
+0.858$\pm$.007 & 0.213$\pm$.003 & 0.821$\pm$.004\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Low--high &
-0.941$\pm$.001 & 0.884$\pm$.002 & 0.923$\pm$.003 &
-0.616$\pm$.012 & 0.036$\pm$.004 & 0.752$\pm$.008\\
+0.941$\pm$.001 & 0.888$\pm$.002 & 0.923$\pm$.003 &
+0.616$\pm$.012 & 0.033$\pm$.004 & 0.752$\pm$.009\\
 \methodswatch{mageckorange} BARCS-MOD & Low--high &
-0.956$\pm$.002 & 0.919$\pm$.003 & 0.923$\pm$.003 &
-0.778$\pm$.003 & 0.063$\pm$.002 & 0.850$\pm$.001\\
+0.956$\pm$.002 & 0.921$\pm$.003 & 0.923$\pm$.003 &
+0.778$\pm$.003 & 0.060$\pm$.003 & 0.851$\pm$.001\\
 \bottomrule
 \end{tabular}
 }

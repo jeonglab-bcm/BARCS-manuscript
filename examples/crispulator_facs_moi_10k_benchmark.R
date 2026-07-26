@@ -22,6 +22,10 @@
 #
 #     Rscript examples/crispulator_facs_moi_10k_benchmark.R
 #
+# All methods are scored on the genes every method returned a finite result
+# for, because MAGeCK-MLE drops genes its own filters reject and an unequal
+# gene universe would make the metrics incomparable.
+#
 # MAGeCK-MLE uses the official 0.5.9.5 binary at `.venv/bin/mageck`, matching
 # the rest of the repository. Its marker score is affinely mapped to zero-one
 # because the MAGeCK initializer requires a reference design row whose
@@ -282,9 +286,36 @@ fit_one_run <- function(directory) {
     p_value = deseq_result$pvalue
   ), min_guides = 1L)
 
+  # MAGeCK-MLE drops genes its own filters reject, so without this every
+  # method would be scored on a different gene universe and the metrics would
+  # not be comparable. Restrict all methods to the genes every method
+  # returned a finite result for.
+  finite_genes <- lapply(gene_results, function(result) {
+    usable <- is.finite(result$estimate) & is.finite(result$p_value) &
+      is.finite(result$fdr)
+    result$gene[usable]
+  })
+  common_genes <- Reduce(intersect, finite_genes)
+  stopifnot(length(common_genes) > 0L)
+
   do.call(rbind, lapply(names(gene_results), function(method) {
-    assessed <- merge(
+    # The negative-control diagnostic is a per-method property of the known
+    # nulls, so it is taken from the method's own output rather than the
+    # common set. MAGeCK-MLE omits control genes from its gene summary
+    # entirely once their sgRNAs are declared, so it is NA by construction.
+    own <- merge(
       gene_truth,
+      gene_results[[method]][, c("gene", "p_value")],
+      by = "gene"
+    )
+    own_control <- own$class == "negcontrol" & is.finite(own$p_value)
+    negative_control_rate <- if (any(own_control)) {
+      mean(own$p_value[own_control] < 0.05)
+    } else {
+      NA_real_
+    }
+    assessed <- merge(
+      gene_truth[gene_truth$gene %in% common_genes, , drop = FALSE],
       gene_results[[method]][, c("gene", "estimate", "p_value", "fdr")],
       by = "gene", all.x = TRUE
     )
@@ -292,6 +323,7 @@ fit_one_run <- function(directory) {
       is.finite(assessed$estimate) & is.finite(assessed$p_value) &
         is.finite(assessed$fdr), , drop = FALSE
     ]
+    stopifnot(nrow(assessed) == length(common_genes))
     score <- -log10(pmax(assessed$p_value, .Machine$double.xmin))
     called <- assessed$fdr < nominal_fdr
     active <- assessed$active
@@ -299,7 +331,6 @@ fit_one_run <- function(directory) {
     true_positive <- sum(called & active)
     false_positive <- sum(called & !active)
     false_negative <- sum(!called & active)
-    negative_control_gene <- assessed$class == "negcontrol"
     data.frame(
       analysis_protocol = analysis_protocol,
       method = sub(" \\(low-high\\)$", "", method),
@@ -329,8 +360,7 @@ fit_one_run <- function(directory) {
       } else {
         0
       },
-      negative_control_gene_p_below_0_05 =
-        mean(assessed$p_value[negative_control_gene] < 0.05),
+      negative_control_gene_p_below_0_05 = negative_control_rate,
       guide_fit_seconds = guide_seconds,
       prior_df = low_bulk_high$prior_df,
       control_scale_original = attr(original, "control_scale"),
@@ -380,11 +410,18 @@ summary_table <- do.call(rbind, lapply(moi_levels, function(moi) {
     method_data <- moi_data[moi_data$method == method, , drop = FALSE]
     do.call(rbind, lapply(summary_metrics, function(metric) {
       values <- method_data[[metric]]
+      values <- values[is.finite(values)]
       data.frame(
         analysis_protocol = analysis_protocol, moi = moi, design = design,
         scope = method_data$scope[1L], method = method, metric = metric,
-        runs = length(values), mean = mean(values), sd = sd(values),
-        se = sd(values) / sqrt(length(values))
+        runs = length(values),
+        mean = if (length(values)) mean(values) else NA_real_,
+        sd = if (length(values) > 1L) sd(values) else NA_real_,
+        se = if (length(values) > 1L) {
+          sd(values) / sqrt(length(values))
+        } else {
+          NA_real_
+        }
       )
     }))
   }))
