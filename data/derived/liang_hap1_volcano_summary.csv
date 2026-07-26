@@ -1,3 +1,6 @@
 "analysis_protocol","cell_line","input_scale","method","genes","discoveries_fdr_0_10","depleted_discoveries_fdr_0_10","essential_genes","essential_depleted_recovered_fdr_0_10","null_controls","null_p_below_0_05"
-"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",8652,244,228,60,44,1570,0.043312101910828
-"liang-hap1-specificity-volcano-v1","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",8652,528,494,60,49,1570,0.105095541401274
+"liang-hap1-specificity-volcano-v2","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",8652,244,228,60,44,1570,0.043312101910828
+"liang-hap1-specificity-volcano-v2","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",8652,528,494,60,49,1570,0.105095541401274
+"liang-hap1-specificity-volcano-v2","HAP1","rounded_normalized_ComBat_pseudocount","edgeR-QL",8652,618,561,60,52,1570,0.0687898089171975
+"liang-hap1-specificity-volcano-v2","HAP1","rounded_normalized_ComBat_pseudocount","DESeq2",8652,638,580,60,52,1570,0.0592356687898089
+"liang-hap1-specificity-volcano-v2","HAP1","rounded_normalized_ComBat_pseudocount","limma-voom",8652,606,535,60,52,1570,0.0713375796178344

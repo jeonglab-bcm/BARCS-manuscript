@@ -1,11 +1,13 @@
 #!/usr/bin/env Rscript
 
 # Liang HAP1 processed-count example modeled on a specificity-threshold curve
-# plus side-by-side volcano plots. BARCS and official MAGeCK-MLE use the same
-# rounded normalized/ComBat-corrected pseudo-count matrix.
+# plus side-by-side volcano plots. BARCS, official MAGeCK-MLE, edgeR-QL,
+# DESeq2, and limma-voom use the same rounded normalized/ComBat-corrected
+# pseudo-count matrix and the same replicate/day design.
 
 options(stringsAsFactors = FALSE)
-analysis_protocol <- "liang-hap1-specificity-volcano-v1"
+source(file.path("R", "method_palette.R"))
+analysis_protocol <- "liang-hap1-specificity-volcano-v2"
 score_path <- file.path(
   "results", "liang_cas13", "all_gene_scores.csv.gz"
 )
@@ -16,7 +18,9 @@ if (!file.exists(score_path)) {
   )
 }
 
-methods <- c("BARCS", "MAGeCK-MLE")
+methods <- c(
+  "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
+)
 thresholds <- c(0.001, 0.005, 0.01, 0.05, 0.10, 0.20)
 scores <- read.csv(gzfile(score_path))
 hap1 <- scores[
@@ -29,7 +33,10 @@ hap1 <- scores[
   drop = FALSE
 ]
 if (!identical(sort(unique(hap1$method)), sort(methods))) {
-  stop("The HAP1 BARCS and MAGeCK-MLE results are required.")
+  stop(
+    "The HAP1 BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and ",
+    "limma-voom results are required."
+  )
 }
 if (!all(
   hap1$input_scale ==
@@ -47,8 +54,8 @@ for (method in methods) {
     ,
     drop = FALSE
   ]
-  if (nrow(null_data) != 1570L) {
-    stop("Expected 1,570 HAP1 non-expressed lncRNA null controls.")
+  if (nrow(null_data) < 1500L) {
+    stop("Too few HAP1 non-expressed lncRNA null controls for ", method)
   }
   for (threshold in thresholds) {
     row_index <- row_index + 1L
@@ -113,20 +120,26 @@ write.csv(
 )
 
 method_colours <- c(
-  BARCS = "#D55E00",
-  `MAGeCK-MLE` = "#56B4E9"
+  BARCS = barcs_method_colours[["BARCS"]],
+  `MAGeCK-MLE` = barcs_method_colours[["MAGeCK"]],
+  `edgeR-QL` = barcs_method_colours[["edgeR"]],
+  DESeq2 = barcs_method_colours[["DESeq2"]],
+  `limma-voom` = barcs_method_colours[["limma-voom"]]
 )
-method_pch <- c(BARCS = 16, `MAGeCK-MLE` = 17)
+method_pch <- c(
+  BARCS = 16, `MAGeCK-MLE` = 17, `edgeR-QL` = 15,
+  DESeq2 = 18, `limma-voom` = 8
+)
 
 pdf(
   file.path("figures", "liang_hap1_specificity_volcano.pdf"),
-  width = 11,
-  height = 4.6,
+  width = 12,
+  height = 7.6,
   useDingbats = FALSE
 )
-layout(matrix(1:3, nrow = 1), widths = c(1.05, 1, 1))
+layout(matrix(1:6, nrow = 2, byrow = TRUE))
 
-par(mar = c(5.2, 4.5, 3, 1))
+par(mar = c(5.2, 4.5, 3, 1.2))
 plot(
   NA,
   xlim = range(seq_along(thresholds)),
@@ -171,44 +184,42 @@ legend(
   lty = 1,
   lwd = 2,
   bty = "n",
-  cex = 0.8
+  cex = 0.72
 )
 
 common_xlim <- range(hap1$effect)
-common_ylim <- c(
-  0,
-  ceiling(max(-log10(pmax(hap1$p_value, .Machine$double.xmin))))
-)
+y_cap <- 60
+common_ylim <- c(0, y_cap)
+panel_letters <- LETTERS[2:6]
 for (method_index in seq_along(methods)) {
   method <- methods[method_index]
   panel <- hap1[hap1$method == method, , drop = FALSE]
   y_value <- -log10(pmax(panel$p_value, .Machine$double.xmin))
+  y_clipped <- y_value > y_cap
   depleted_call <- panel$fdr < 0.10 & panel$effect < 0
   point_colours <- ifelse(
     depleted_call,
     adjustcolor("#E64B35", alpha.f = 0.55),
     adjustcolor("#999999", alpha.f = 0.25)
   )
-  par(mar = c(5.2, if (method_index == 1L) 4.5 else 1.2, 3, 1))
+  show_y_axis <- method_index %in% c(1L, 3L)
+  par(mar = c(5.2, if (show_y_axis) 4.5 else 1.2, 3, 1))
   plot(
     panel$effect,
-    y_value,
-    pch = 16,
+    pmin(y_value, y_cap),
+    pch = ifelse(y_clipped, 17, 16),
     cex = 0.38,
     col = point_colours,
     xlim = common_xlim,
     ylim = common_ylim,
     xlab = "Gene effect",
-    ylab = if (method_index == 1L) {
-      expression(-log[10](italic(p)))
+    ylab = if (show_y_axis) {
+      expression(-log[10](italic(p))~"(cap 60)")
     } else {
       ""
     },
-    yaxt = if (method_index == 1L) "s" else "n",
-    main = paste0(
-      if (method_index == 1L) "B  " else "",
-      method
-    ),
+    yaxt = if (show_y_axis) "s" else "n",
+    main = paste0(panel_letters[method_index], "  ", method),
     bty = "l"
   )
   abline(h = -log10(0.05), col = "#3B5BDB", lty = 2)

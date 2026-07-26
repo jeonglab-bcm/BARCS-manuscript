@@ -120,6 +120,45 @@ BARCS remains useful as a transparent ordered-trend analysis with explicit
 negative-control diagnostics, but it does not replace Waterbear's joint
 multinomial model.
 
+## Liang Cas13 processed-count sensitivity
+
+The Liang comparison uses rounded versions of the deposited normalized,
+ComBat-corrected Day-0 and Day-14 values. All newly fitted methods receive
+that same matrix and replicate/day design. This controls the input comparison,
+but it is not a raw-count likelihood benchmark.
+
+At gene level, BARCS-original, edgeR-QL, DESeq2, and limma-voom use the same
+unweighted signed-\(z\) rule:
+
+$$
+Z_g=\frac{1}{\sqrt{m_g}}\sum_{j=1}^{m_g}
+\operatorname{sign}(\widehat\beta_{gj})
+\Phi^{-1}\!\left(1-\frac{p_{gj}}{2}\right).
+$$
+
+Thus these four methods differ in their guide-level count model, not in the
+final gene combiner. MAGeCK-MLE uses its native joint gene model.
+BARCS-partial and BARCS-EB are different again: they pool guide effects by
+random-effects inverse-variance weighting and do not use Stouffer
+aggregation.
+
+In HAP1, the extra guide-level models recover more of the 60 essential
+controls at FDR 0.10, while BARCS has the best nominal null specificity:
+
+| Method | Essential controls recovered | Null specificity at \(p<0.05\) |
+|---|---:|---:|
+| BARCS | 44/60 | **0.957** |
+| MAGeCK-MLE | 49/60 | 0.895 |
+| edgeR-QL | **52/60** | 0.931 |
+| DESeq2 | **52/60** | 0.941 |
+| limma-voom | **52/60** | 0.929 |
+
+The primary analysis retains every valid guide. A pre-outcome sensitivity
+selecting the five guides with greatest mean Day-0 abundance reduces BARCS
+macro-average precision from 0.776 to 0.638 and FDR-0.10 essential recall
+from 0.487 to 0.330. Selecting guides by their observed p-values would be
+circular and is not used.
+
 ## Reproducibility and provenance
 
 The CRISPulator metrics were recomputed from all method-level gene-result

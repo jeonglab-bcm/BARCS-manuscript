@@ -7,7 +7,8 @@
 #   1. Liang RRA: deposited RobustRankAggreg v1.2.1 results;
 #   2. MAGeCK-RRA: official `mageck test` on deposited processed counts;
 #   3. MAGeCK-MLE: official `mageck mle` with replicate blocking;
-#   4. BARCS: beta-binomial regression with the same replicate/day design.
+#   4. BARCS: beta-binomial regression with the same replicate/day design;
+#   5. edgeR-QL, DESeq2, and limma-voom with the same design.
 #
 # Liang RRA and MAGeCK-RRA are different algorithms.  The former ranks guide
 # fold changes using the CRAN RobustRankAggreg package; the latter is MAGeCK's
@@ -151,6 +152,10 @@ combine_guides <- function(result) {
     index <- indices[[gene_name]]
     valid <- is.finite(result$estimate[index]) &
       is.finite(result$p_value[index])
+    if ("converged" %in% names(result)) {
+      valid <- valid & !is.na(result$converged[index]) &
+        result$converged[index]
+    }
     index <- index[valid]
     if (!length(index)) {
       return(NULL)
@@ -169,6 +174,149 @@ combine_guides <- function(result) {
   }))
   combined$fdr <- p.adjust(combined$p_value, method = "BH")
   combined
+}
+
+make_guide_result <- function(cell_guide, estimate, p_value,
+                              statistic = NA_real_) {
+  estimate <- as.numeric(estimate)
+  p_value <- as.numeric(p_value)
+  statistic <- rep_len(as.numeric(statistic), length(estimate))
+  data.frame(
+    gene = cell_guide$gene,
+    guide = cell_guide$sgrna,
+    estimate = estimate,
+    statistic = statistic,
+    p_value = p_value,
+    converged = is.finite(estimate) & is.finite(p_value)
+  )
+}
+
+fit_general_count_methods <- function(counts, sample_data, cell_guide,
+                                      cell_stem) {
+  required <- c("edgeR", "DESeq2", "limma")
+  unavailable <- required[
+    !vapply(required, requireNamespace, logical(1), quietly = TRUE)
+  ]
+  if (length(unavailable)) {
+    stop(
+      "Liang general-count comparisons require: ",
+      paste(unavailable, collapse = ", ")
+    )
+  }
+
+  formula <- if (nlevels(sample_data$replicate) >= 2L &&
+                 nrow(sample_data) >= 4L) {
+    ~ replicate + day14
+  } else {
+    ~ day14
+  }
+  design <- model.matrix(formula, data = sample_data)
+  coefficient <- match("day14", colnames(design))
+  if (is.na(coefficient)) {
+    stop("The day-14 coefficient is absent from the design.")
+  }
+
+  # The deposited matrix is already normalized and ComBat-corrected. We add
+  # only library-size offsets, not a second composition-normalization step.
+  library_size <- colSums(counts)
+  relative_library_size <- library_size /
+    exp(mean(log(library_size)))
+
+  fit_or_read <- function(method, fit) {
+    path <- file.path(
+      result_dir,
+      paste0(cell_stem, "_", method, "_guide.csv.gz")
+    )
+    if (!file.exists(path) || identical(Sys.getenv("RERUN_LIANG"), "1")) {
+      result <- fit()
+      write.csv(result, gzfile(path), row.names = FALSE)
+    } else {
+      result <- read.csv(gzfile(path))
+    }
+    result
+  }
+
+  edger <- fit_or_read("edger_ql", function() {
+    dge <- edgeR::DGEList(
+      counts = counts,
+      lib.size = library_size
+    )
+    dge$samples$norm.factors <- 1
+    dge <- edgeR::estimateDisp(dge, design, robust = TRUE)
+    fit <- edgeR::glmQLFit(dge, design, robust = TRUE)
+    test <- edgeR::glmQLFTest(fit, coef = coefficient)
+    make_guide_result(
+      cell_guide,
+      estimate = test$table$logFC,
+      p_value = test$table$PValue,
+      statistic = sign(test$table$logFC) *
+        sqrt(pmax(test$table$F, 0))
+    )
+  })
+
+  deseq2 <- fit_or_read("deseq2", function() {
+    dds <- DESeq2::DESeqDataSetFromMatrix(
+      countData = round(counts),
+      colData = sample_data,
+      design = formula
+    )
+    DESeq2::sizeFactors(dds) <- relative_library_size
+    dds <- suppressMessages(DESeq2::DESeq(
+      dds,
+      test = "Wald",
+      quiet = TRUE,
+      minReplicatesForReplace = Inf
+    ))
+    coefficient_name <- grep(
+      "^day14($|_)", DESeq2::resultsNames(dds), value = TRUE
+    )
+    if (length(coefficient_name) != 1L) {
+      stop("Could not identify one DESeq2 day-14 coefficient.")
+    }
+    table <- DESeq2::results(
+      dds,
+      name = coefficient_name,
+      independentFiltering = FALSE,
+      cooksCutoff = FALSE
+    )
+    make_guide_result(
+      cell_guide,
+      estimate = table$log2FoldChange,
+      p_value = table$pvalue,
+      statistic = table$stat
+    )
+  })
+
+  limma <- fit_or_read("limma_voom", function() {
+    dge <- edgeR::DGEList(
+      counts = counts,
+      lib.size = library_size
+    )
+    dge$samples$norm.factors <- 1
+    transformed <- limma::voom(dge, design, plot = FALSE)
+    fit <- limma::eBayes(
+      limma::lmFit(transformed, design),
+      robust = TRUE
+    )
+    table <- limma::topTable(
+      fit,
+      coef = coefficient,
+      number = Inf,
+      sort.by = "none"
+    )
+    make_guide_result(
+      cell_guide,
+      estimate = table$logFC,
+      p_value = table$P.Value,
+      statistic = table$t
+    )
+  })
+
+  list(
+    `edgeR-QL` = combine_guides(edger),
+    DESeq2 = combine_guides(deseq2),
+    `limma-voom` = combine_guides(limma)
+  )
 }
 
 mageck <- file.path(".venv", "bin", "mageck")
@@ -229,6 +377,9 @@ run_cell_line <- function(cell_line) {
     barcs_gene,
     file.path(result_dir, paste0(cell_stem, "_barcs_gene.csv")),
     row.names = FALSE
+  )
+  general_count <- fit_general_count_methods(
+    counts, sample_data, cell_guide, cell_stem
   )
 
   # Give each non-targeting guide its own pseudo-gene.  This prevents MAGeCK
@@ -362,7 +513,10 @@ run_cell_line <- function(cell_line) {
     add_method(liang_gene, "Liang RRA"),
     add_method(rra_gene, "MAGeCK-RRA"),
     add_method(mle_gene, "MAGeCK-MLE"),
-    add_method(barcs_gene, "BARCS")
+    add_method(barcs_gene, "BARCS"),
+    add_method(general_count[["edgeR-QL"]], "edgeR-QL"),
+    add_method(general_count[["DESeq2"]], "DESeq2"),
+    add_method(general_count[["limma-voom"]], "limma-voom")
   ))
 }
 
@@ -529,12 +683,18 @@ write.csv(
   row.names = FALSE
 )
 
-method_order <- c("Liang RRA", "MAGeCK-RRA", "MAGeCK-MLE", "BARCS")
+method_order <- c(
+  "Liang RRA", "MAGeCK-RRA", "MAGeCK-MLE", "BARCS",
+  "edgeR-QL", "DESeq2", "limma-voom"
+)
 method_colour <- c(
   `Liang RRA` = barcs_method_colours[["Liang RRA"]],
   `MAGeCK-RRA` = barcs_method_colours[["MAGeCK-RRA"]],
   `MAGeCK-MLE` = barcs_method_colours[["MAGeCK"]],
-  BARCS = barcs_method_colours[["BARCS"]]
+  BARCS = barcs_method_colours[["BARCS"]],
+  `edgeR-QL` = barcs_method_colours[["edgeR"]],
+  DESeq2 = barcs_method_colours[["DESeq2"]],
+  `limma-voom` = barcs_method_colours[["limma-voom"]]
 )
 
 pdf(figure_path, width = 11, height = 8.5)

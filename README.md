@@ -124,10 +124,14 @@ commits the updated submodule pointer. See
 - `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
   processed-count sensitivity analysis using Liang's deposited
   RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
-  BARCS on the same normalized day-0/day-14 values.
+  BARCS, edgeR-QL, DESeq2, and limma-voom on the same normalized
+  day-0/day-14 values.
+- `examples/liang_cas13_top5_sensitivity.R`: outcome-independent comparison
+  of all valid guides with the five guides having the highest mean Day-0
+  abundance within each gene.
 - `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
-  across p-value thresholds and matched BARCS/MAGeCK-MLE volcano plots using
-  the processed pseudo-count sensitivity-analysis inputs.
+  across p-value thresholds and matched BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
+  and limma-voom volcano plots using the processed pseudo-count inputs.
 - `scripts/prepare_liang_cas13.R`,
   `scripts/count_liang_cas13_run.sh`, and
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
@@ -165,6 +169,7 @@ Rscript examples/crispulator_facs_f1_threshold_curves.R
 Rscript examples/waterbear_facs_benchmark.R
 Rscript examples/waterbear_facs_external_head_to_head.R
 Rscript examples/liang_cas13_benchmark.R
+Rscript examples/liang_cas13_top5_sensitivity.R
 Rscript examples/liang_hap1_specificity_volcano.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
@@ -182,10 +187,13 @@ MAGeCK-RRA, so the benchmark keeps those as separate methods. The deposited
 values are fractional after median-ratio normalization, ComBat correction,
 and outlier processing. Because BARCS enforces integer counts, the script
 explicitly rounds them to nearest pseudo-counts and gives that identical
-matrix to the three newly fitted methods--BARCS, MAGeCK-RRA, and MAGeCK-MLE;
-it also records the rounding error. Consequently, this is labelled a
+matrix to the six newly fitted methods--BARCS, MAGeCK-RRA, MAGeCK-MLE,
+edgeR-QL, DESeq2, and limma-voom; it also records the rounding error. The
+general count methods use library-size offsets but no second
+composition-normalization step. Consequently, this is labelled a
 processed-count sensitivity analysis:
-neither BARCS nor MAGeCK has its literal raw-count sampling likelihood.
+none of the newly fitted methods has its literal raw-count sampling
+likelihood.
 Known-essential protein-coding controls are positives
 and cell-line-specific non-expressed lncRNAs are null controls. Published RRA
 calls are a comparator, not a circular definition of truth.
@@ -194,11 +202,31 @@ The processed-count result is intentionally not a BARCS win. Macro-averaged
 over the five cell lines, Liang RRA has the highest AUROC (0.970), average
 precision (0.891), essential recall at 5% null FPR (0.917), and directional
 essential recall at FDR 0.10 (0.823). BARCS reaches 0.939, 0.776, 0.823, and
-0.487, respectively. Every BARCS day-effect fit has only one residual degree
-of freedom after the available replicate block, so its main limitation is
-threshold power rather than a complete loss of biological ranking. Mean
-BARCS--MAGeCK-MLE effect-rank correlation is 0.875 across cell lines. The
-versioned metrics and rounding audit are under `data/derived/`.
+0.487, respectively. edgeR-QL, DESeq2, and limma-voom have average precision
+of 0.840, 0.839, and 0.841 and FDR-0.10 essential recall of 0.790, 0.783, and
+0.787. Their greater threshold recall accompanies inflated null-tail rates:
+0.122, 0.103, and 0.118 of non-expressed lncRNAs have nominal \(p<0.05\),
+versus 0.065 for BARCS. In HAP1 specifically, null specificity at nominal
+\(p<0.05\) is 95.7% for BARCS, 89.5% for MAGeCK-MLE, 93.1% for edgeR-QL,
+94.1% for DESeq2, and 92.9% for limma-voom. Every BARCS day-effect fit has
+only one residual degree of freedom after the available replicate block, so
+its main limitation is threshold power rather than a complete loss of
+biological ranking.
+
+BARCS-original, edgeR-QL, DESeq2, and limma-voom all use unweighted signed-\(z\)
+aggregation after their respective guide-level fits. This holds the historical
+gene combiner fixed while comparing guide-level models. MAGeCK-MLE instead
+uses its native joint gene model; BARCS-partial and BARCS-EB use
+inverse-variance random-effects pooling and are not signed-\(z\) methods.
+
+The primary Liang result uses every valid guide. Selecting the top five by
+mean Day-0 abundance is a pre-outcome, reproducible sensitivity analysis, but
+it does not improve BARCS: macro average precision falls from 0.776 to 0.638,
+and FDR-0.10 essential recall falls from 0.487 to 0.330. Selecting the five
+smallest observed p-values is not reported because it uses the outcome twice
+and would make significance anti-conservative. Mean BARCS--MAGeCK-MLE
+effect-rank correlation is 0.875 across cell lines. The versioned metrics,
+top-five sensitivity, and rounding audit are under `data/derived/`.
 
 An optional raw-read confirmation remains available. It streams approximately
 14 GB of compressed endpoints without retaining FASTQs:
