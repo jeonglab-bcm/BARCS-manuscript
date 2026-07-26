@@ -22,9 +22,10 @@
 #
 #     Rscript examples/crispulator_facs_moi_10k_benchmark.R
 #
-# MAGeCK-MLE is not included. It is not installable from PyPI or from source
-# in this environment, so it could not be refitted at these settings; the
-# 400-gene comparisons elsewhere in the repository retain it.
+# MAGeCK-MLE uses the official 0.5.9.5 binary at `.venv/bin/mageck`, matching
+# the rest of the repository. Its marker score is affinely mapped to zero-one
+# because the MAGeCK initializer requires a reference design row whose
+# non-intercept entries are all zero.
 
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "crispulator-moi-10k-v1"
@@ -84,6 +85,15 @@ suppressPackageStartupMessages({
   library(DESeq2)
 })
 source(file.path("R", "bbreg.R"))
+
+mageck <- file.path(".venv", "bin", "mageck")
+if (!file.exists(mageck)) {
+  stop("Official MAGeCK 0.5.9.5 is required at `.venv/bin/mageck`.",
+       call. = FALSE)
+}
+mageck_environment <- paste0(
+  "PATH=", normalizePath(dirname(mageck)), ":", Sys.getenv("PATH")
+)
 
 auroc <- function(truth, score) {
   ranks <- rank(score, ties.method = "average")
@@ -197,6 +207,70 @@ fit_one_run <- function(directory) {
     estimate = voom_fit$coefficients[, "phenotype_z"],
     p_value = voom_fit$p.value[, "phenotype_z"]
   ), min_guides = 1L)
+
+  # MAGeCK-MLE, official binary, on the same low-bulk-high samples.
+  mageck_dir <- file.path(directory, "mageck")
+  dir.create(mageck_dir, showWarnings = FALSE, recursive = TRUE)
+  count_path <- file.path(mageck_dir, "counts.txt")
+  design_path <- file.path(mageck_dir, "design.txt")
+  control_path <- file.path(mageck_dir, "control_sgrna.txt")
+  mle_prefix <- file.path(mageck_dir, "mle")
+  mle_path <- paste0(mle_prefix, ".gene_summary.txt")
+  if (!file.exists(mle_path)) {
+    write.table(
+      data.frame(
+        sgRNA = guide_truth$guide[keep_guide],
+        Gene = guide_truth$gene[keep_guide],
+        round(y[keep_guide, , drop = FALSE]),
+        check.names = FALSE
+      ),
+      count_path, sep = "\t", quote = FALSE, row.names = FALSE
+    )
+    writeLines(
+      guide_truth$guide[keep_guide & guide_truth$class == "negcontrol"],
+      control_path
+    )
+    # Affine map of the ordered marker onto zero-one, so the low samples of
+    # the reference replicate form the all-zero reference row MAGeCK needs.
+    marker <- design_data$phenotype_z
+    marker <- (marker - min(marker)) / (max(marker) - min(marker))
+    replicate_levels <- levels(design_data$replicate)
+    mageck_design <- data.frame(
+      samples = design_data$sample, baseline = 1, phenotype = marker
+    )
+    for (level in replicate_levels[-1L]) {
+      mageck_design[[paste0("rep_", level)]] <-
+        as.integer(design_data$replicate == level)
+    }
+    reference_row <- which(
+      mageck_design$phenotype == 0 &
+        rowSums(mageck_design[, -(1:2), drop = FALSE]) == 0
+    )[1L]
+    stopifnot(is.finite(reference_row))
+    mageck_design <- mageck_design[
+      c(reference_row, setdiff(seq_len(nrow(mageck_design)), reference_row)),
+    ]
+    write.table(
+      mageck_design, design_path,
+      sep = "\t", quote = FALSE, row.names = FALSE
+    )
+    status <- system2(mageck, c(
+      "mle", "-k", count_path, "-d", design_path, "-n", mle_prefix,
+      "--norm-method", "none", "--control-sgrna", control_path,
+      "--permutation-round", "1", "--no-permutation-by-group",
+      "--threads", as.character(as.integer(Sys.getenv("BARCS_NCORES", "4")))
+    ), env = mageck_environment, stdout = FALSE, stderr = FALSE)
+    if (status != 0L || !file.exists(mle_path)) {
+      stop("MAGeCK-MLE failed for ", directory, call. = FALSE)
+    }
+  }
+  mle_raw <- read.delim(mle_path, check.names = FALSE)
+  gene_results[["MAGeCK-MLE"]] <- data.frame(
+    gene = mle_raw$Gene,
+    estimate = mle_raw[["phenotype|beta"]],
+    p_value = mle_raw[["phenotype|p-value"]],
+    fdr = mle_raw[["phenotype|fdr"]]
+  )
 
   deseq_result <- results(DESeq(DESeqDataSetFromMatrix(
     countData = round(y[keep_guide, , drop = FALSE]),
