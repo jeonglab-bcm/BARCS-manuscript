@@ -688,12 +688,35 @@ high while the realized error rate is still below what was asked for.  F1 does
 not discriminate between these methods; what discriminates them is whether the
 number you set is the number you get.
 
-One limitation of this scan is ours rather than the method's.  MAGeCK-MLE was
-run with a single permutation round, following the convention used elsewhere
-in this repository, which quantizes its gene FDR and gives it a floor: its
-call count is constant at 358 and its F1 constant at 0.306 across six orders
-of magnitude.  Its behaviour in the strict regime should therefore be read as
-an artifact of that setting, not as a property of MAGeCK-MLE.
+\paragraph{MAGeCK-MLE cannot be compared at strict cutoffs, and more
+permutations do not fix it.}
+MAGeCK-MLE's call count is constant across several orders of magnitude of
+requested FDR, which is a property of its inference rather than of the data.
+Its gene $p$-value is a permutation tail probability estimated from
+$\text{genes}\times\text{rounds}$ draws, so it is quantized in steps of about
+$1/(\text{genes}\times\text{rounds})$, and any gene whose statistic exceeds
+every permuted value is reported with $p$ exactly zero.  Such genes are called
+at any cutoff however strict, which is what produces the plateau.
+
+Refitting one realization at ten rounds instead of one confirms the mechanism
+and shows that it is not a settings artifact that can simply be corrected.
+The smallest positive $p$-value falls from $2\times10^{-4}$ to
+$2\times10^{-5}$, matching the predicted $1/(9475\times\text{rounds})$ to
+within the two-sided factor, and the number of genes at $p=0$ falls from 186
+to 66.  But the plateau does not disappear: with ten rounds the call count is
+still flat, at 66 genes from $10^{-6}$ through $10^{-3}$, and the F1 over that
+range \emph{falls} from 0.174 to 0.065 because fewer genes reach $p=0$.  More
+permutation moves the plateau down rather than removing it, so MAGeCK-MLE's
+strict-cutoff position is set by a computational budget rather than by the
+screen.
+
+Resolving a gene FDR of $10^{-6}$ at this library size would need on the order
+of $10^{6}/9475\approx110$ rounds, roughly fourteen hours per realization at
+the throughput measured here.  We therefore read MAGeCK-MLE's curve below a
+requested $10^{-2}$ as not resolvable rather than as a performance result, and
+exclude it from the strict-regime comparison; the same caution applies to any
+permutation-based gene FDR used at genome scale.  This is measured in
+\texttt{examples/crispulator\_facs\_mageck\_permutation\_resolution.R}.
 
 \begin{figure}[!t]
 \centering

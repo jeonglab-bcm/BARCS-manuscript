@@ -1,0 +1,15 @@
+"analysis_protocol","permutation_rounds","genes","distinct_p_values","smallest_positive_p","predicted_resolution","genes_with_zero_p","nominal_fdr","calls","realized_fdp","f1"
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,1e-06,186,0,0.173669467787115
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,1e-05,186,0,0.173669467787115
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,1e-04,186,0,0.173669467787115
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,0.001,186,0,0.173669467787115
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,0.01,453,0,0.376089663760897
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,0.05,978,0.00613496932515337,0.662576687116564
+"crispulator-mageck-permutation-resolution-v1",1,9475,3527,2e-04,0.000105540897097625,186,0.1,1171,0.00683176771989752,0.743843939878478
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,1e-06,66,0,0.0652818991097923
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,1e-05,66,0,0.0652818991097923
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,1e-04,66,0,0.0652818991097923
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,0.001,66,0,0.0652818991097923
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,0.01,488,0,0.399345335515548
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,0.05,880,0.00340909090909091,0.618476727785613
+"crispulator-mageck-permutation-resolution-v1",10,9475,7713,2e-05,1.05540897097625e-05,66,0.1,1141,0.007011393514461,0.731675815305134

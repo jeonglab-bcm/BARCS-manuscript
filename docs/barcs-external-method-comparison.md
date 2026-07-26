@@ -417,13 +417,42 @@ Two claims survive:
   what was asked for.** F1 does not discriminate these methods; whether the
   number you set is the number you get does.
 
-**A limitation that is ours, not MAGeCK's.** MAGeCK-MLE was run with
-`--permutation-round 1`, following the convention used elsewhere in this
-repository. That quantizes its gene FDR and gives it a floor: its call count
-is constant at 358 and its F1 constant at 0.306 across six orders of
-magnitude. Its strict-regime behaviour here is an artifact of that setting.
-Re-running with more permutation rounds would be needed to characterise it
-properly.
+#### MAGeCK-MLE is not resolvable at strict cutoffs
+
+MAGeCK-MLE's call count is constant across orders of magnitude of requested
+FDR. That is a property of its inference, not of the data: its gene p-value is
+a permutation tail probability from `genes × rounds` draws, quantized in steps
+of ~1/(genes × rounds), and any gene whose statistic beats every permuted
+value gets p exactly 0 — so it is called at *any* cutoff.
+
+Refitting one realization at 10 rounds instead of 1
+(`examples/crispulator_facs_mageck_permutation_resolution.R`) confirms the
+mechanism and shows it is **not** a settings artifact that can be corrected:
+
+| Rounds | Distinct p | Smallest positive p | Predicted 1/(genes×rounds) | Genes at p = 0 |
+|---:|---:|---:|---:|---:|
+| 1 | 3,527 | 2e-4 | 1.06e-4 | 186 |
+| 10 | 7,713 | 2e-5 | 1.06e-5 | 66 |
+
+The resolution improves exactly as predicted. But the plateau persists — and
+moves *down*:
+
+| Requested FDR | Calls (1 rd) | Calls (10 rd) | F1 (1 rd) | F1 (10 rd) |
+|---|---:|---:|---:|---:|
+| 1e-6 … 1e-3 | 186 | 66 | 0.174 | 0.065 |
+| 0.01 | 453 | 488 | 0.376 | 0.399 |
+| 0.10 | 1,171 | 1,141 | 0.744 | 0.732 |
+
+More permutation lowers the plateau rather than removing it, because fewer
+genes reach p = 0. MAGeCK-MLE's strict-cutoff position is therefore set by a
+computational budget, not by the screen. Resolving FDR 1e-6 at this library
+size needs ~1e6/9475 ≈ 110 rounds, about fourteen hours per realization at the
+throughput measured here.
+
+**We therefore read MAGeCK-MLE's curve below a requested 0.01 as not
+resolvable rather than as a performance result**, and exclude it from the
+strict-regime comparison. The same caution applies to any permutation-based
+gene FDR at genome scale.
 
 ### The one-replicate boundary, and why the count models lead there
 
