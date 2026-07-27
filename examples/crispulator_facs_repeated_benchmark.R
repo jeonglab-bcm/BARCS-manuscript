@@ -1,8 +1,41 @@
 #!/usr/bin/env Rscript
 
 # Repeat the four-method BARCS CRISPulator benchmark across prespecified
-# parameters and seeds. Per-run count matrices remain under git-ignored
-# `results/`; compact metrics and figures are versioned.
+# parameters and seeds.
+#
+# `examples/crispulator_facs_benchmark.R` compares the four guide-to-gene
+# statistics on a single simulated screen. That is enough to see whether they
+# differ at all, and not nearly enough to believe the difference: one screen is
+# one draw, and the ranking of four closely related statistics can turn over
+# from seed to seed.
+#
+# This script varies one factor at a time around a baseline -- MOI, the
+# fraction of high-quality guides, the number of genes, and the number of
+# replicates -- across five seeds each, and reports the metrics with their
+# spread. A difference that survives here is a property of the method; one
+# that does not was a property of the draw.
+#
+# The one-replicate setting is included on purpose even though it is
+# degenerate. With R = 1 the design leaves a single residual degree of freedom
+# per guide and BARCS makes no calls at all, which is the boundary of where
+# these methods can be used. It is reported as a boundary rather than averaged
+# in with the rest; see the scope-rule discussion in
+# `examples/crispulator_facs_external_head_to_head_aggregate.R`.
+#
+# The grid is configured by environment variables (see `parse_numeric_values`
+# below) so the same script can run the default sensitivity analysis or a
+# larger factorial without editing it. README's "Reproduce" section lists the
+# variants.
+#
+# This script runs the simulator itself, once per grid cell, so it needs the
+# pinned Julia environment but no separate simulation step. Per-run screens
+# land in the gitignored `results/crispulator_facs/repeated/`, where the
+# head-to-head and F1-curve scripts then read them.
+#
+#     pixi run bench-facs-grid
+#
+# Bulky per-run count matrices stay under `results/`; only the compact metrics
+# in `data/derived/` and the figures are versioned.
 
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "barcs-four-methods-v1"

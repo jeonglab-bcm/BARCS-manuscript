@@ -1,5 +1,32 @@
 #!/usr/bin/env Rscript
 
+# How BARCS relates to original CB2, in six worked examples.
+#
+# `examples/cb2_generalization_proof.R` verifies the same relationship in
+# thirty lines of linear algebra. This script is the version to read when that
+# one is too compressed to be convincing: every step prints its numbers, and
+# the examples are ordered so each one answers the doubt the previous one
+# raises.
+#
+#   1. The legacy representation on numbers small enough to check by hand.
+#   2. The same identity on 1,000 random problems, in case example 1 was luck.
+#   3. The identity driven by original CB2's own `fit_ab()` on read counts,
+#      in case the hand-supplied summaries were doing the work.
+#   4. Where default `bbreg(~ group)` and original CB2 genuinely disagree, and
+#      why -- this is the honest limit of the compatibility claim.
+#   5. The disagreement in example 4 shrinking as the two groups move closer,
+#      which is the local-equivalence statement made visible.
+#   6. What the regression buys: the same machinery with a continuous dose
+#      column in place of the group label.
+#
+# Read in order, the six say: the identity is exact where it is claimed
+# (1--3), it is not exact where it is not claimed (4), the gap behaves the way
+# the theory says (5), and the point of the exercise is the design matrix (6).
+#
+#     Rscript examples/cb2_generalization_walkthrough.R
+#
+# Prints only; writes no files. Fails loudly if an identity breaks.
+
 section <- function(title) {
   cat("\n", strrep("=", 72), "\n", title, "\n",
       strrep("=", 72), "\n", sep = "")

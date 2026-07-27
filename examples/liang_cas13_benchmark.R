@@ -319,13 +319,10 @@ fit_general_count_methods <- function(counts, sample_data, cell_guide,
   )
 }
 
-mageck <- file.path(".venv", "bin", "mageck")
-if (!file.exists(mageck)) {
-  stop("Official MAGeCK 0.5.9.5 is required at `.venv/bin/mageck`.")
-}
-mageck_environment <- paste0(
-  "PATH=", normalizePath(dirname(mageck)), ":", Sys.getenv("PATH")
-)
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_check_version()
+mageck_environment <- mageck_path_env()
 
 run_cell_line <- function(cell_line) {
   message("Analysing ", cell_line, " ...")

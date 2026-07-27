@@ -30,11 +30,10 @@ run_directory <- file.path(
 )
 mageck_directory <- file.path(run_directory, "mageck")
 
-mageck <- file.path(".venv", "bin", "mageck")
-if (!file.exists(mageck)) {
-  stop("Official MAGeCK 0.5.9.5 is required at `.venv/bin/mageck`.",
-       call. = FALSE)
-}
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_check_version()
+
 required <- file.path(
   mageck_directory, c("counts.txt", "design.txt", "control_sgrna.txt")
 )

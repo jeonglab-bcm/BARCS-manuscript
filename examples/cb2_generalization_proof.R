@@ -1,8 +1,37 @@
 #!/usr/bin/env Rscript
 
 # Executable verification of two connections between original CB2 and BARCS.
-# The first is an exact legacy summary-scale representation, not strict nesting
-# of the default estimator. The second is a local/asymptotic statement.
+#
+# BARCS is offered as an additive path inside CB2, not a replacement for it, so
+# the relationship between the two estimators has to be stated precisely enough
+# to be checked. Two separate claims are easy to conflate, and this script
+# keeps them apart by verifying each on its own terms.
+#
+#   1. An exact algebraic identity. Given the weighted group proportions and
+#      variances that original CB2 has *already computed*, a saturated
+#      two-cell generalized least-squares fit reproduces its effect, standard
+#      error, t statistic, and p value -- to machine precision, not
+#      approximately. Checked below with `stopifnot` at 1e-12.
+#
+#   2. A local, asymptotic statement. BARCS works on the logit scale and CB2 on
+#      the raw-proportion scale, so the two statistics are not equal in finite
+#      samples. As the two proportions approach a shared interior value the gap
+#      closes.
+#
+# What this deliberately does NOT show is that default `bbreg()` strictly nests
+# original CB2. Claim 1 starts from CB2's own summaries rather than from raw
+# counts, and claim 2 is a limit. The distinction matters because the stronger
+# claim would license reading old CB2 p-values off a new BARCS fit, which is
+# not supported.
+#
+# The script asserts rather than reports: if either connection breaks it exits
+# nonzero, so it is a regression test that happens to print a table.
+#
+#     Rscript examples/cb2_generalization_proof.R
+#
+# For the same argument at greater length see
+# `examples/cb2_generalization_walkthrough.R`; for a version without matrix
+# algebra see `docs/cb2-generalization-high-school-proof.md`.
 
 if (file.exists(file.path("CB2", "DESCRIPTION")) &&
     requireNamespace("devtools", quietly = TRUE)) {

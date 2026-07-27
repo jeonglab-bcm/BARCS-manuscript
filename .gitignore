@@ -25,3 +25,11 @@ results/
 
 # Rendered page images used only for visual QA
 output/rendered/
+
+# pixi environments. pixi.toml and pixi.lock are versioned; the several-GB
+# solved environment under .pixi/ is rebuilt from them by `pixi install`.
+.pixi/
+
+# Toolchains pixi cannot supply as conda packages, installed by
+# `pixi run setup-julia` and pinned by checksum in scripts/setup_julia.sh.
+.tools/

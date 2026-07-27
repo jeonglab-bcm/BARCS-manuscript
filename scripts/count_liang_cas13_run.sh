@@ -22,7 +22,15 @@ count_path="${output_dir}/${sample}.counts.tsv"
 log_path="${output_dir}/${sample}.log"
 temporary_path="${count_path}.partial"
 
-cutadapt_executable=${CUTADAPT:-"${project_root}/.venv/bin/cutadapt"}
+# Prefer whatever is on PATH -- which is what `pixi run -e recount` provides --
+# and fall back to the legacy ad-hoc virtualenv this repository used to assume.
+# $CUTADAPT and $BOWTIE still override both.
+default_cutadapt=cutadapt
+if ! command -v cutadapt >/dev/null 2>&1 &&
+   [[ -x "${project_root}/.venv/bin/cutadapt" ]]; then
+  default_cutadapt="${project_root}/.venv/bin/cutadapt"
+fi
+cutadapt_executable=${CUTADAPT:-"${default_cutadapt}"}
 bowtie_executable=${BOWTIE:-bowtie}
 bowtie_build_executable=${BOWTIE_BUILD:-bowtie-build}
 

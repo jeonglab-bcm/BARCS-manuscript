@@ -5,6 +5,34 @@
 # 33-gene follow-up panel. Waterbear and MAUDE are retained as literature
 # recovery references only because complete per-gene outputs for the panel
 # are not available here.
+#
+# `examples/waterbear_facs_benchmark.R` compares the four BARCS gene
+# statistics with each other on this screen. This script adds the external
+# methods, which is a harder comparison to make fairly and is worth spelling
+# out.
+#
+# MAGeCK is rerun here rather than quoted. A published number was produced
+# with the authors' own preprocessing, filtering, and design choices, so
+# comparing against it measures the whole pipeline rather than the method.
+# Rerunning both MAGeCK modes on the same matrix and design BARCS receives
+# makes the comparison about inference.
+#
+# Waterbear and MAUDE cannot be treated the same way. Complete per-gene
+# outputs for the follow-up panel are not available, so only their published
+# recovery totals can be cited. Those totals are reported as literature
+# references and are not scored alongside the rerun methods -- a recovery
+# count computed under someone else's gene universe and threshold is not
+# comparable to one computed here, and presenting them in the same column
+# would imply it is.
+#
+# The scoring target is the 33-gene follow-up panel, which is an
+# experimentally selected set rather than an exhaustive one. Genes outside it
+# are not known negatives; they are unlabelled. Recall against the panel is
+# therefore meaningful and precision against it is not, which is why the
+# metrics reported here are the ones the panel can actually support.
+#
+#     Rscript examples/waterbear_facs_benchmark.R   # writes the fits reused here
+#     Rscript examples/waterbear_facs_external_head_to_head.R
 
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "waterbear-external-headtohead-v1"

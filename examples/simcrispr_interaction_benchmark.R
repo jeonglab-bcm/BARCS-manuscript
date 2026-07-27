@@ -51,8 +51,8 @@
 #
 #     Rscript examples/simcrispr_interaction_benchmark.R
 #
-# MAGeCK-MLE uses the official 0.5.9.5 binary at `.venv/bin/mageck`, with each
-# sgRNA as its own gene because the truth is guide-level.
+# MAGeCK-MLE uses the official 0.5.9.5 binary located by `R/mageck.R`, with
+# each sgRNA as its own gene because the truth is guide-level.
 
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "simcrispr-interaction-v1"
@@ -85,14 +85,10 @@ if (length(absent)) {
 }
 source(file.path("R", "bbreg.R"))
 
-mageck <- file.path(".venv", "bin", "mageck")
-if (!file.exists(mageck)) {
-  stop("Official MAGeCK 0.5.9.5 is required at `.venv/bin/mageck`.",
-       call. = FALSE)
-}
-mageck_environment <- paste0(
-  "PATH=", normalizePath(dirname(mageck)), ":", Sys.getenv("PATH")
-)
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_check_version()
+mageck_environment <- mageck_path_env()
 
 auroc <- function(truth, score) {
   ranks <- rank(score, ties.method = "average")

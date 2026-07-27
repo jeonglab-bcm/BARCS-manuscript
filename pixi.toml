@@ -1,0 +1,271 @@
+# Reproducible toolchain for the BARCS analysis repository.
+#
+# Everything the benchmarks, the tests, and the manuscript build need is
+# declared here, so a reviewer can reproduce a figure without matching an
+# undocumented machine. `pixi.lock` pins exact builds; edit this file, never
+# the lock, and commit both together.
+#
+#     curl -fsSL https://pixi.sh/install.sh | bash   # once, if pixi is missing
+#     pixi run setup                                 # once per clone
+#     pixi run doctor                                # confirms every tool runs
+#
+# Then either prefix commands with `pixi run`, or enter a shell with the whole
+# toolchain on PATH:
+#
+#     pixi shell
+#
+# Three of the four toolchains come from conda channels. The fourth, Julia, has
+# no conda-forge build for linux-aarch64, so `setup-julia` fetches the official
+# binary for the host architecture against a pinned checksum. See
+# https://pixi.prefix.dev/latest/ for the manifest reference.
+
+[workspace]
+name = "barcs"
+description = "Beta-binomial Analysis and Regression for CRISPR Screens"
+channels = ["conda-forge", "bioconda"]
+# conda-forge is listed first and therefore wins for any package both channels
+# ship, which is the resolution order bioconda documents.
+platforms = ["linux-64", "linux-aarch64"]
+# To develop on macOS, add "osx-arm64" and re-solve. It is left out because
+# bioconda's Bioconductor builds for that platform lag the Linux ones, and an
+# unsolvable platform blocks `pixi install` for everyone.
+
+# ---------------------------------------------------------------------------
+# Conda dependencies
+# ---------------------------------------------------------------------------
+
+[dependencies]
+# R itself. The floor is the oldest release the bioconda Bioconductor builds
+# are compiled against; the ceiling keeps a future R 4.7 from silently
+# invalidating those same builds.
+r-base = ">=4.4,<4.7"
+
+# CB2 has C++ in it, and CRISPhieRmix is installed from source, so a clone
+# needs a compiler even though no compiled artifact is committed.
+c-compiler = "*"
+cxx-compiler = "*"
+make = "*"
+
+# CB2 `LinkingTo:`.
+r-rcpp = "*"
+r-rcpparmadillo = "*"
+
+# CB2 `Imports:`. These come from the conda channels rather than from
+# `install.packages()` so that the lock file pins them.
+r-metap = "*"
+r-magrittr = "*"
+r-dplyr = "*"
+r-tibble = "*"
+r-stringr = "*"
+r-ggplot2 = "*"
+r-tidyr = "*"
+r-glue = "*"
+r-pheatmap = "*"
+r-readr = "*"
+"r-r.utils" = "*"  # quoted: an unquoted dot would make this a nested TOML key
+
+# CB2 `Suggests:` — needed to run the package test suite.
+r-testthat = "*"
+r-knitr = "*"
+r-rmarkdown = "*"
+
+# Read by the benchmark scripts directly: `readxl` opens the published
+# supplementary tables, `rhdf5` opens the Chronos HDF5 releases.
+r-readxl = "*"
+bioconductor-rhdf5 = "*"
+
+# The RNA-seq count models BARCS is benchmarked against.
+bioconductor-deseq2 = "*"
+bioconductor-edger = "*"
+bioconductor-limma = "*"
+
+# Dependencies of the two R packages that exist only on GitHub, listed here so
+# the lock file covers them too. `setup-r-github` then compiles just the two
+# packages themselves. statmod/sn/nloptr belong to CRISPhieRmix, MASS to
+# simCRISPR.
+r-remotes = "*"
+r-devtools = "*"  # DEVELOPMENT.md's package workflow: devtools::test("CB2")
+r-statmod = "*"
+r-sn = "*"
+r-nloptr = "*"
+r-mass = "*"
+
+# The external gene caller. 0.5.9.5 is the version every committed MAGeCK
+# number was produced with; its permutation null makes results version
+# sensitive, so this is pinned exactly rather than floated. Installing it from
+# bioconda also avoids building the SourceForge tarball, whose `setup.py` needs
+# `setuptools<60` for the long-removed `install_layout` option.
+mageck = "==0.5.9.5"
+
+# NOTE: there is deliberately no `texlive-core` here. conda-forge ships it at
+# 13 MB with an empty `texmf-dist/tex/latex` -- engines only, no amsmath, no
+# hyperref, no microtype -- and its bundled tlmgr cannot run. The manuscript
+# toolchain is installed from CTAN by `setup-texlive` instead. `perl` is what
+# runs that installer.
+perl = "*"
+
+# Used by the setup scripts to fetch and verify the Julia and TeX Live
+# tarballs.
+curl = "*"
+
+# ---------------------------------------------------------------------------
+# Optional: recounting the Liang screens from raw reads
+#
+# The Liang benchmark normally runs from the authors' deposited processed
+# counts, which is what `bench-liang` does and what the committed results use.
+# Recounting from the original FASTQs is a separate, much heavier path -- it
+# streams twenty runs from ENA through anchor trimming and Bowtie -- and it
+# needs two tools nothing else here does. They are kept out of the default
+# environment so an ordinary clone does not pay for them.
+#
+#     pixi run -e recount count-liang SAMPLE RUN FASTQ_URL OUTPUT_DIR
+# ---------------------------------------------------------------------------
+
+[feature.recount.dependencies]
+cutadapt = "*"
+bowtie = "*"
+
+[feature.recount.tasks]
+count-liang = "bash scripts/count_liang_cas13_run.sh"
+prepare-liang = "Rscript scripts/prepare_liang_cas13.R"
+
+[environments]
+recount = ["recount"]
+
+# ---------------------------------------------------------------------------
+# Tasks
+#
+# Run `pixi task list` to see these. Each one is also a précis of how the
+# corresponding piece of the analysis is meant to be invoked.
+# ---------------------------------------------------------------------------
+
+[tasks]
+
+# -- Setup ------------------------------------------------------------------
+
+setup = { depends-on = ["setup-julia", "setup-texlive", "setup-r-github", "setup-cb2"] }
+
+# Both setup scripts below check for an existing install and exit early, so
+# they are cheap to re-run. Neither declares pixi `outputs` for caching: they
+# install into the gitignored `.tools/`, which pixi's output globbing does not
+# look inside, and declaring them only produces a spurious "no files matched"
+# warning on every run.
+setup-julia = "bash scripts/setup_julia.sh"
+
+setup-texlive = "bash scripts/setup_texlive.sh"
+
+# CRISPhieRmix and simCRISPR are not published on CRAN, Bioconductor, or any
+# conda channel, so they are the one thing the lock file cannot pin. Both are
+# fixed to a commit rather than to a branch.
+setup-r-github = { cmd = "Rscript scripts/setup_r_github.R", depends-on = [] }
+
+# The R package under test is the `CB2/` submodule, not a released CB2. It is
+# installed into the pixi environment's own library so that switching pixi
+# environments can never leave a stale package behind.
+setup-cb2 = "R CMD INSTALL --no-multiarch --with-keep.source CB2"
+
+# -- Verification -----------------------------------------------------------
+
+# Reports which of the seven toolchains this machine can actually run.
+doctor = "bash scripts/check_tools.sh"
+
+# The analysis-side test suite (the BARCS regression layer in `R/bbreg.R`).
+test = "Rscript tests/run_tests.R"
+
+# The package-side test suite, which lives in the submodule.
+test-package = { cmd = "Rscript -e 'devtools::test(\"CB2\")'", depends-on = ["setup-cb2"] }
+
+check-package = { cmd = "R CMD build CB2 && R CMD check --no-manual CB2_*.tar.gz" }
+
+# -- Manuscript -------------------------------------------------------------
+
+manuscript = "latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex"
+manuscript-clean = "latexmk -C main.tex"
+
+# -- Simulation -------------------------------------------------------------
+#
+# Most benchmarks do not need a separate simulation step, which is worth
+# knowing before running a long one unnecessarily:
+#
+#   * the baseline screen is committed under `data/derived/crispulator_facs/`,
+#     so `bench-facs-single` runs straight from a clone;
+#   * `bench-facs-grid` shells out to Julia itself, once per grid cell;
+#   * `bench-genome-scale` has its own `--simulate` pass, below.
+#
+# Instantiating the pinned Julia environment is a genuine prerequisite of the
+# latter two, and `setup` already covers it.
+
+julia-instantiate = { cmd = "julia --project=julia -e 'using Pkg; Pkg.instantiate()'", depends-on = ["setup-julia"] }
+
+# Regenerate the committed baseline screen. This OVERWRITES the versioned
+# files in `data/derived/crispulator_facs/`; with Julia pinned it should
+# reproduce them, and `git diff` afterwards is the check. Only needed when
+# deliberately changing the baseline simulation.
+simulate-baseline = { cmd = "julia --project=julia julia/simulate_crispulator_facs.jl", depends-on = ["julia-instantiate"] }
+
+# -- Benchmarks -------------------------------------------------------------
+#
+# Grouped by what they answer. Where a benchmark needs input it does not
+# generate itself, the comment says so.
+
+# Does the regression layer reproduce original CB2 where the two overlap?
+proof = "Rscript examples/cb2_generalization_proof.R"
+walkthrough = "Rscript examples/cb2_generalization_walkthrough.R"
+io-examples = "Rscript examples/barcs_input_output_examples.R"
+
+# The four-method comparison on the committed baseline screen. Runs from a
+# fresh clone with no simulation step.
+bench-facs-single = "Rscript examples/crispulator_facs_benchmark.R"
+
+# The same comparison over seeds and a parameter grid. Invokes Julia per grid
+# cell and writes per-run screens into the gitignored `results/`, which the
+# two aggregate scripts below then read.
+bench-facs-grid = { cmd = "Rscript examples/crispulator_facs_repeated_benchmark.R", depends-on = ["julia-instantiate"] }
+
+# Both read `results/crispulator_facs/repeated/`, so they need
+# `bench-facs-grid` first. Each is a two-stage pair: the fitting stage writes
+# per-run rows, and the aggregate stage owns the scope rule.
+bench-external = "Rscript examples/crispulator_facs_external_head_to_head.R"
+bench-external-aggregate = "Rscript examples/crispulator_facs_external_head_to_head_aggregate.R"
+bench-f1-curves = "Rscript examples/crispulator_facs_f1_threshold_curves.R"
+bench-f1-curves-aggregate = "Rscript examples/crispulator_facs_f1_threshold_curves_aggregate.R"
+
+# Headline simulation study: 10,000 genes, MAGeCK-MLE and CRISPhieRmix as
+# comparators, FDR scanned over thirteen cutoffs. Two passes -- the script
+# simulates its own screens under `--simulate`, then evaluates them.
+bench-genome-scale-simulate = { cmd = "Rscript examples/crispulator_facs_moi_10k_benchmark.R --simulate", depends-on = ["julia-instantiate"] }
+bench-genome-scale = "Rscript examples/crispulator_facs_moi_10k_benchmark.R"
+
+# Factorial screen where the estimand is an interaction coefficient. Simulates
+# its own input via the simCRISPR R package, so it needs no `simulate` step.
+bench-interaction = "Rscript examples/simcrispr_interaction_benchmark.R"
+
+# Real-data benchmarks. Each downloads its own input into `data/raw/`.
+bench-waterbear = "Rscript examples/waterbear_facs_benchmark.R"
+bench-gse70038 = "Rscript examples/gse70038_comparison.R"
+bench-sanson = "Rscript examples/sanson_benchmark.R"
+bench-chronos = "Rscript examples/chronos_tzelepis_benchmark.R"
+bench-liang = "Rscript examples/liang_cas13_benchmark.R"
+
+# ---------------------------------------------------------------------------
+# Environment
+# ---------------------------------------------------------------------------
+
+[activation.env]
+# Julia and TeX Live are installed outside the conda prefix (see the
+# `setup-julia` and `setup-texlive` tasks), so put them on PATH for every task
+# and for `pixi shell`. TeX Live names its binary directory after the platform
+# and this field takes no globs, so both Linux names are listed; whichever one
+# does not exist costs nothing on PATH.
+PATH = "$PIXI_PROJECT_ROOT/.tools/julia/bin:$PIXI_PROJECT_ROOT/.tools/texlive/bin/aarch64-linux:$PIXI_PROJECT_ROOT/.tools/texlive/bin/x86_64-linux:$PATH"
+
+# Keep Julia's package depot inside the workspace. Without this, `pixi run
+# simulate` would write into `~/.julia` and quietly share state with whatever
+# else on the machine uses Julia.
+JULIA_DEPOT_PATH = "$PIXI_PROJECT_ROOT/.tools/julia-depot"
+
+# Several benchmarks fit guides in parallel via `parallel::mclapply`. Left
+# unset, the BLAS underneath R also threads, and the two multiply into
+# oversubscription that makes runtimes uncomparable between machines.
+OMP_NUM_THREADS = "1"
+OPENBLAS_NUM_THREADS = "1"

@@ -1,9 +1,41 @@
 #!/usr/bin/env Rscript
 
 # Reproducible demonstration of beta-binomial regression for a continuous
-# sample-level phenotype.  Run from the repository root:
+# sample-level phenotype.
 #
-#   Rscript examples/simulation.R
+# The one self-contained simulation in the repository: it generates its own
+# data, so unlike the CRISPulator benchmarks it needs neither a simulated
+# screen nor a downloaded one. That makes it the script to run first when
+# checking that an installation works end to end -- it exercises the
+# regression, the guide-to-gene step, and the external MAGeCK-MLE call in
+# about a minute.
+#
+# It is also the cleanest statement of what BARCS is for. Counts are drawn
+# from the model the method assumes -- a logit-linear dose effect, batch
+# offsets, beta-binomial overdispersion with a known rho -- so the truth is
+# known exactly and three estimators can be compared on it:
+#
+#   naive binomial z     ignores overdispersion. Included to show what it
+#                        costs: its type I error at 0.05 runs above 0.8, so
+#                        nearly every "discovery" is noise. This is the
+#                        failure BARCS exists to prevent.
+#   beta-binomial t      BARCS itself.
+#   official MAGeCK-MLE  the external reference, run on the identical
+#                        continuous design rather than a dichotomized one.
+#
+# Because the data are drawn from BARCS's own assumptions, this is a check
+# that the implementation is correct -- not evidence that it wins on real
+# screens. For that, see the CRISPulator and real-data benchmarks listed in
+# `docs/repository-map.md`.
+#
+# Reported: type I error on null genes, power, discoveries and empirical FDR
+# at a 0.05 threshold, effect RMSE, and 95% interval coverage. Coverage is the
+# one to watch -- it is where the naive model's failure becomes unmistakable.
+#
+#     Rscript examples/simulation.R
+#
+# Writes `results/simulation_summary.csv` and
+# `figures/simulation_diagnostics.pdf`.
 
 source(file.path("R", "bbreg.R"))
 source(file.path("R", "method_palette.R"))
@@ -77,7 +109,9 @@ bb_result <- bb_screen(
 )
 
 # Run the official MAGeCK-MLE executable on the identical continuous design.
-mageck_executable <- file.path(".venv", "bin", "mageck")
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_check_version()
 mageck_dir <- file.path("results", "simulation_mageck")
 dir.create(mageck_dir, recursive = TRUE, showWarnings = FALSE)
 mageck_count_path <- file.path(mageck_dir, "counts.tsv")
@@ -102,11 +136,8 @@ write.table(
   mageck_design, mageck_design_path,
   sep = "\t", quote = FALSE, row.names = FALSE
 )
-if (!file.exists(mageck_executable)) {
-  stop("Official MAGeCK is required at `.venv/bin/mageck`.", call. = FALSE)
-}
 mageck_status <- system2(
-  mageck_executable,
+  mageck,
   c(
     "mle",
     "-k", mageck_count_path,

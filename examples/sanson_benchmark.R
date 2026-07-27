@@ -3,6 +3,32 @@
 # Independent biological benchmark using the Sanson A375 screen bundled with
 # CB2. Essential and nonessential reference genes define an observable target:
 # a better ranking should separate the two classes more accurately.
+#
+# This is the closest thing to ground truth a real screen offers. Core
+# essential genes should drop out of a proliferation screen and reference
+# nonessential genes should not, in any cell line, so the two curated sets
+# stand in for the labels a simulation would hand you. That makes this the
+# check on whether the simulation results transfer: CRISPulator screens are
+# generated under assumptions not far from the ones BARCS makes, and a method
+# can look good there for the wrong reason.
+#
+# The screen is binary -- terminal versus plasmid -- so it is a special case
+# of the regression rather than a continuous-phenotype benchmark. It earns its
+# place by being a gold standard, not by exercising the general design.
+#
+# The analysis is run twice, with and without MAGeCK's official piecewise
+# copy-number correction. A375 is aneuploid, and cutting in an amplified
+# region kills cells through DNA damage regardless of which gene was hit, so
+# copy number produces gene-level "essentiality" that is really a cutting
+# artifact. Running both ways separates a method's ranking from the CNV bias
+# it inherits, and `results/sanson_benchmark/cnv_bias_diagnostic.csv` records
+# how much of each method's signal was that artifact.
+#
+#     Rscript examples/sanson_benchmark.R
+#
+# Needs no download: the screen ships as an .rda inside the CB2 submodule.
+# The copy-number profile is committed at
+# `data/derived/A375_DepMap19Q3_CNV.tsv`, extracted from DepMap 19Q3.
 
 source(file.path("R", "bbreg.R"))
 source(file.path("R", "method_palette.R"))
@@ -94,18 +120,18 @@ write.table(
   mageck_design_path,
   sep = "\t", quote = FALSE, row.names = FALSE
 )
-mageck_executable <- file.path(".venv", "bin", "mageck")
-mageck_python <- file.path(".venv", "bin", "python")
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_py <- mageck_python()
+mageck_check_version()
 mageck_compat <- file.path("scripts", "mageck_compat.py")
 mageck_cnv_correct <- file.path("scripts", "mageck_cnv_correct.py")
-if (!all(file.exists(
-  mageck_executable, mageck_python, mageck_compat, mageck_cnv_correct
-))) {
-  stop("Official MAGeCK is required at `.venv/bin/mageck`.", call. = FALSE)
+if (!all(file.exists(mageck_compat, mageck_cnv_correct))) {
+  stop("The MAGeCK helper scripts are missing from `scripts/`.", call. = FALSE)
 }
 
 bb_cnv_status <- system2(
-  mageck_python,
+  mageck_py,
   c(
     mageck_cnv_correct,
     "--effects", bb_effect_path,
@@ -127,7 +153,7 @@ bb_gene$cnv_score <- -sign(bb_gene$cnv_corrected_estimate) *
   -log10(pmax(bb_gene$p_value, .Machine$double.xmin))
 
 status <- system2(
-  mageck_executable,
+  mageck,
   c(
     "mle",
     "-k", mageck_count_path,
@@ -142,7 +168,7 @@ if (status != 0 || !file.exists(mageck_gene_path)) {
   stop("Official MAGeCK test analysis failed.", call. = FALSE)
 }
 cnv_status <- system2(
-  mageck_python,
+  mageck_py,
   c(
     mageck_compat,
     "mle",

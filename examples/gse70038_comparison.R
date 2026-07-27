@@ -2,7 +2,22 @@
 
 # Head-to-head analysis of GEO GSE70038.
 #
-# The design follows Table 5 / Box 3 of the MAGeCKFlute protocol:
+# This is the backward-compatibility check run on real data. The screen is
+# terminal-versus-initial, which is exactly the two-group question original
+# CB2 was built for, so it is a special case of the regression rather than a
+# continuous-phenotype benchmark. Its value is that it is a case where BARCS
+# must not be interesting: if generalizing the design matrix had quietly
+# changed the answer to the simple question, this is where it would show.
+#
+# Two things make it worth the compute. There is published biology to check
+# the calls against, and the MAGeCKFlute protocol specifies the design matrix
+# explicitly, so MAGeCK-MLE can be run on a design that is matched rather than
+# approximated. Design-matched is a stronger comparison than same-data: it
+# removes the usual objection that a difference in results came from a
+# difference in how the experiment was encoded.
+#
+# All 64,747 guides are fitted, with no abundance or variance prefilter. The
+# design follows Table 5 / Box 3 of the MAGeCKFlute protocol:
 # every sample has an initial-condition intercept, Day 0 samples have no
 # additional indicator, and each terminal sample has one binary cell-line
 # condition. This script fits beta-binomial regression to all guides, combines
@@ -78,12 +93,13 @@ if (!file.exists(mageck_count_path)) {
   )
 }
 
-mageck_executable <- file.path(".venv", "bin", "mageck")
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable(required = FALSE)
 mageck_prefix <- file.path(result_dir, "mageck")
 mageck_gene_path <- paste0(mageck_prefix, ".gene_summary.txt")
-if (file.exists(mageck_executable) && !file.exists(mageck_gene_path)) {
+if (file.exists(mageck) && !file.exists(mageck_gene_path)) {
   status <- system2(
-    mageck_executable,
+    mageck,
     c(
       "mle",
       "-k", mageck_count_path,
@@ -100,8 +116,8 @@ if (file.exists(mageck_executable) && !file.exists(mageck_gene_path)) {
 }
 if (!file.exists(mageck_gene_path)) {
   stop(
-    "MAGeCK-MLE output is unavailable. Install the official executable at ",
-    "`.venv/bin/mageck` and rerun this script.",
+    "MAGeCK-MLE output is unavailable. Check the toolchain with ",
+    "`pixi run doctor` and rerun this script.",
     call. = FALSE
   )
 }

@@ -177,14 +177,14 @@ bb_gene_path <- file.path(
 )
 write.csv(bb_gene, bb_gene_path, row.names = FALSE)
 
-mageck_executable <- file.path(".venv", "bin", "mageck")
-mageck_python <- file.path(".venv", "bin", "python")
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_py <- mageck_python()
+mageck_check_version()
 mageck_compat <- file.path("scripts", "mageck_compat.py")
 mageck_cnv_correct <- file.path("scripts", "mageck_cnv_correct.py")
-if (!all(file.exists(c(
-  mageck_executable, mageck_python, mageck_compat, mageck_cnv_correct
-)))) {
-  stop("Official MAGeCK 0.5.9.5 is required in `.venv`.", call. = FALSE)
+if (!all(file.exists(c(mageck_compat, mageck_cnv_correct)))) {
+  stop("The MAGeCK helper scripts are missing from `scripts/`.", call. = FALSE)
 }
 
 cnv_path <- file.path("data", "derived", "HT29_DepMap20Q2_CNV.tsv")
@@ -209,7 +209,7 @@ mageck_arguments <- c(
 if (!file.exists(mageck_gene_path) ||
     identical(Sys.getenv("RERUN_MAGECK"), "1")) {
   status <- system2(
-    mageck_executable,
+    mageck,
     c(mageck_arguments, "-n", mageck_prefix)
   )
   if (status != 0 || !file.exists(mageck_gene_path)) {
@@ -219,7 +219,7 @@ if (!file.exists(mageck_gene_path) ||
 if (!file.exists(mageck_cnv_gene_path) ||
     identical(Sys.getenv("RERUN_MAGECK"), "1")) {
   status <- system2(
-    mageck_python,
+    mageck_py,
     c(
       mageck_compat,
       mageck_arguments,
@@ -247,7 +247,7 @@ write.table(
   bb_effect_path, sep = "\t", quote = FALSE, row.names = FALSE
 )
 status <- system2(
-  mageck_python,
+  mageck_py,
   c(
     mageck_cnv_correct,
     "--effects", bb_effect_path,

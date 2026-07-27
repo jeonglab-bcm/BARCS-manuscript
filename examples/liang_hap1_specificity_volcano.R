@@ -4,6 +4,32 @@
 # plus side-by-side volcano plots. BARCS, official MAGeCK-MLE, edgeR-QL,
 # DESeq2, and limma-voom use the same rounded normalized/ComBat-corrected
 # pseudo-count matrix and the same replicate/day design.
+#
+# Every other real-data benchmark here measures whether a method finds the
+# genes it should. This one measures whether it stays quiet when it should,
+# which is the failure mode that costs a screen the most: a false hit is
+# followed up at bench cost, and nothing in the screen itself reveals the
+# error.
+#
+# HAP1 supplies null controls, so the fraction of them called at a given
+# threshold is a direct false-positive rate rather than an estimate. Sweeping
+# the threshold turns that into a curve, and the curve is the honest way to
+# compare methods whose p-values are on different scales -- comparing them at
+# one arbitrary cutoff would mostly compare their calibration.
+#
+# The volcano panels beside it exist so the curve can be interpreted. Two
+# methods can share a false-positive rate and get there differently, one by
+# shrinking everything toward the middle and one by being genuinely
+# discriminating, and only the volcano shows which.
+#
+# All five methods are handed the identical matrix and design. This is
+# deliberate and it is a limitation: the input is Liang's already normalized,
+# ComBat-corrected, rounded pseudo-counts, not raw counts, so the count models
+# are being run outside the input they were designed for. It equalizes
+# preprocessing at the cost of flattering none of them.
+#
+#     Rscript examples/liang_cas13_benchmark.R    # writes the scores read here
+#     Rscript examples/liang_hap1_specificity_volcano.R
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))

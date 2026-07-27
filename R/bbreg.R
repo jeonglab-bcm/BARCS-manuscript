@@ -60,6 +60,17 @@
   chol2inv(chol(a))
 }
 
+# Weighted least squares, the inner step of the IRLS loop.
+#
+# Both helpers below look for an `*_cpp` function first. Those are the
+# RcppArmadillo kernels in the CB2 package: when this file is sourced
+# alongside a loaded CB2 they are found and used, and when it is sourced on
+# its own -- which is how the benchmark scripts run it, so a reviewer can read
+# a benchmark without installing anything -- the R fallback runs instead.
+#
+# The two paths must stay numerically identical, since results committed to
+# this repository may have been produced under either. `tests/run_tests.R`
+# covers the R path; the package's own suite covers the C++ one.
 .bb_wls_system <- function(x, weight, response) {
   if (exists("bb_wls_system_cpp", mode = "function", inherits = TRUE)) {
     return(bb_wls_system_cpp(x, weight, response))
@@ -576,6 +587,33 @@ bb_calibrate_controls <- function(result, control, alpha = 0.05,
 #' @param x One positive number.
 #' @return The value `y` with `trigamma(y)` equal to `x`, or `Inf`.
 #' @keywords internal
+# Solve trigamma(y) = x for y.
+#
+# This is the step that turns an observed spread of log-dispersions into a
+# prior degrees of freedom. Smyth's (2004) scaled-F moment estimator gives the
+# variance of the log guide dispersions about the fitted trend; under the
+# model that variance equals trigamma(prior_df / 2) plus a known term, so
+# recovering prior_df means inverting trigamma. There is no closed form, hence
+# this. It mirrors `limma::trigammaInverse`.
+#
+# Newton's method, but on 1/trigamma rather than on trigamma itself. Because
+# trigamma is convex and decreasing, iterating on the reciprocal converges
+# monotonically from the starting value below, which is what makes a fixed
+# 50-iteration cap safe: it is a bound that is never reached in practice, not
+# a tolerance.
+#
+# The three early returns are the boundaries where the iteration is either
+# unnecessary or numerically unhelpful:
+#
+#   x <= 0 or non-finite   No solution -- trigamma is strictly positive. Inf
+#                          means "infinite prior df", which the caller reads
+#                          as complete shrinkage to the trend. This is the
+#                          right answer for a screen whose guide dispersions
+#                          show no more spread than sampling alone explains.
+#   x > 1e7                trigamma(y) -> 1/y^2 as y -> 0, so y ~ 1/sqrt(x).
+#   x < 1e-6               trigamma(y) -> 1/y as y -> Inf, so y ~ 1/x. Here
+#                          the Newton step would difference two nearly equal
+#                          quantities and lose most of its precision.
 .bb_trigamma_inverse <- function(x) {
   if (!is.finite(x) || x <= 0) {
     return(Inf)
@@ -586,9 +624,13 @@ bb_calibrate_controls <- function(result, control, alpha = 0.05,
   if (x < 1e-6) {
     return(1 / x)
   }
+  # Starting value chosen to sit below the root, so the monotone convergence
+  # above applies.
   y <- 0.5 + 1 / x
   for (iteration in seq_len(50L)) {
     tri <- trigamma(y)
+    # Newton step for the reciprocal form; psigamma(y, deriv = 2) is
+    # trigamma'(y), the tetragamma function.
     step <- tri * (1 - tri / x) / psigamma(y, deriv = 2L)
     y <- y + step
     if (abs(step / y) < 1e-8) {

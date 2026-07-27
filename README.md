@@ -79,98 +79,163 @@ commits the updated submodule pointer. See
 
 ## Contents
 
-- `R/bbreg.R`: dependency-free R implementation for one guide, contrasts,
-  guide-by-guide screens, historical signed-score aggregation, exchangeable
-  normal guide-beta inference, random-effects guide partial pooling, and
-  empirical-Bayes heterogeneity moderation.
-- `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
-  low 25%, high 25%, overlapping 0--100% bulk, and input samples.
-- `examples/crispulator_facs_benchmark.R`: one-seed comparison of
-  BARCS-original, BARCS-NORM, BARCS-partial, and BARCS-EB using one shared
-  set of guide-level fits.
-- `examples/crispulator_facs_repeated_benchmark.R`: the same four-method
-  comparison over five seeds, MOI, guide quality, gene count, and replicate
-  count.
-- `examples/crispulator_facs_external_head_to_head.R`: one-evaluator
-  comparison with official MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom,
-  including result and input hashes.
-- `examples/crispulator_facs_f1_threshold_curves.R`: standard gene-level F1,
-  recall, precision, and realized-FDP curves at five nominal FDR thresholds.
-- `docs/barcs-gene-methods.md`: equations, numerical interpretation,
-  calibration, and diagnostics for the four guide-to-gene statistics.
-- `examples/cb2_generalization_proof.R`: numerical verification of the legacy
-  GLS representation and a local-equivalence illustration for the logit
-  statistic.
-- `examples/cb2_generalization_walkthrough.R`: six code-first examples,
-  including hand-checkable numbers, 1,000 randomized identity checks, original
-  `fit_ab()` counts, the finite-sample logit difference, local convergence, and
-  a continuous-dose fit.
-- `examples/barcs_input_output_examples.R`: printable two-group,
-  continuous-dose, and dose-plus-batch inputs with their exact model outputs.
-- `examples/gse70038_comparison.R`: head-to-head analysis of all 64,747 guides
-  in GSE70038 using a Table-5-style design and official MAGeCK-MLE 0.5.9.5.
-- `examples/sanson_benchmark.R`: independent essential-versus-nonessential-gene
-  benchmark on the Sanson A375 Brunello screen bundled with CB2, with and
-  without official MAGeCK piecewise CNV correction.
-- `examples/chronos_tzelepis_benchmark.R`: genuinely longitudinal HT-29
-  benchmark (pDNA plus days 7, 10, 13, 16, 19, 22, and 25) against an official
-  continuous-time MAGeCK-MLE fit and the deposited Chronos, MAGeCK, and BAGEL2
-  results.
-- `examples/waterbear_facs_benchmark.R`: ordered four-bin GSE242880 IL2RA
-  comparison of the same four BARCS gene statistics against the 26
-  directionally validated genes and the selected 33-gene follow-up panel.
-- `examples/waterbear_facs_external_head_to_head.R`: comparison of the four
-  BARCS methods with rerun MAGeCK-MLE/MAGeCK test and the published
-  Waterbear/MAUDE recovery totals.
-- `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
-  processed-count sensitivity analysis using Liang's deposited
-  RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
-  BARCS, edgeR-QL, DESeq2, and limma-voom on the same normalized
-  day-0/day-14 values.
-- `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
-  across p-value thresholds and matched BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
-  and limma-voom volcano plots using the processed pseudo-count inputs.
-- `scripts/prepare_liang_cas13.R`,
-  `scripts/count_liang_cas13_run.sh`, and
-  `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
-  tables, stream the 20 endpoint FASTQs through the published anchor/Bowtie
-  rules without retaining reads, and submit restartable counting jobs.
-- `data/derived/A375_DepMap19Q3_CNV.tsv`: gene-level A375 copy-number profile
-  extracted from DepMap Public 19Q3 (ACH-000219).
-- `data/derived/HT29_DepMap20Q2_CNV.tsv`: gene-level HT-29 copy-number profile
-  extracted from DepMap Public 20Q2 (ACH-000552).
-- `scripts/mageck_compat.py` and `scripts/mageck_cnv_correct.py`: runtime
-  compatibility and direct access to MAGeCK 0.5.9.5's official CNV normalizer.
-- `CB2/`: clone of `jeonglab-bcm/CB2` with the additive `bbreg()`,
-  `bb_contrast()`, `bb_screen()`, and negative-control calibration API,
-  RcppArmadillo weighted-IRLS kernels, package tests, documentation, and a
+The repository holds one method and the evidence for it. Almost every file
+belongs to one of four questions, and
+[`docs/repository-map.md`](docs/repository-map.md) is the full guide — what
+each script asks, what it reads, what it writes, and which manuscript claim it
+supports. Start there if you are returning to the project after time away.
+
+**The method**
+
+- `CB2/`: the R package, as a git submodule. This is the shipped artifact —
+  the additive `bbreg()`, `bb_contrast()`, `bb_screen()` API, negative-control
+  calibration, RcppArmadillo weighted-IRLS kernels, tests, and a
   continuous-phenotype vignette.
-- `tests/run_tests.R`: base-R regression and input-validation tests.
-- `main.tex`: derivation, interpretation, simulation results, and limitations.
-- `output/pdf/beta-binomial-regression-continuous-phenotypes.pdf`: rendered
+- `R/bbreg.R`: a dependency-free copy of the regression layer, so a benchmark
+  can be read and run without installing the package. Covers single-guide
+  fits, contrasts, guide-by-guide screens, dispersion moderation, and the four
+  guide-to-gene statistics.
+- `R/mageck.R`: locates the external MAGeCK installation.
+- `R/method_palette.R`: one colour per method, shared by every figure.
+- `tests/run_tests.R`: regression and input-validation tests for the above.
+
+**Does it reduce to original CB² where the two overlap?**
+
+- `examples/cb2_generalization_proof.R`: the legacy GLS representation checked
+  to machine precision, plus the local-equivalence illustration.
+- `examples/cb2_generalization_walkthrough.R`: the same argument in six worked
+  examples, including 1,000 randomized identity checks and the case where the
+  two estimators genuinely differ.
+- `examples/barcs_input_output_examples.R`: input table → call → output table,
+  for four designs.
+
+**Is it correct where the truth is known?**
+
+- `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
+  low 25%, high 25%, overlapping 0–100% bulk, and input samples.
+- `examples/simulation.R`: self-contained end-to-end demonstration on a
+  continuous dose design. Needs no simulated input; the quickest check that an
+  installation works.
+- `examples/crispulator_facs_benchmark.R`: the four guide-to-gene statistics on
+  one screen, from one shared set of guide-level fits.
+- `examples/crispulator_facs_repeated_benchmark.R`: the same comparison across
+  five seeds, MOI, guide quality, gene count, and replicate count.
+- `examples/crispulator_facs_moi_10k_benchmark.R`: the headline result — 10,000
+  genes against MAGeCK-MLE and CRISPhieRmix, FDR scanned over thirteen cutoffs.
+- `examples/crispulator_facs_improved_barcs.R` and `..._holdout.R`: whether
+  dispersion moderation helps, on development and then on fresh splits.
+- `examples/crispulator_facs_miss_cases.R`: which genes the comparators call
+  that BARCS misses, and how many are real.
+- `examples/crispulator_facs_mageck_permutation_resolution.R`: measures
+  MAGeCK-MLE's permutation floor rather than caveating it.
+- `examples/simcrispr_interaction_benchmark.R`: factorial screen where the
+  estimand is an interaction coefficient, and what the denominator costs.
+- `examples/crispulator_facs_external_head_to_head.R` and
+  `examples/crispulator_facs_f1_threshold_curves.R`, each with an
+  `_aggregate.R` partner: fitting is separated from the scope rule, so
+  changing what counts as in scope is a rerun of stage two rather than a refit.
+
+**Does it hold up on real screens?**
+
+- `examples/sanson_benchmark.R`: essential vs nonessential genes on the Sanson
+  A375 Brunello screen, with and without MAGeCK's official CNV correction.
+- `examples/chronos_tzelepis_benchmark.R`: genuinely longitudinal HT-29 (pDNA
+  plus seven timepoints) against a continuous-time MAGeCK-MLE fit and the
+  deposited Chronos, MAGeCK, and BAGEL2 results.
+- `examples/gse70038_comparison.R`: all 64,747 guides, Table-5-style design,
+  design-matched MAGeCK-MLE. The backward-compatibility check on real data.
+- `examples/waterbear_facs_benchmark.R` and
+  `examples/waterbear_facs_external_head_to_head.R`: ordered four-bin GSE242880
+  IL2RA screen against the validated gene panel, then against rerun MAGeCK and
+  the published Waterbear/MAUDE totals.
+- `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
+  sensitivity analysis against deposited RobustRankAggreg results.
+- `examples/liang_hap1_specificity_volcano.R`: null-control specificity across
+  p-value thresholds — a false-positive check rather than a power check.
+
+**Supporting data and tooling**
+
+- `scripts/prepare_liang_cas13.R`, `scripts/count_liang_cas13_run.sh`,
+  `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
+  tables and stream the 20 endpoint FASTQs through the published
+  anchor/Bowtie rules without retaining reads.
+- `scripts/mageck_compat.py` and `scripts/mageck_cnv_correct.py`: runtime
+  compatibility shim and direct access to MAGeCK 0.5.9.5's CNV normalizer.
+- `scripts/setup_julia.sh`, `scripts/setup_texlive.sh`,
+  `scripts/setup_r_github.R`, `scripts/check_tools.sh`: the toolchain pieces
+  pixi cannot install as conda packages, plus the environment check.
+- `data/derived/A375_DepMap19Q3_CNV.tsv` and `HT29_DepMap20Q2_CNV.tsv`:
+  gene-level copy-number profiles from DepMap 19Q3 (ACH-000219) and 20Q2
+  (ACH-000552).
+
+**Documentation and manuscript**
+
+- `docs/repository-map.md`: what everything above is for.
+- `docs/barcs-gene-methods.md`: equations, calibration, and diagnostics for the
+  four guide-to-gene statistics.
+- `docs/barcs-external-method-comparison.md`: the findings, including the ones
+  that went against BARCS.
+- `docs/barcs-input-output-examples.md`,
+  `docs/cb2-generalization-high-school-proof.md`, and
+  `docs/cb2-generalization-computational-walkthrough.md`: the gentler entry
+  points.
+- `main.tex` with `sections/`: derivation, results, and limitations.
+- `output/pdf/beta-binomial-regression-continuous-phenotypes.pdf`: the built
   manuscript.
 
 ## Reproduce
 
-From the repository root:
+The analysis spans four toolchains — R for the method and benchmarks, Julia
+for the CRISPulator simulations, Python for MAGeCK, and TeX for the manuscript.
+They are declared together in [`pixi.toml`](pixi.toml), so reproducing a result
+does not mean reconstructing someone's machine:
 
 ```sh
-Rscript tests/run_tests.R
-Rscript examples/cb2_generalization_proof.R
-Rscript examples/cb2_generalization_walkthrough.R
-Rscript examples/barcs_input_output_examples.R
-julia --project=julia -e 'using Pkg; Pkg.instantiate()'
-julia --project=julia julia/simulate_crispulator_facs.jl
-Rscript examples/crispulator_facs_repeated_benchmark.R
-Rscript examples/crispulator_facs_external_head_to_head.R
-Rscript examples/crispulator_facs_f1_threshold_curves.R
-Rscript examples/waterbear_facs_benchmark.R
-Rscript examples/waterbear_facs_external_head_to_head.R
-Rscript examples/liang_cas13_benchmark.R
-Rscript examples/liang_hap1_specificity_volcano.R
-Rscript -e 'devtools::test("CB2")'
-latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+curl -fsSL https://pixi.sh/install.sh | bash   # once, if pixi is missing
+git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS.git
+cd BARCS
+
+pixi run setup      # R packages, Julia, TeX Live, and the CB2 submodule
+pixi run doctor     # reports which toolchains this machine can run
 ```
+
+`pixi run doctor` prints one line per capability and is the fastest way to see
+what is missing. See <https://pixi.prefix.dev/latest/> for pixi itself.
+
+Then run the pieces you need. `pixi task list` shows them all:
+
+```sh
+pixi run test              # the analysis-side test suite
+pixi run proof             # backward compatibility with original CB2
+pixi run bench-facs-single # four-method comparison on the committed screen
+
+pixi run bench-genome-scale   # the headline 10,000-gene comparison
+pixi run bench-interaction    # factorial screen, interaction coefficient
+pixi run bench-sanson         # essential vs nonessential gold standard
+pixi run bench-waterbear      # ordered four-bin FACS screen
+
+pixi run manuscript        # build main.pdf
+pixi run test-package      # the CB2 package's own suite
+```
+
+Every task is a plain command, so anything can also be run directly inside
+`pixi shell` — for example
+`Rscript examples/crispulator_facs_repeated_benchmark.R`.
+
+The baseline CRISPulator screen is committed, so the single-screen benchmarks
+run straight from a clone. The grid and genome-scale benchmarks call Julia
+themselves; each script's header says what it needs, and
+[`docs/repository-map.md`](docs/repository-map.md) tabulates it.
+
+MAGeCK is located at run time by [`R/mageck.R`](R/mageck.R), which prefers
+`$MAGECK`, then whatever is on `PATH`. Pinning matters: MAGeCK's gene p-value
+is a permutation tail probability, so a version other than the pinned 0.5.9.5
+can move results, and the scripts warn when they see one.
+
+Without pixi, the same work needs R ≥ 4.4 with the Bioconductor and CRAN
+packages listed in `pixi.toml`, Julia 1.12.6, MAGeCK 0.5.9.5, and a TeX
+installation that includes `cm-super` — see the warning in
+[`DEVELOPMENT.md`](DEVELOPMENT.md) about what happens without it.
 
 This branch intentionally uses only the CRISPulator FACS and Waterbear FACS
 workflows to compare the four BARCS guide-to-gene methods. Other historical

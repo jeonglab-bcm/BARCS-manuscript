@@ -2,6 +2,35 @@
 
 # F1 and calibration curves across nominal gene-FDR thresholds for the eight
 # methods in the CRISPulator low + bulk + high comparison.
+#
+# Reporting F1 at a single cutoff invites a method to win by being
+# miscalibrated. A method whose realized error rate runs well above what it
+# advertises simply calls more genes, and at a fixed nominal FDR that buys
+# recall and therefore F1 -- without the method being any better at
+# distinguishing active genes from inactive ones.
+#
+# So the comparison is run across a range of nominal thresholds and two things
+# are reported side by side: F1, and the realized false-discovery proportion
+# against the requested one. Reading them together is what separates "detects
+# more" from "asks for less". It is also what shows the F1 ordering here is
+# fragile -- the leader changes with the cutoff -- which is stated in the
+# manuscript rather than resolved in a method's favour.
+#
+# This is stage one of two. It fits and scores every method on every run and
+# writes per-run rows; `crispulator_facs_f1_threshold_curves_aggregate.R`
+# applies the scope rule and builds the summaries and the figure. The split
+# means a change to what counts as in scope is a cheap rerun of stage two
+# rather than a full refit.
+#
+# Reads the per-run screens written by the parameter-grid benchmark, so that
+# has to have run first.
+#
+#     pixi run bench-facs-grid
+#     pixi run bench-f1-curves
+#     pixi run bench-f1-curves-aggregate
+#
+# The genome-scale version of this scan, over thirteen log-spaced cutoffs from
+# 1e-6 to 0.20, lives in `examples/crispulator_facs_moi_10k_benchmark.R`.
 
 options(stringsAsFactors = FALSE)
 analysis_protocol <- "crispulator-f1-threshold-curves-v1"

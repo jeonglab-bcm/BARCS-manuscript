@@ -10,6 +10,26 @@
 #
 # The benchmark deliberately excludes unrelated count methods. Its purpose is
 # to isolate the consequence of changing only the guide-to-gene statistic.
+#
+# That exclusion is the whole design. Adding MAGeCK or edgeR here would change
+# two things at once -- the inference engine and the pooling rule -- and any
+# difference could be attributed to either. Handing all four statistics the
+# identical guide-level fits means the only thing that varies is how guide
+# evidence becomes a gene call, so a difference in the metrics has exactly one
+# possible cause. The external comparisons are run separately, in the
+# `*_head_to_head` and `*_moi_10k_*` scripts.
+#
+# This runs on one screen, which is enough to see a difference and not enough
+# to trust it; `examples/crispulator_facs_repeated_benchmark.R` repeats the
+# same comparison across seeds and a parameter grid.
+#
+# Runs from a fresh clone: the baseline screen it reads is committed under
+# `data/derived/crispulator_facs/`, so no simulation step is needed.
+#
+#     pixi run bench-facs-single
+#
+# CRISPULATOR_DATA_DIR and the other environment variables read below let the
+# script point at an alternative simulated screen without editing it.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))

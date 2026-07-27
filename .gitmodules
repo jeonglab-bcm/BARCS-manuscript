@@ -1,4 +1,4 @@
 [submodule "CB2"]
 	path = CB2
 	url = https://github.com/jeonglab-bcm/CB2.git
-	branch = feature/cb2-reg
+	branch = hj/manuscript-audit

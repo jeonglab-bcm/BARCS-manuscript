@@ -32,7 +32,7 @@
 # for, because MAGeCK-MLE drops genes its own filters reject and an unequal
 # gene universe would make the metrics incomparable.
 #
-# MAGeCK-MLE uses the official 0.5.9.5 binary at `.venv/bin/mageck`, matching
+# MAGeCK-MLE uses the official 0.5.9.5 binary located by `R/mageck.R`, matching
 # the rest of the repository. Its marker score is affinely mapped to zero-one
 # because the MAGeCK initializer requires a reference design row whose
 # non-intercept entries are all zero.
@@ -110,14 +110,10 @@ suppressPackageStartupMessages({
 })
 source(file.path("R", "bbreg.R"))
 
-mageck <- file.path(".venv", "bin", "mageck")
-if (!file.exists(mageck)) {
-  stop("Official MAGeCK 0.5.9.5 is required at `.venv/bin/mageck`.",
-       call. = FALSE)
-}
-mageck_environment <- paste0(
-  "PATH=", normalizePath(dirname(mageck)), ":", Sys.getenv("PATH")
-)
+source(file.path("R", "mageck.R"))
+mageck <- mageck_executable()
+mageck_check_version()
+mageck_environment <- mageck_path_env()
 
 auroc <- function(truth, score) {
   ranks <- rank(score, ties.method = "average")
