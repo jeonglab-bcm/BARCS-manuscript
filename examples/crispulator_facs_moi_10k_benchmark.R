@@ -662,7 +662,18 @@ method_pch <- c(16, 17, 15, 8, 4, 3)
 names(method_pch) <- names(method_colours)
 curve_methods <- names(method_colours)
 x_positions <- -log10(thresholds)
-x_labels <- format(thresholds, trim = TRUE, scientific = FALSE)
+
+# Label the decades as powers of ten rather than as strings of zeros; the
+# intermediate 3x thresholds get an unlabelled tick so the grid stays visible.
+labelled_thresholds <- c(0.20, 0.10, 0.01, 1e-3, 1e-4, 1e-5, 1e-6)
+x_labels <- as.expression(lapply(labelled_thresholds, function(value) {
+  exponent <- round(log10(value))
+  if (isTRUE(all.equal(value, 10^exponent)) && exponent <= -3) {
+    bquote(10^.(exponent))
+  } else {
+    format(value, trim = TRUE, scientific = FALSE)
+  }
+}))
 
 draw_curve <- function(moi, metric, title, ylim) {
   panel <- scan_summary[
@@ -676,7 +687,8 @@ draw_curve <- function(moi, metric, title, ylim) {
     ylab = if (metric == "f1") "F1 score" else "Realized FDP",
     main = title, bty = "l"
   )
-  axis(1, at = x_positions, labels = x_labels)
+  axis(1, at = x_positions, labels = FALSE, tcl = -0.25)
+  axis(1, at = -log10(labelled_thresholds), labels = x_labels)
   if (metric == "realized_fdp") {
     # Realized equals nominal: a method on this line reports what it delivers.
     lines(x_positions, thresholds, lty = 2, lwd = 1.5, col = "#333333")
