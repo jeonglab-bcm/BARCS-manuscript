@@ -1,0 +1,12 @@
+"analysis_protocol","control_scale","calls","true_positives","realized_fdp","recovered_missed_genes"
+"crispulator-miss-cases-v1",1,87,71,0.183908045977011,14
+"crispulator-miss-cases-v1",1.04,80,67,0.1625,12
+"crispulator-miss-cases-v1",1.08,71,61,0.140845070422535,6
+"crispulator-miss-cases-v1",1.12,69,60,0.130434782608696,5
+"crispulator-miss-cases-v1",1.16,67,60,0.104477611940299,5
+"crispulator-miss-cases-v1",1.2,62,57,0.0806451612903226,2
+"crispulator-miss-cases-v1",1.24,59,55,0.0677966101694915,0
+"crispulator-miss-cases-v1",1.28,58,55,0.0517241379310345,0
+"crispulator-miss-cases-v1",1.32,57,54,0.0526315789473684,0
+"crispulator-miss-cases-v1",1.36,54,53,0.0185185185185185,0
+"crispulator-miss-cases-v1",1.4,53,52,0.0188679245283019,0

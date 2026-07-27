@@ -320,6 +320,102 @@ stopifnot(
   ))
 )
 
+# ---- guide dispersion moderation --------------------------------------------
+
+assert_close(trigamma(.bb_trigamma_inverse(0.4)), 0.4, 1e-8,
+             "trigamma inverse must invert trigamma")
+assert_close(trigamma(.bb_trigamma_inverse(2.5)), 2.5, 1e-8,
+             "trigamma inverse must invert trigamma")
+stopifnot(is.infinite(.bb_trigamma_inverse(-1)))
+
+set.seed(9021)
+n_moderate <- 400L
+df_moderate <- 7L
+moderate_input <- data.frame(
+  guide = sprintf("g%04d", seq_len(n_moderate)),
+  gene = rep(sprintf("gene%03d", seq_len(n_moderate / 4L)), each = 4L),
+  estimate = rnorm(n_moderate, 0, 0.05),
+  df = df_moderate,
+  rho = 0,
+  mean_cpm = exp(rnorm(n_moderate, 6, 0.4)),
+  converged = TRUE
+)
+# True inflation is common; the per-guide estimate is a noisy chi-square draw.
+true_inflation <- 2
+moderate_input$pearson_null <- true_inflation *
+  rchisq(n_moderate, df = df_moderate)
+moderate_input$std_error <- 0.05 *
+  sqrt(pmax(1, moderate_input$pearson_null / df_moderate))
+moderate_input$t_value <- moderate_input$estimate / moderate_input$std_error
+moderate_input$p_value <- 2 * pt(-abs(moderate_input$t_value), df_moderate)
+
+moderated_guide <- bb_moderate_dispersion(
+  moderate_input, trend = FALSE, one_way = TRUE, borrow_df = FALSE
+)
+own_inflation <- moderate_input$pearson_null / df_moderate
+fitted_inflation <- pmax(1, own_inflation)
+stopifnot(
+  # Estimates are untouched; only the variance changes.
+  identical(moderated_guide$estimate, moderate_input$estimate),
+  # Shrinkage reduces the spread of the inflation estimates.
+  sd(moderated_guide$moderated_inflation) < sd(own_inflation),
+  attr(moderated_guide, "prior_df") > 0,
+  # The unmoderated columns are retained.
+  identical(moderated_guide$unmoderated_p_value, moderate_input$p_value),
+  # Conservative defaults: the reference df is unchanged, no guide's variance
+  # is lowered, and so no guide's p-value shrinks.
+  all(moderated_guide$df == df_moderate),
+  all(moderated_guide$moderated_inflation >= fitted_inflation - 1e-9),
+  all(moderated_guide$std_error >= moderate_input$std_error - 1e-9),
+  all(moderated_guide$p_value >= moderate_input$p_value - 1e-9)
+)
+
+# The default is textbook two-sided moderation: the reference df grows and the
+# variances concentrate on the truth.
+two_sided_moderation <- bb_moderate_dispersion(moderate_input, trend = FALSE)
+stopifnot(
+  length(unique(two_sided_moderation$df)) == 1L,
+  unique(two_sided_moderation$df) > df_moderate,
+  sd(two_sided_moderation$moderated_inflation) <
+    sd(moderated_guide$moderated_inflation)
+)
+assert_close(
+  median(two_sided_moderation$moderated_inflation), true_inflation, 0.25,
+  "moderated inflation must concentrate on the true common value"
+)
+
+# ---- qq-slope control calibration -------------------------------------------
+
+set.seed(4242)
+n_control <- 600L
+control_scale_truth <- 1.4
+calibration_input <- data.frame(
+  estimate = rnorm(n_control),
+  std_error = 1,
+  df = 12,
+  rho = 0
+)
+calibration_input$t_value <- control_scale_truth * rt(n_control, df = 12)
+calibration_input$p_value <- 2 * pt(-abs(calibration_input$t_value), 12)
+calibration_input$fdr <- p.adjust(calibration_input$p_value, method = "BH")
+qq_calibrated <- bb_calibrate_controls(
+  calibration_input, rep(TRUE, n_control), method = "qq_slope"
+)
+assert_close(
+  attr(qq_calibrated, "control_scale"), control_scale_truth, 0.12,
+  "qq-slope calibration must recover a known inflated null scale"
+)
+stopifnot(
+  # The floor at one still applies.
+  attr(
+    bb_calibrate_controls(
+      transform(calibration_input, t_value = rt(n_control, df = 12)),
+      rep(TRUE, n_control), method = "qq_slope"
+    ),
+    "control_scale"
+  ) >= 1
+)
+
 bad_response_failed <- inherits(
   try(bbreg(c(2, 3), c(1, 4), ~ 1, data.frame(x = 1:2)), silent = TRUE),
   "try-error"
@@ -337,5 +433,42 @@ bad_design_failed <- inherits(
   "try-error"
 )
 stopifnot(bad_response_failed, bad_design_failed)
+
+# Non-integer totals must fail loudly at the screen level. Without the guard
+# every guide fails to converge individually and `bb_screen()` reports a table
+# of NA rows, which reads as a modelling failure rather than a bad argument.
+# Size-factor normalization is the usual route to a fractional total.
+set.seed(909)
+guides_scaled <- 40L
+samples_scaled <- 6L
+counts_scaled <- matrix(
+  rpois(guides_scaled * samples_scaled, 300),
+  guides_scaled, samples_scaled,
+  dimnames = list(
+    sprintf("guide_%d", seq_len(guides_scaled)),
+    sprintf("sample_%d", seq_len(samples_scaled))
+  )
+)
+data_scaled <- data.frame(
+  sample = colnames(counts_scaled),
+  arm = rep(0:1, each = samples_scaled / 2)
+)
+fractional_totals_failed <- inherits(
+  try(
+    bb_screen(
+      counts = counts_scaled, totals = colSums(counts_scaled) + 0.5,
+      data = data_scaled, formula = ~arm, term = "arm",
+      guide = rownames(counts_scaled)
+    ),
+    silent = TRUE
+  ),
+  "try-error"
+)
+integer_totals <- bb_screen(
+  counts = counts_scaled, totals = colSums(counts_scaled),
+  data = data_scaled, formula = ~arm, term = "arm",
+  guide = rownames(counts_scaled)
+)
+stopifnot(fractional_totals_failed, all(integer_totals$converged))
 
 cat("All beta-binomial regression tests passed.\n")
