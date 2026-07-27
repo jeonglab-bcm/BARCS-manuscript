@@ -170,16 +170,15 @@ supports. Start there if you are returning to the project after time away.
 
 **The method in Python**
 
-- `python/barcs/`: a Python port of the guide-level regression -- `bbreg`,
-  `bb_contrast`, `bb_screen`, control calibration, and the `original`
-  guide-to-gene statistic. No R dependency. The later gene statistics and
-  dispersion moderation are deliberately not ported.
-- `python/tests/`: fits a shared fixture in both languages and requires them to
-  agree to eight significant figures.
+- `python/barcs/`: an rpy2 wrapper around `R/bbreg.R`. It reimplements nothing,
+  so there is one set of statistics and all ten public functions are reachable
+  from Python -- including the three later guide-to-gene statistics and
+  dispersion moderation.
+- `python/tests/`: pins the marshalling, and runs the whole pipeline against a
+  native `Rscript` over the same fixture, required to agree to 1e-12.
 - `python/notebooks/barcs_walkthrough.py`: an interactive marimo notebook, kept
   as plain Python so it diffs like source.
-- See [`python/README.md`](python/README.md) for the boundary of the port and
-  exactly how closely the two implementations agree.
+- See [`python/README.md`](python/README.md).
 
 **Documentation and manuscript**
 
@@ -230,7 +229,7 @@ pixi run bench-waterbear      # ordered four-bin FACS screen
 pixi run manuscript        # build main.pdf
 pixi run test-package      # the CB2 package's own suite
 
-pixi run test-python-vs-r  # check the Python port against R
+pixi run test-python       # the Python wrapper's tests
 pixi run notebook          # interactive marimo walkthrough
 ```
 

@@ -1,59 +1,62 @@
-"""Beta-binomial regression with t-based coefficient tests.
+r"""Beta-binomial regression with t-based coefficient tests.
 
-A Python port of the regression layer in ``R/bbreg.R``. It fits the mean model
+A thin rpy2 wrapper around ``R/bbreg.R``. Every function here calls straight
+into that file; nothing in this module reimplements any of its numerics. It
+fits the mean model
 
 .. math::
 
-    \\operatorname{logit}(\\mu_i) = x_i' \\beta
+    \operatorname{logit}(\mu_i) = x_i' \beta
 
 under the beta-binomial variance
 
 .. math::
 
-    \\operatorname{Var}(K_i) = n_i \\mu_i (1 - \\mu_i)
-                               \\{1 + (n_i - 1) \\rho\\}.
+    \operatorname{Var}(K_i) = n_i \mu_i (1 - \mu_i)
+                              \{1 + (n_i - 1) \rho\}.
 
-Coefficients come from feasible IRLS, ``rho`` from the Pearson estimating
-equation, and coefficient tests use a Student t reference on the residual
-degrees of freedom.
+Why a wrapper rather than a port
+---------------------------------
+An earlier version of this module was a from-scratch NumPy/SciPy
+reimplementation of ``R/bbreg.R``, kept in step with the original by a test
+suite that required the two to agree to eight significant figures. That is one
+more place for the two to drift, and it only covered five of the ten public
+functions below -- the ones judged worth reimplementing. This module instead
+sources ``R/bbreg.R`` once and calls its functions through rpy2, so there is
+exactly one implementation and every exported R function is available here,
+not just the ones a port happened to cover.
 
-Why a port rather than a wrapper
---------------------------------
-Calling R from Python would have kept one implementation, at the cost of
-making every Python user install R and the package. This is instead a
-standalone implementation with no R dependency at all -- but that only means
-something if it agrees with the original, so ``python/tests/`` checks the two
-against each other on shared fixtures and requires agreement to 1e-10.
-``pixi run test-python-vs-r`` runs that comparison.
+The cost is what the R implementation always cost: an R installation with
+Rcpp/RcppArmadillo. Both are already repository dependencies declared in
+``pixi.toml`` -- this module does not add a new requirement so much as stop
+pretending the Python side doesn't have one.
 
-Read the R file for the statistical reasoning; it is the reference text and is
-not repeated here. Comments below cover what is specific to reproducing it in
-Python, which is mostly places where a NumPy or SciPy default differs from
-R's.
+Read ``R/bbreg.R`` for the statistical reasoning; it is the reference text and
+is not repeated here. What lives in this module is the marshalling between
+pandas/NumPy and R: data frames, formulas, matrices, and the handful of named
+R attributes (such as ``bb_calibrate_controls``'s ``control_scale``) that get
+attached to the returned DataFrame's ``.attrs``.
 
-What is ported
---------------
-The guide-level inference path, end to end: :func:`bbreg`,
-:func:`bb_contrast`, :func:`bb_screen`, :func:`bb_calibrate_controls`, and the
-``original`` guide-to-gene statistic :func:`bb_gene_original`.
-
-Not ported: the exchangeable-normal, partial-pooling, and empirical-Bayes
-guide-to-gene statistics, and :func:`bb_moderate_dispersion`. Those are what
-the manuscript's later comparisons turn on, and every committed result
-involving them came from the R implementation. Use R for those rather than
-assuming this module covers them.
+What changed for callers
+-------------------------
+``bb_screen``'s ``min_total_count`` now defaults to R's ``10`` rather than the
+port's ``1`` -- the two were never supposed to disagree here, and now they
+cannot. ``bbreg``/``bb_screen`` no longer accept a pre-built design matrix in
+place of a formula string; R's formula machinery is now the only path, so
+pass ``"~ dose + batch"`` rather than an already-expanded matrix.
 """
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Sequence
 
 import numpy as np
 import pandas as pd
-from scipy import optimize, stats
-from scipy.special import expit
+import rpy2.robjects as robjects
+from rpy2.robjects import numpy2ri, pandas2ri
+from rpy2.robjects.conversion import localconverter
 
 __all__ = [
     "BBRegResult",
@@ -61,189 +64,133 @@ __all__ = [
     "bb_contrast",
     "bb_screen",
     "bb_calibrate_controls",
+    "bb_moderate_dispersion",
     "bb_gene_original",
+    "bb_gene_normal",
+    "bb_gene_consistency",
+    "bb_gene_partial_pool",
+    "bb_gene_eb_moderate",
     "benjamini_hochberg",
 ]
 
-# R's `.Machine$double.eps` and `double.xmin`.
-_DOUBLE_EPS = np.finfo(float).eps
-_DOUBLE_XMIN = np.finfo(float).tiny
+# Sourced once, into R's global environment, the first time this module is
+# imported. No CB2 package is loaded, so the C++ kernels in `R/bbreg.R` are
+# never found and the pure-R fallback runs -- the same reference path
+# `python/tests/reference_fit.R` exercises directly.
+_R_SCRIPT = Path(__file__).resolve().parents[2] / "R" / "bbreg.R"
+# Order matters, and pandas2ri must come last. Both converters claim R's
+# `data.frame`: numpy2ri turns one into a structured `recarray`, pandas2ri into
+# a DataFrame, and whichever is added later wins. Every function below returns
+# a data frame, so pandas has to be the one that does.
+_CONVERTER = robjects.default_converter + numpy2ri.converter + pandas2ri.converter
+with localconverter(_CONVERTER):
+    robjects.r["source"](str(_R_SCRIPT))
+_R = robjects.globalenv
 
 
-# ---------------------------------------------------------------------------
-# Small numerical helpers where R and NumPy defaults differ
-# ---------------------------------------------------------------------------
+def _r_call(name: str, *args: Any, **kwargs: Any) -> Any:
+    """Call one function sourced from ``R/bbreg.R``, converting both ways."""
+    with localconverter(_CONVERTER):
+        return _R[name](*args, **kwargs)
 
 
-def benjamini_hochberg(p_value: np.ndarray) -> np.ndarray:
-    """Benjamini-Hochberg adjusted p-values, matching ``p.adjust(method="BH")``.
+def _to_r(value: Any) -> Any:
+    """Python -> R, passing anything that is already an R object straight through."""
+    if isinstance(value, robjects.rinterface.Sexp):
+        return value
+    with localconverter(_CONVERTER):
+        return robjects.conversion.get_conversion().py2rpy(value)
 
-    Written out rather than taken from statsmodels for two reasons: it avoids a
-    dependency for twelve lines of arithmetic, and R's version propagates NA
-    while ranking against ``n`` = the number of *non-missing* p-values. A guide
-    that failed to converge must not shrink the multiple-testing correction for
-    the ones that did.
+
+def _r_call_raw(name: str, *args: Any, **kwargs: Any) -> Any:
+    """Call R, converting the arguments but returning the R object untouched.
+
+    :func:`bbreg` needs this. Its result is an R list whose fields are pulled
+    out one at a time by :meth:`BBRegResult._from_r`; if the return value were
+    converted automatically it would arrive as a plain Python container with no
+    ``.rx2`` to pull them out with.
     """
-    p_value = np.asarray(p_value, dtype=float)
-    out = np.full(p_value.shape, np.nan)
-    finite = np.isfinite(p_value)
-    n = int(finite.sum())
-    if n == 0:
-        return out
-
-    values = p_value[finite]
-    order = np.argsort(-values, kind="stable")  # decreasing, as R does
-    ranks = np.arange(n, 0, -1, dtype=float)
-    # Cumulative minimum of (n / i) * p over the decreasing order, clipped at 1.
-    adjusted = np.minimum.accumulate(np.minimum(n / ranks * values[order], 1.0))
-    restored = np.empty(n)
-    restored[order] = adjusted
-    out[finite] = restored
-    return out
-
-
-def _quantile_type8(x: np.ndarray, probs: np.ndarray) -> np.ndarray:
-    """R's ``quantile(type = 8)``.
-
-    NumPy's default is R's type 7. The control calibration in the R code asks
-    for type 8 explicitly -- the median-unbiased definition -- and the two give
-    visibly different answers in the far tail, which is exactly where the
-    empirical null scale is read off. NumPy spells it ``median_unbiased``.
-    """
-    return np.quantile(np.asarray(x, dtype=float), probs, method="median_unbiased")
-
-
-# ---------------------------------------------------------------------------
-# Validation and design construction
-# ---------------------------------------------------------------------------
-
-
-def _validate_response(count: np.ndarray, total: np.ndarray) -> None:
-    if count.shape != total.shape or count.size < 2:
-        raise ValueError("`count` and `total` must have the same length (at least two).")
-    if not (np.isfinite(count).all() and np.isfinite(total).all()):
-        raise ValueError("`count` and `total` cannot contain missing or non-finite values.")
-    if (total <= 0).any() or (count < 0).any() or (count > total).any():
-        raise ValueError("Each observation must satisfy 0 <= `count` <= `total`, with `total` > 0.")
-    tol = np.sqrt(_DOUBLE_EPS)
-    if (np.abs(count - np.round(count)) >= tol).any() or (
-        np.abs(total - np.round(total)) >= tol
-    ).any():
-        raise ValueError("`count` and `total` must contain integer-valued counts.")
-
-
-def _r_style_name(column: str) -> str:
-    """Rename a formulaic column to what R's ``model.matrix`` would call it.
-
-    The two libraries build the same columns and disagree only on the labels:
-    formulaic writes ``Intercept`` and ``batch[T.b2]`` where R writes
-    ``(Intercept)`` and ``batchb2``. The labels are not cosmetic here --
-    :func:`bb_screen` selects a coefficient by name through its ``term``
-    argument, so leaving them alone would mean the same analysis needed a
-    different ``term`` in each language, and every comparison against an R
-    result would have to translate.
-    """
-    if column == "Intercept":
-        return "(Intercept)"
-    # `batch[T.b2]` -> `batchb2`; leaves plain numeric terms such as `dose`
-    # untouched, and handles interactions by rewriting each `:`-joined part.
-    return ":".join(
-        re.sub(r"^(.*)\[T\.(.*)\]$", r"\1\2", part) for part in column.split(":")
+    return _R[name](
+        *(_to_r(argument) for argument in args),
+        **{key: _to_r(value) for key, value in kwargs.items()},
     )
 
 
-def _make_design(formula: str | np.ndarray, data: pd.DataFrame, n: int):
-    """Build the model matrix, matching R's ``model.matrix`` conventions.
+def _to_py(robj: Any) -> Any:
+    with localconverter(_CONVERTER):
+        converted = robjects.conversion.get_conversion().rpy2py(robj)
+    if isinstance(converted, pd.DataFrame):
+        # R data frames carry row names, and for every frame BARCS returns
+        # those are just the default "1", "2", ... Left alone they arrive as a
+        # string index, so `screen["guide"][0]` raises KeyError and positional
+        # code has to reach for `.iloc` everywhere. None of these frames uses
+        # row names to carry information, so drop them for a RangeIndex.
+        converted = converted.reset_index(drop=True)
+    return converted
 
-    A design matrix can be passed directly, which keeps this usable without
-    ``formulaic``. When a formula string is given, formulaic parses it with
-    treatment coding and the first factor level as the reference -- R's
-    defaults -- so ``~ dose + batch`` produces the same columns in the same
-    order as R.
+
+def _r_attr(robj: Any, name: str) -> Any:
+    """Read one ``attr(robj, name)``, or ``None`` if R has not set it."""
+    value = robjects.r["attr"](robj, name)
+    if value is robjects.NULL:
+        return None
+    converted = _to_py(value)
+    if hasattr(converted, "__len__") and not isinstance(converted, str) and len(converted) == 1:
+        return converted[0]
+    return converted
+
+
+def _dataframe_with_attrs(robj: Any, attr_names: Sequence[str]) -> pd.DataFrame:
+    """Convert an R data frame to pandas, carrying named R attributes into ``.attrs``.
+
+    ``robj`` must be an unconverted R object -- attributes live on the R side
+    and are lost the moment the frame becomes a DataFrame, so callers reach
+    for :func:`_r_call_raw` rather than :func:`_r_call`.
     """
-    if isinstance(formula, str):
-        try:
-            from formulaic import model_matrix
-        except ImportError as exc:  # pragma: no cover - environment guard
-            raise ImportError(
-                "Formula input needs `formulaic`. Install it, or pass an "
-                "already-built design matrix instead."
-            ) from exc
-        if not isinstance(data, pd.DataFrame) or len(data) != n:
-            raise ValueError("`data` must be a data frame with one row per observation.")
-        matrix = model_matrix(formula, data)
-        names = [_r_style_name(column) for column in matrix.columns]
-        x = np.asarray(matrix, dtype=float)
-    else:
-        x = np.asarray(formula, dtype=float)
-        if x.ndim != 2 or x.shape[0] != n:
-            raise ValueError("A design matrix must have one row per observation.")
-        names = [f"x{i}" for i in range(x.shape[1])]
-
-    if np.linalg.matrix_rank(x) < x.shape[1]:
-        raise ValueError("The design matrix is not full rank; remove aliased covariates.")
-    if x.shape[0] <= x.shape[1]:
-        raise ValueError("The model needs more observations than fitted coefficients.")
-    return x, names
+    frame = _to_py(robj)
+    for name in attr_names:
+        frame.attrs[name] = _r_attr(robj, name)
+    return frame
 
 
-# ---------------------------------------------------------------------------
-# Dispersion
-# ---------------------------------------------------------------------------
+def _matrix_to_frame(robj: Any) -> pd.DataFrame:
+    """Convert an R matrix with row/column names to a labelled pandas DataFrame."""
+    array = np.asarray(_to_py(robj))
+    rownames = robjects.r["rownames"](robj)
+    colnames = robjects.r["colnames"](robj)
+    index = list(rownames) if rownames is not robjects.NULL else None
+    columns = list(colnames) if colnames is not robjects.NULL else None
+    return pd.DataFrame(array, index=index, columns=columns)
 
 
-@dataclass
-class _RhoFit:
-    rho: float
-    scale: float
-    pearson: float
-    pearson_null: float
-    boundary: bool
+def _r_formula(formula: str | robjects.Formula) -> robjects.Formula:
+    if isinstance(formula, robjects.Formula):
+        return formula
+    return robjects.Formula(str(formula))
 
 
-def _estimate_rho(
-    count: np.ndarray,
-    total: np.ndarray,
-    mu: np.ndarray,
-    df_residual: int,
-    upper: float = 1 - 1e-8,
-) -> _RhoFit:
-    binomial_variance = total * mu * (1 - mu)
-
-    def pearson(rho: float) -> float:
-        return float(
-            np.sum((count - total * mu) ** 2 / (binomial_variance * (1 + (total - 1) * rho)))
-        )
-
-    q0 = pearson(0.0)
-    # `pearson_null` is the Pearson chi-square under the binomial model.
-    # Unlike `rho` it is not truncated at the lower boundary, which is what
-    # makes it the right quantity for dispersion moderation to shrink.
-    if not np.isfinite(q0):
-        return _RhoFit(0.0, 1.0, q0, q0, True)
-    if q0 <= df_residual:
-        return _RhoFit(0.0, 1.0, q0, q0, False)
-
-    qu = pearson(upper)
-    if qu >= df_residual:
-        return _RhoFit(upper, max(1.0, qu / df_residual), qu, q0, True)
-
-    # R uses `uniroot(tol = 1e-10)`; brentq with the same bracket and a tighter
-    # tolerance lands on the same root to well inside the comparison threshold.
-    rho = float(
-        optimize.brentq(lambda r: pearson(r) - df_residual, 0.0, upper, xtol=1e-12, rtol=8.9e-16)
-    )
-    return _RhoFit(rho, 1.0, pearson(rho), q0, False)
+def _named_r_vector(values: dict[str, float]) -> robjects.FloatVector:
+    vector = robjects.FloatVector([float(v) for v in values.values()])
+    vector.names = robjects.StrVector(list(values.keys()))
+    return vector
 
 
-# ---------------------------------------------------------------------------
-# Single-guide fit
-# ---------------------------------------------------------------------------
+def _optional_bool_vector(control: Sequence[bool] | np.ndarray | None) -> Any:
+    if control is None:
+        return robjects.NULL
+    return robjects.BoolVector(np.asarray(control, dtype=bool))
+
+
+def benjamini_hochberg(p_value: Sequence[float] | np.ndarray) -> np.ndarray:
+    """Benjamini-Hochberg adjusted p-values, via R's ``p.adjust(method = "BH")``."""
+    with localconverter(_CONVERTER):
+        adjusted = robjects.r["p.adjust"](np.asarray(p_value, dtype=float), method="BH")
+        return np.asarray(_to_py(adjusted))
 
 
 @dataclass
 class BBRegResult:
-    """A fitted single-guide beta-binomial regression."""
+    """A fitted single-guide beta-binomial regression (R's ``bbreg`` object)."""
 
     coefficients: pd.Series
     coefficient_table: pd.DataFrame
@@ -264,6 +211,9 @@ class BBRegResult:
     weights: np.ndarray = field(repr=False)
     converged: bool = False
     iterations: int = 0
+    # The underlying R `bbreg` object, kept so `bb_contrast` can pass this fit
+    # straight back into R rather than refitting from the extracted fields.
+    r_object: Any = field(repr=False, compare=False, default=None)
 
     def summary(self) -> str:
         lines = [
@@ -277,148 +227,54 @@ class BBRegResult:
         ]
         return "\n".join(lines)
 
-
-def _initial_beta(x: np.ndarray, count: np.ndarray, total: np.ndarray, tolerance: float):
-    """Binomial IRLS start, standing in for R's ``glm.fit``.
-
-    R seeds the beta-binomial loop with an ordinary binomial GLM. Rather than
-    depend on statsmodels for that one call, the equivalent IRLS is written out
-    here. The starting value only has to be good, not identical -- the
-    beta-binomial loop below iterates to a tolerance either way -- but keeping
-    it the same algorithm avoids converging to a different local answer on
-    badly behaved guides.
-    """
-    proportion = count / total
-    mu = (count + 0.5) / (total + 1.0)
-    beta = np.zeros(x.shape[1])
-    for _ in range(50):
-        eta = np.log(mu / (1 - mu))
-        weight = total * mu * (1 - mu)
-        working = eta + (proportion - mu) / (mu * (1 - mu))
-        try:
-            information = x.T @ (weight[:, None] * x)
-            beta_new = np.linalg.solve(information, x.T @ (weight * working))
-        except np.linalg.LinAlgError:
-            return None
-        if not np.isfinite(beta_new).all():
-            return None
-        change = np.max(np.abs(beta_new - beta) / np.maximum(1.0, np.abs(beta)))
-        beta = beta_new
-        eta = x @ beta
-        mu = np.clip(expit(eta), 1e-10, 1 - 1e-10)
-        if change < tolerance:
-            break
-    return beta
+    @classmethod
+    def _from_r(cls, r_fit: Any) -> "BBRegResult":
+        table = _matrix_to_frame(r_fit.rx2("coefficient_table"))
+        return cls(
+            coefficients=pd.Series(_to_py(r_fit.rx2("coefficients")), index=table.index),
+            coefficient_table=table,
+            covariance=np.asarray(_to_py(r_fit.rx2("covariance"))),
+            fitted_values=np.asarray(_to_py(r_fit.rx2("fitted.values"))),
+            linear_predictors=np.asarray(_to_py(r_fit.rx2("linear.predictors"))),
+            residuals=np.asarray(_to_py(r_fit.rx2("residuals"))),
+            pearson=float(_to_py(r_fit.rx2("pearson"))[0]),
+            pearson_null=float(_to_py(r_fit.rx2("pearson_null"))[0]),
+            rho=float(_to_py(r_fit.rx2("rho"))[0]),
+            scale=float(_to_py(r_fit.rx2("scale"))[0]),
+            dispersion_boundary=bool(_to_py(r_fit.rx2("dispersion_boundary"))[0]),
+            df_residual=int(_to_py(r_fit.rx2("df.residual"))[0]),
+            rank=int(_to_py(r_fit.rx2("rank"))[0]),
+            count=np.asarray(_to_py(r_fit.rx2("count"))),
+            total=np.asarray(_to_py(r_fit.rx2("total"))),
+            design=np.asarray(_to_py(r_fit.rx2("design"))),
+            weights=np.asarray(_to_py(r_fit.rx2("weights"))),
+            converged=bool(_to_py(r_fit.rx2("converged"))[0]),
+            iterations=int(_to_py(r_fit.rx2("iterations"))[0]),
+            r_object=r_fit,
+        )
 
 
 def bbreg(
     count: Sequence[float] | np.ndarray,
     total: Sequence[float] | np.ndarray,
-    formula: str | np.ndarray,
-    data: pd.DataFrame | None = None,
+    formula: str,
+    data: pd.DataFrame,
     maxit: int = 100,
     tolerance: float = 1e-8,
     mu_bound: float = 1e-8,
 ) -> BBRegResult:
-    """Fit beta-binomial regression for one guide.
-
-    Parameters mirror the R function. ``formula`` accepts either an R-style
-    one-sided formula string such as ``"~ dose + batch"`` or a pre-built design
-    matrix.
-    """
-    count = np.asarray(count, dtype=float)
-    total = np.asarray(total, dtype=float)
-    _validate_response(count, total)
-
-    x, names = _make_design(formula, data, count.size)
-    rank = x.shape[1]
-    df_residual = x.shape[0] - rank
-
-    beta = _initial_beta(x, count, total, tolerance)
-    if beta is None or not np.isfinite(beta).all():
-        pooled = (count.sum() + 0.5) / (total.sum() + 1.0)
-        beta = np.zeros(rank)
-        beta[0] = np.log(pooled / (1 - pooled))
-
-    converged = False
-    rho_fit = _RhoFit(0.0, 1.0, np.nan, np.nan, False)
-    iteration = 0
-    for iteration in range(1, maxit + 1):
-        eta = x @ beta
-        mu = np.clip(expit(eta), mu_bound, 1 - mu_bound)
-        rho_fit = _estimate_rho(count, total, mu, df_residual)
-
-        working_response = eta + (count / total - mu) / (mu * (1 - mu))
-        working_weight = total * mu * (1 - mu) / (1 + (total - 1) * rho_fit.rho)
-
-        try:
-            information = x.T @ (working_weight[:, None] * x)
-            beta_new = np.linalg.solve(information, x.T @ (working_weight * working_response))
-        except np.linalg.LinAlgError as exc:
-            raise ValueError(
-                "The IRLS update was singular; inspect sparse counts and the design."
-            ) from exc
-        if not np.isfinite(beta_new).all():
-            raise ValueError(
-                "The IRLS update was singular; inspect sparse counts and the design."
-            )
-
-        change = np.max(np.abs(beta_new - beta) / np.maximum(1.0, np.abs(beta)))
-        beta = beta_new
-        if change < tolerance:
-            converged = True
-            break
-
-    eta = x @ beta
-    mu = np.clip(expit(eta), mu_bound, 1 - mu_bound)
-    rho_fit = _estimate_rho(count, total, mu, df_residual)
-    working_weight = total * mu * (1 - mu) / (1 + (total - 1) * rho_fit.rho)
-
-    information = x.T @ (working_weight[:, None] * x)
-    # R inverts via `chol2inv(chol(.))`. Cholesky here too: the information
-    # matrix is positive definite by construction, and using the same
-    # factorisation keeps the rounding identical rather than merely close.
-    factor = np.linalg.cholesky(information)
-    identity = np.eye(rank)
-    unscaled = np.linalg.solve(factor.T, np.linalg.solve(factor, identity))
-    covariance = rho_fit.scale * unscaled
-
-    standard_error = np.sqrt(np.diag(covariance))
-    statistic = beta / standard_error
-    p_value = 2 * stats.t.cdf(-np.abs(statistic), df=df_residual)
-
-    table = pd.DataFrame(
-        {
-            "estimate": beta,
-            "std_error": standard_error,
-            "t_value": statistic,
-            "df": float(df_residual),
-            "p_value": p_value,
-        },
-        index=names,
+    """Fit beta-binomial regression for one guide. See ``R/bbreg.R::bbreg``."""
+    r_fit = _r_call_raw(
+        "bbreg",
+        np.asarray(count, dtype=float),
+        np.asarray(total, dtype=float),
+        _r_formula(formula),
+        data,
+        maxit=maxit,
+        tolerance=tolerance,
+        mu_bound=mu_bound,
     )
-
-    return BBRegResult(
-        coefficients=pd.Series(beta, index=names),
-        coefficient_table=table,
-        covariance=covariance,
-        fitted_values=mu,
-        linear_predictors=eta,
-        residuals=count / total - mu,
-        pearson=rho_fit.pearson,
-        pearson_null=rho_fit.pearson_null,
-        rho=rho_fit.rho,
-        scale=rho_fit.scale,
-        dispersion_boundary=rho_fit.boundary,
-        df_residual=df_residual,
-        rank=rank,
-        count=count,
-        total=total,
-        design=x,
-        weights=working_weight,
-        converged=converged,
-        iterations=iteration,
-    )
+    return BBRegResult._from_r(r_fit)
 
 
 def bb_contrast(
@@ -426,145 +282,52 @@ def bb_contrast(
     contrast: Sequence[float] | dict[str, float] | np.ndarray,
     null: float = 0.0,
 ) -> pd.DataFrame:
-    """Test a linear contrast of the fitted coefficients."""
-    names = list(fit.coefficients.index)
-    if isinstance(contrast, dict):
-        unknown = set(contrast) - set(names)
-        if unknown:
-            raise ValueError(f"A named contrast contains an unknown coefficient: {sorted(unknown)}")
-        vector = np.zeros(len(names))
-        for key, value in contrast.items():
-            vector[names.index(key)] = value
-    else:
-        vector = np.asarray(contrast, dtype=float)
-        if vector.size != len(names):
-            raise ValueError("An unnamed contrast must have one value per coefficient.")
-    if not np.isfinite(vector).all():
-        raise ValueError("`contrast` must be numeric without missing values.")
-
-    estimate = float(vector @ fit.coefficients.to_numpy())
-    standard_error = float(np.sqrt(vector @ fit.covariance @ vector))
-    statistic = (estimate - null) / standard_error
-    return pd.DataFrame(
-        {
-            "estimate": [estimate],
-            "std_error": [standard_error],
-            "t_value": [statistic],
-            "df": [float(fit.df_residual)],
-            "p_value": [2 * stats.t.cdf(-abs(statistic), df=fit.df_residual)],
-        }
+    """Test a linear contrast of the fitted coefficients. See ``R/bbreg.R::bb_contrast``."""
+    r_contrast = (
+        _named_r_vector(contrast)
+        if isinstance(contrast, dict)
+        else robjects.FloatVector(np.asarray(contrast, dtype=float))
     )
-
-
-# ---------------------------------------------------------------------------
-# Screen-level driver
-# ---------------------------------------------------------------------------
+    r_result = _r_call("bb_contrast", fit.r_object, r_contrast, null=float(null))
+    return _to_py(r_result)
 
 
 def bb_screen(
     counts: np.ndarray | pd.DataFrame,
     data: pd.DataFrame,
-    formula: str | np.ndarray,
+    formula: str,
     term: str,
     totals: Sequence[float] | None = None,
     guide: Sequence[str] | None = None,
     gene: Sequence[str] | None = None,
-    min_total_count: int = 1,
+    min_total_count: int = 10,
+    ncores: int = 1,
     **kwargs: Any,
 ) -> pd.DataFrame:
-    """Apply :func:`bbreg` guide by guide and report one coefficient.
+    """Apply :func:`bbreg` guide by guide. See ``R/bbreg.R::bb_screen``.
 
     Returns one row per guide with the reported term's estimate, standard
-    error, t statistic, degrees of freedom, p-value, and BH-adjusted FDR,
-    alongside the guide's dispersion and mean CPM.
+    error, t statistic, degrees of freedom, p-value, BH-adjusted FDR,
+    dispersion, and mean CPM.
     """
     if isinstance(counts, pd.DataFrame):
         if guide is None:
             guide = list(counts.index)
         counts = counts.to_numpy(dtype=float)
-    counts = np.asarray(counts, dtype=float)
-    if counts.ndim != 2:
-        raise ValueError("`counts` must be a guide-by-sample matrix.")
-    n_guides, n_samples = counts.shape
+    counts_matrix = np.asarray(counts, dtype=float)
 
-    if len(data) != n_samples:
-        raise ValueError("`data` must have one row per count-matrix column.")
-
-    totals_array = counts.sum(axis=0) if totals is None else np.asarray(totals, dtype=float)
-    if totals_array.size != n_samples:
-        raise ValueError("`totals` must have one value per count-matrix column.")
-    if (counts > totals_array[None, :]).any():
-        raise ValueError("A guide count cannot exceed its sample's `total`.")
-    # Checked here as well as per guide because the per-guide failure is
-    # silent: every fit would return an all-NA row reading as a modelling
-    # failure rather than a malformed argument. Size-factor normalization is
-    # the usual way to arrive with non-integer totals.
-    if (np.abs(totals_array - np.round(totals_array)) >= np.sqrt(_DOUBLE_EPS)).any():
-        raise ValueError(
-            "`totals` must be integer-valued library sizes; round them first. "
-            "A beta-binomial denominator counts sequenced reads, so a fractional "
-            "total has no likelihood."
-        )
-
-    if guide is None:
-        guide = [f"guide_{i + 1}" for i in range(n_guides)]
-    guide = list(guide)
-    if len(guide) != n_guides or len(set(guide)) != n_guides:
-        raise ValueError("`guide` must uniquely identify every row of `counts`.")
-    if gene is not None and len(gene) != n_guides:
-        raise ValueError("`gene` must have one value per guide.")
-
-    _, names = _make_design(formula, data, n_samples)
-    if term not in names:
-        raise ValueError(f"`term` must be one model-matrix coefficient: {', '.join(names)}")
-
-    records = []
-    for i in range(n_guides):
-        row = counts[i]
-        mean_cpm = float(np.mean(row / totals_array * 1e6))
-        blank = {
-            "estimate": np.nan,
-            "std_error": np.nan,
-            "t_value": np.nan,
-            "df": np.nan,
-            "p_value": np.nan,
-            "rho": np.nan,
-            "pearson_null": np.nan,
-            "mean_cpm": mean_cpm,
-            "converged": False,
-        }
-        if row.sum() < min_total_count:
-            records.append(blank)
-            continue
-        try:
-            fit = bbreg(row, totals_array, formula, data, **kwargs)
-        except Exception:
-            # A guide that cannot be fitted is a data property, not a bug: the
-            # screen continues and the guide is reported as unconverged, which
-            # is how the R version behaves.
-            records.append(blank)
-            continue
-        entry = fit.coefficient_table.loc[term]
-        records.append(
-            {
-                "estimate": float(entry["estimate"]),
-                "std_error": float(entry["std_error"]),
-                "t_value": float(entry["t_value"]),
-                "df": float(entry["df"]),
-                "p_value": float(entry["p_value"]),
-                "rho": fit.rho,
-                "pearson_null": fit.pearson_null,
-                "mean_cpm": mean_cpm,
-                "converged": fit.converged,
-            }
-        )
-
-    result = pd.DataFrame.from_records(records)
-    result.insert(0, "guide", guide)
+    call_kwargs: dict[str, Any] = {"min_total_count": min_total_count, "ncores": ncores}
+    if totals is not None:
+        call_kwargs["totals"] = np.asarray(totals, dtype=float)
+    if guide is not None:
+        call_kwargs["guide"] = robjects.StrVector([str(g) for g in guide])
     if gene is not None:
-        result.insert(0, "gene", list(gene))
-    result["fdr"] = benjamini_hochberg(result["p_value"].to_numpy())
-    return result
+        call_kwargs["gene"] = robjects.StrVector([str(g) for g in gene])
+
+    r_result = _r_call(
+        "bb_screen", counts_matrix, data, _r_formula(formula), term, **call_kwargs, **kwargs
+    )
+    return _to_py(r_result)
 
 
 def bb_calibrate_controls(
@@ -577,126 +340,137 @@ def bb_calibrate_controls(
 ) -> pd.DataFrame:
     """Rescale guide-level t tests against negative-control guides.
 
-    Estimates a one-parameter empirical-null scale and divides every t
-    statistic by it. ``min_scale`` defaults to 1 so that calibration can only
-    make an already conservative analysis more conservative, never less.
+    See ``R/bbreg.R::bb_calibrate_controls``. Returns ``result`` with
+    recalibrated standard errors, t statistics, p-values, and FDR; the raw
+    columns are kept with a ``raw_`` prefix, and the estimated scale and
+    alpha are attached to the returned frame's ``.attrs``.
     """
-    if method not in {"tail_quantile", "qq_slope"}:
-        raise ValueError("`method` must be 'tail_quantile' or 'qq_slope'.")
-    if not (0 < alpha < 0.5):
-        raise ValueError("`alpha` must be one finite number between 0 and 0.5.")
-    if min_controls < 2:
-        raise ValueError("`min_controls` must be at least two.")
-    if min_scale <= 0:
-        raise ValueError("`min_scale` must be positive.")
+    r_result = _r_call_raw(
+        "bb_calibrate_controls",
+        result,
+        robjects.BoolVector(np.asarray(control, dtype=bool)),
+        alpha=alpha,
+        min_controls=min_controls,
+        min_scale=min_scale,
+        method=method,
+    )
+    return _dataframe_with_attrs(r_result, ["control_scale", "control_alpha"])
 
-    control = np.asarray(control, dtype=bool)
-    t_value = result["t_value"].to_numpy(dtype=float)
-    df = result["df"].to_numpy(dtype=float)
-    valid = control & np.isfinite(t_value) & np.isfinite(df)
-    if int(valid.sum()) < int(min_controls):
-        raise ValueError(f"At least {int(min_controls)} finite negative-control statistics are required.")
 
-    control_df = np.unique(df[valid])
-    if control_df.size != 1 or control_df[0] <= 0:
-        raise ValueError("Finite negative-control guides must share one positive `df`.")
-    control_df = float(control_df[0])
+def bb_moderate_dispersion(
+    result: pd.DataFrame,
+    trend: bool = True,
+    one_way: bool = False,
+    borrow_df: bool = True,
+    span: float = 0.5,
+    min_guides: int = 50,
+) -> pd.DataFrame:
+    """Shrink guide-level dispersion toward a library-wide trend.
 
-    absolute = np.abs(t_value[valid])
-    if method == "tail_quantile":
-        # One order statistic in the far tail. Simple, but high variance with
-        # only a few hundred controls.
-        empirical_cutoff = float(_quantile_type8(absolute, 1 - alpha))
-        reference_cutoff = float(stats.t.ppf(1 - alpha / 2, df=control_df))
-        ratio = empirical_cutoff / reference_cutoff
-    else:
-        # Slope of the control QQ plot against the t reference, through the
-        # origin, over a band where many order statistics contribute.
-        probabilities = np.round(np.arange(0.50, 0.9501, 0.01), 10)
-        empirical = _quantile_type8(absolute, probabilities)
-        reference = stats.t.ppf((1 + probabilities) / 2, df=control_df)
-        ratio = float(np.sum(empirical * reference) / np.sum(reference**2))
-
-    scale = max(min_scale, ratio)
-
-    out = result.copy()
-    out["raw_std_error"] = out["std_error"]
-    out["raw_t_value"] = out["t_value"]
-    out["raw_p_value"] = out["p_value"]
-    out["raw_fdr"] = out["fdr"]
-    out["std_error"] = out["std_error"] * scale
-    out["t_value"] = out["t_value"] / scale
-    out["p_value"] = 2 * stats.t.cdf(-np.abs(out["t_value"].to_numpy()), df=out["df"].to_numpy())
-    out["fdr"] = benjamini_hochberg(out["p_value"].to_numpy())
-    out.attrs["control_scale"] = scale
-    out.attrs["control_alpha"] = alpha
-    return out
+    See ``R/bbreg.R::bb_moderate_dispersion``. The estimated prior degrees of
+    freedom and total reference degrees of freedom are attached to the
+    returned frame's ``.attrs``.
+    """
+    r_result = _r_call_raw(
+        "bb_moderate_dispersion",
+        result,
+        trend=bool(trend),
+        one_way=bool(one_way),
+        borrow_df=bool(borrow_df),
+        span=span,
+        min_guides=min_guides,
+    )
+    return _dataframe_with_attrs(r_result, ["prior_df", "df_total"])
 
 
 def bb_gene_original(result: pd.DataFrame, min_guides: int = 1) -> pd.DataFrame:
-    """Historical signed-z guide-to-gene aggregation.
+    """The historical signed-z guide-to-gene statistic. See ``R/bbreg.R::bb_gene_original``."""
+    r_result = _r_call("bb_gene_original", result, min_guides=min_guides)
+    return _to_py(r_result)
 
-    Combines each gene's guide statistics as a signed Stouffer z. This is the
-    ``original`` statistic; the three later ones in the R implementation are
-    not ported.
-    """
-    for column in ("gene", "estimate", "p_value"):
-        if column not in result.columns:
-            raise ValueError(
-                "`result` must contain guide-level `gene`, `estimate`, and `p_value` columns."
-            )
-    if min_guides < 1:
-        raise ValueError("`min_guides` must be one positive integer.")
 
-    estimate = result["estimate"].to_numpy(dtype=float)
-    p_value = result["p_value"].to_numpy(dtype=float)
-    valid = np.isfinite(estimate) & np.isfinite(p_value) & (p_value >= 0) & (p_value <= 1)
-    if "converged" in result.columns:
-        converged = result["converged"].to_numpy()
-        valid = valid & np.array([bool(c) if c is not None else False for c in converged])
+def bb_gene_normal(
+    result: pd.DataFrame,
+    min_guides: int = 3,
+    reference: str = "student_t",
+) -> pd.DataFrame:
+    """Exchangeable-normal guide-to-gene test. See ``R/bbreg.R::bb_gene_normal``."""
+    r_result = _r_call_raw("bb_gene_normal", result, min_guides=min_guides, reference=reference)
+    return _dataframe_with_attrs(r_result, ["reference", "null_assumption"])
 
-    genes = result["gene"].to_numpy()
-    rows = []
-    # Sorted, to match R's `split()`, which orders groups by factor level.
-    for gene_name in sorted(pd.unique(genes), key=str):
-        all_index = np.flatnonzero(genes == gene_name)
-        index = all_index[valid[all_index]]
-        if index.size < min_guides:
-            continue
 
-        # Two-sided p to a signed z, floored at the smallest positive double so
-        # that a p-value of exactly zero does not become an infinite z.
-        signed_z = np.sign(estimate[index]) * stats.norm.isf(
-            np.maximum(p_value[index] / 2, _DOUBLE_XMIN)
-        )
-        combined_z = float(np.sum(signed_z) / np.sqrt(index.size))
-        gene_estimate = float(np.median(estimate[index]))
-        rows.append(
-            {
-                "gene": gene_name,
-                "n_guides": int(index.size),
-                "estimate": gene_estimate,
-                "statistic": combined_z,
-                "guide_direction_agreement": (
-                    np.nan
-                    if gene_estimate == 0
-                    else float(np.mean(np.sign(estimate[index]) == np.sign(gene_estimate)))
-                ),
-                "effect_statistic_sign_agreement": bool(
-                    gene_estimate == 0 or np.sign(gene_estimate) == np.sign(combined_z)
-                ),
-                "p_value": float(2 * stats.norm.cdf(-abs(combined_z))),
-                "converged_fraction": (
-                    float(np.mean(result["converged"].to_numpy()[all_index].astype(float)))
-                    if "converged" in result.columns
-                    else np.nan
-                ),
-                "method": "original",
-            }
-        )
+def bb_gene_consistency(
+    result: pd.DataFrame,
+    control: Sequence[bool] | np.ndarray | None = None,
+    min_guides: int = 3,
+    alpha: float = 0.05,
+    min_control_genes: int = 10,
+    min_scale: float = 1.0,
+) -> pd.DataFrame:
+    """Empirical-null guide-consistency test. See ``R/bbreg.R::bb_gene_consistency``."""
+    r_result = _r_call(
+        "bb_gene_consistency",
+        result,
+        control=_optional_bool_vector(control),
+        min_guides=min_guides,
+        alpha=alpha,
+        min_control_genes=min_control_genes,
+        min_scale=min_scale,
+    )
+    return _dataframe_with_attrs(
+        r_result,
+        [
+            "null_center",
+            "null_scale",
+            "global_scale",
+            "control_scale",
+            "control_genes",
+            "null_assumption",
+        ],
+    )
 
-    if not rows:
-        raise ValueError("No gene has enough finite guide results.")
-    gene_result = pd.DataFrame(rows)
-    gene_result["fdr"] = benjamini_hochberg(gene_result["p_value"].to_numpy())
-    return gene_result
+
+def bb_gene_partial_pool(
+    result: pd.DataFrame,
+    control: Sequence[bool] | np.ndarray | None = None,
+    min_guides: int = 2,
+    alpha: float = 0.05,
+    min_control_genes: int = 10,
+    min_scale: float = 1.0,
+) -> pd.DataFrame:
+    """Random-effects guide pooling. See ``R/bbreg.R::bb_gene_partial_pool``."""
+    r_result = _r_call_raw(
+        "bb_gene_partial_pool",
+        result,
+        control=_optional_bool_vector(control),
+        min_guides=min_guides,
+        alpha=alpha,
+        min_control_genes=min_control_genes,
+        min_scale=min_scale,
+    )
+    return _dataframe_with_attrs(r_result, ["heterogeneity_estimator", "null_assumption"])
+
+
+def bb_gene_eb_moderate(
+    result: pd.DataFrame,
+    control: Sequence[bool] | np.ndarray | None = None,
+    min_guides: int = 2,
+    prior_df: float = 4,
+    alpha: float = 0.05,
+    min_control_genes: int = 10,
+    min_scale: float = 1.0,
+) -> pd.DataFrame:
+    """Empirical-Bayes moderated guide pooling. See ``R/bbreg.R::bb_gene_eb_moderate``."""
+    r_result = _r_call_raw(
+        "bb_gene_eb_moderate",
+        result,
+        control=_optional_bool_vector(control),
+        min_guides=min_guides,
+        prior_df=prior_df,
+        alpha=alpha,
+        min_control_genes=min_control_genes,
+        min_scale=min_scale,
+    )
+    return _dataframe_with_attrs(
+        r_result, ["prior_tau2", "prior_df", "heterogeneity_estimator", "null_assumption"]
+    )

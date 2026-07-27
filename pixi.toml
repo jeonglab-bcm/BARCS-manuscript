@@ -115,13 +115,30 @@ python = ">=3.11"
 numpy = "*"
 scipy = "*"
 pandas = "*"
-# R-style formula parsing, so `~ dose + batch` means the same thing in both
-# implementations -- including treatment coding with the first factor level as
-# the reference, which is what R's default contrasts do.
+# The bridge to the R implementation. `python/barcs/` calls `R/bbreg.R`
+# through this rather than reimplementing it, so there is one set of
+# statistics and the whole R API is reachable from Python.
+rpy2 = "*"
+
+# Used only by the notebook's deliberately misspecified binomial comparison,
+# which builds its own design matrix in Python. The BARCS path never touches
+# it -- R's formula machinery is the only one involved there.
 formulaic = "*"
-marimo = "*"
 matplotlib-base = "*"
 pytest = "*"
+
+# ---------------------------------------------------------------------------
+# PyPI dependencies
+# ---------------------------------------------------------------------------
+
+[pypi-dependencies]
+# conda-forge's marimo feedstock is stuck on 0.13.6 for linux-aarch64, which
+# has a display-math rendering bug: a `$$ ... $$` block comes out of
+# `mo.md()` as `<marimo-tex>||[ ... ||]</marimo-tex>` instead of
+# `\[ ... \]`, so KaTeX never recognizes it and the raw LaTeX source shows up
+# as broken text in the browser. Taking marimo from PyPI instead gets the
+# current release, where this is fixed.
+marimo = ">=0.23"
 
 # ---------------------------------------------------------------------------
 # Optional: recounting the Liang screens from raw reads
@@ -192,19 +209,18 @@ test-package = { cmd = "Rscript -e 'devtools::test(\"CB2\")'", depends-on = ["se
 
 check-package = { cmd = "R CMD build CB2 && R CMD check --no-manual CB2_*.tar.gz" }
 
-# -- Python port -------------------------------------------------------------
+# -- Python interface ---------------------------------------------------------
 #
-# `python/barcs/` reimplements the guide-level inference path of `R/bbreg.R`
-# with no R dependency. It covers bbreg, bb_contrast, bb_screen, the control
-# calibration, and the `original` guide-to-gene statistic -- not the three
-# later gene statistics and not dispersion moderation. See python/README.md.
+# `python/barcs/` is an rpy2 wrapper around `R/bbreg.R`. It reimplements
+# nothing: every function calls into that file, so there is one set of
+# statistics and the whole R API is reachable from Python -- including the
+# three later gene statistics and dispersion moderation. See python/README.md.
+#
+# It therefore needs R, which this environment already provides.
 
-# Pure Python; runs anywhere, no R needed.
-test-python = "python3 -m pytest python/tests -q -k 'not matches_r'"
-
-# The one that matters: fits a shared fixture in both languages and requires
-# agreement to eight significant figures.
-test-python-vs-r = "python3 -m pytest python/tests -q"
+# Marshalling checks, plus a run of the whole pipeline against a native
+# `Rscript` over the same fixture, required to agree to 1e-12.
+test-python = "python3 -m pytest python/tests -q"
 
 # Interactive walkthrough. marimo notebooks are plain Python, so this one
 # diffs and reviews like source rather than like a .ipynb.

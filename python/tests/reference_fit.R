@@ -1,12 +1,14 @@
 #!/usr/bin/env Rscript
 
-# Reference fits for the Python port's equivalence tests.
+# Reference fits for the Python wrapper's marshalling tests.
 #
-# `python/tests/test_against_r.py` writes a fixture screen to a directory,
+# `python/tests/test_matches_rscript.py` writes a fixture screen to a directory,
 # runs this script over it, and compares the CSVs it writes against the same
-# quantities computed by `python/barcs/`. The Python side owns the fixture so
-# both implementations are handed byte-identical input; this script only
-# fits and dumps.
+# quantities computed through the rpy2 wrapper. Both paths source this same
+# `R/bbreg.R` with no CB2 loaded, so they run identical code and any difference
+# is in the marshalling rather than the statistics. The Python side owns the
+# fixture so both are handed byte-identical input; this script only fits and
+# dumps.
 #
 #     Rscript python/tests/reference_fit.R <fixture_dir>
 #

@@ -1,43 +1,28 @@
-"""Check the Python port against the R implementation it was ported from.
+"""Check that the rpy2 wrapper marshals data correctly.
 
-The port only earns trust by agreeing with the original, so this builds a
-fixture screen, fits it both ways, and requires the two to match.
+`barcs` calls `R/bbreg.R` through rpy2, so there is no second implementation
+to compare against and nothing statistical to verify -- the numerics are R's.
+What can still go wrong is everything around the call: a matrix arriving
+transposed, a factor losing its level order, a column coming back as the wrong
+type, an R attribute quietly dropped.
 
-On the tolerance
-----------------
-Coefficient estimates agree to about 1e-12, which is double-precision noise.
-Standard errors agree to about 4e-10, and the reason is worth stating because
-it is not a defect in either implementation.
+So this fits one fixture screen twice. Once through the wrapper, and once by
+running `reference_fit.R` under a plain `Rscript` over CSV files written to
+disk. Both paths source the same `R/bbreg.R` with no CB2 loaded, so they
+execute identical code and any difference is the marshalling.
 
-Both estimate ``rho`` by solving ``pearson(rho) = df_residual``. R uses
-``uniroot(tol = 1e-10)``, which on the fixture stops at a point where the
-Pearson statistic is 11.0000000083 against a target of 11; SciPy's ``brentq``,
-asked for a tighter tolerance, reaches 10.999999999999776. So the two land on
-``rho`` values that differ by 7.5e-10 relative -- and the Python one is the
-more accurate root. That difference flows into the working weights and hence
-into the standard errors.
+That makes the bar exact rather than approximate. When this module was a
+port, the two agreed to eight significant figures and the residual came from
+R's `uniroot` and SciPy's `brentq` stopping in different places; there is now
+only one root finder, so the tolerance is 1e-12 -- double-precision noise from
+the CSV round trip and nothing else. A failure here is a conversion bug, not a
+numerical one.
 
-That 7.5e-10 in ``rho`` is the seed of every other difference, and it grows a
-little at each step that divides one noisy quantity by another. Standard
-errors land at 4e-10, the negative-control scale -- a ratio of quantiles of
-``estimate / std_error`` -- at 1e-8, and the calibrated FDR at 3e-8.
+The fixture is deliberately awkward: a continuous covariate crossed with a
+three-level factor, guides across a wide abundance range, genuinely
+overdispersed counts, and a set of true nulls for the calibration to read.
 
-The threshold is therefore 1e-7: still eight significant figures of agreement
-on every reported quantity, and honest about the fact that two root finders
-with different stopping rules are not expected to agree to the last bit.
-Tightening it further would mean deliberately making the Python solver worse
-in order to imitate R's stopping rule.
-
-The fixture is deliberately awkward, because agreement on easy data proves
-little. It includes a continuous covariate crossed with a three-level factor,
-guides spanning three orders of magnitude of abundance, genuinely
-overdispersed counts, and a set of true nulls to calibrate against.
-
-Skipped when Rscript or the CB2 environment is unavailable, so the pure-Python
-suite still runs anywhere:
-
-    pixi run test-python           # Python only
-    pixi run test-python-vs-r      # includes this file
+Skipped when Rscript is unavailable.
 """
 
 from __future__ import annotations
@@ -53,6 +38,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+pytest.importorskip("rpy2", reason="rpy2 is not installed")
+
 from barcs import (  # noqa: E402
     bb_calibrate_controls,
     bb_contrast,
@@ -62,7 +49,8 @@ from barcs import (  # noqa: E402
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-TOLERANCE = 1e-7  # see the module docstring: R's uniroot stopping rule sets this
+# Both paths run the same R code, so this is a CSV round-trip tolerance.
+TOLERANCE = 1e-12
 
 requires_r = pytest.mark.skipif(
     shutil.which("Rscript") is None,
@@ -97,21 +85,10 @@ def build_fixture(directory: Path) -> dict[str, object]:
     effect[np.array(gene) == "control"] = 0.0
 
     # Baselines spanning a wide abundance range, so the screen mixes abundant
-    # and scarce guides. The floor is chosen empirically for this seed as the
-    # widest range in which every guide still converges; the assertion in
-    # test_screen_matches_r fails loudly if a future edit breaks that.
-    #
-    # It matters because an IRLS that stopped at `maxit` is not obliged to stop
-    # in the same place in two languages -- on an earlier fixture the two
-    # returned +66 and +49 for the same unconverged guide -- and one such guide
-    # contaminates every screen-wide quantity: the BH correction, the control
-    # scale, and the gene aggregation are all computed over all guides at once.
-    #
-    # Convergence is not simply a function of depth. A guide with 448 reads can
-    # fail where one with 237 succeeds, because what fails is the fixed-point
-    # iteration rather than the arithmetic, so this floor is a property of this
-    # seed and not a general threshold. Sparse-guide behaviour is covered by
-    # test_sparse_guides_are_reported_not_raised instead.
+    # and scarce guides, with a floor chosen so every guide converges. Both
+    # paths run the same solver now, so an unconverged guide would not make
+    # them disagree -- but it would still make the fixture a weaker test, since
+    # a screen full of NA rows compares nothing.
     baseline = rng.uniform(-7.8, -6.5, size=n_guides)
     batch_effect = {"b1": 0.0, "b2": 0.18, "b3": -0.12}
     offsets = np.array([batch_effect[b] for b in batch])
@@ -197,7 +174,7 @@ def test_single_guide_fit_matches_r(fixture, r_results):
     )
 
     assert list(fit.coefficient_table.index) == list(reference["coefficient"]), (
-        "design matrix columns differ between formulaic and R's model.matrix"
+        "coefficient names differ between the wrapper and a native R session"
     )
     for column in ("estimate", "std_error", "t_value", "df", "p_value"):
         assert_close(fit.coefficient_table[column], reference[column], f"single fit {column}")
@@ -311,22 +288,10 @@ def test_gene_aggregation_matches_r(fixture, r_results):
 def test_sparse_guides_are_reported_not_raised():
     """A guide too sparse to fit is flagged, not fatal.
 
-    The two implementations part company here, and it is recorded rather than
-    smoothed over. On a guide with only a handful of reads spread across many
-    samples, R's `bbreg` errors and `bb_screen` catches it into an all-NA row;
-    the Python IRLS sometimes still returns a value. Neither answer is
-    meaningful at that abundance.
-
-    What both guarantee, and what this pins down, is narrower than it might
-    seem: one unusable guide never aborts the screen, and a guide with no reads
-    at all is always reported as unusable rather than as a result.
-
-    A guide with a *handful* of reads is not covered by that. Python often
-    converges on one and returns a finite estimate where R declines to fit it,
-    so `converged` being True on such a guide means only that the iteration
-    stopped moving -- not that the answer means anything. Filter on abundance,
-    via `min_total_count` or afterwards; do not rely on `converged` to do it,
-    and do not compare the two implementations on guides like these.
+    `bb_screen` skips any guide whose total falls below `min_total_count`,
+    which now defaults to R's 10 rather than the port's 1. Such a guide must
+    still occupy a row -- dropping it would silently misalign the result
+    against the caller's guide list -- and must never appear as an estimate.
     """
     rng = np.random.default_rng(11)
     samples = pd.DataFrame({"dose": np.tile([-1.0, 0.0, 1.0], 4)})
@@ -340,15 +305,12 @@ def test_sparse_guides_are_reported_not_raised():
 
     assert len(screen) == 4, "a sparse guide must not drop rows from the screen"
 
-    # The all-zero guide falls below `min_total_count` and must never be
-    # presented as an estimate.
-    assert not bool(screen["converged"][2])
-    assert not np.isfinite(screen["estimate"][2])
-
-    # The two-read guide is the documented grey area: whatever it reports, it
-    # must not have derailed the screen, and its mean CPM must still be
-    # recorded so it can be filtered on abundance afterwards.
-    assert np.isfinite(screen["mean_cpm"][3])
+    # Both sparse guides fall below the default min_total_count of 10.
+    for row in (2, 3):
+        assert not bool(screen["converged"][row])
+        assert not np.isfinite(screen["estimate"][row])
+        # mean_cpm is still recorded, so abundance filtering remains possible.
+        assert np.isfinite(screen["mean_cpm"][row])
 
     # The ordinary guides are unaffected by their sparse neighbours.
     assert bool(screen["converged"][0])

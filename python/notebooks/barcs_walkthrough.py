@@ -1,3 +1,14 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "formulaic>=1.2.2",
+#     "marimo>=0.23.3",
+#     "matplotlib>=3.11.1",
+#     "numpy>=2.5.1",
+#     "pandas>=3.0.5",
+#     "scipy>=1.18.0",
+# ]
+# ///
 """Interactive walkthrough of BARCS.
 
 A marimo notebook. Marimo stores notebooks as plain Python, which is why this
@@ -20,44 +31,44 @@ truth is known. It is not a benchmark. The benchmarks are the R scripts in
 
 import marimo
 
-__generated_with = "0.9.0"
+__generated_with = "0.23.4"
 app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-        # BARCS: beta-binomial regression for CRISPR screens
+    mo.md(r"""
+    # BARCS: beta-binomial regression for CRISPR screens
 
-        A pooled screen measures each guide as a count out of a library total.
-        The obvious model for a count out of a total is the binomial, and it is
-        wrong in a way that matters: it assumes the only variability is
-        sequencing depth. Real replicate libraries differ by more than that, so
-        the binomial understates the variance, and a test built on it calls
-        noise significant.
+    A pooled screen measures each guide as a count out of a library total.
+    The obvious model for a count out of a total is the binomial, and it is
+    wrong in a way that matters: it assumes the only variability is
+    sequencing depth. Real replicate libraries differ by more than that, so
+    the binomial understates the variance, and a test built on it calls
+    noise significant.
 
-        BARCS keeps the binomial sampling step and adds a beta-distributed
-        guide proportion on top of it:
+    BARCS keeps the binomial sampling step and adds a beta-distributed
+    guide proportion on top of it:
 
-        $$\\operatorname{Var}(K_i) = n_i \\mu_i (1 - \\mu_i)
-          \\bigl\\{1 + (n_i - 1)\\rho\\bigr\\}$$
+    $$\operatorname{Var}(K_i) = n_i \mu_i (1 - \mu_i)
+      \bigl\{1 + (n_i - 1)\rho\bigr\}$$
 
-        with $\\rho$ estimated per guide. The mean model is an ordinary design
-        matrix, $\\operatorname{logit}(\\mu_i) = x_i'\\beta$, which is what lets
-        a screen be analysed against a dose, a time course, or an adjusted
-        contrast rather than only two groups.
+    with $\rho$ estimated per guide. The mean model is an ordinary design
+    matrix, $\operatorname{logit}(\mu_i) = x_i'\beta$, which is what lets
+    a screen be analysed against a dose, a time course, or an adjusted
+    contrast rather than only two groups.
 
-        Everything below is simulated, so the true effects are known and the
-        answers can be checked rather than admired.
-        """
-    )
+    Everything below is simulated, so the true effects are known and the
+    answers can be checked rather than admired.
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("""## 1. Simulate a screen""")
+    mo.md("""
+    ## 1. Simulate a screen
+    """)
     return
 
 
@@ -140,6 +151,9 @@ def _(
             gene_effect[:n_active] = signs * effect_size
 
         gene = np.repeat([f"gene{i:04d}" for i in range(n_genes)], guides_per_gene)
+        guide = np.array(
+            [f"{name}_sg{i % guides_per_gene}" for i, name in enumerate(gene)]
+        )
         guide_effect = np.repeat(gene_effect, guides_per_gene)
         n_guides = n_genes * guides_per_gene
 
@@ -165,9 +179,9 @@ def _(
                 "active": gene_effect != 0,
             }
         )
-        return counts, samples, totals, gene, truth
+        return counts, samples, totals, gene, guide, truth
 
-    counts, samples, totals, gene, truth = simulate_screen(
+    counts, samples, totals, gene, guide, truth = simulate_screen(
         n_genes.value,
         guides_per_gene.value,
         active_fraction.value,
@@ -176,51 +190,66 @@ def _(
         depth.value,
         seed.value,
     )
-    return counts, gene, samples, simulate_screen, totals, truth
+    return counts, gene, guide, samples, totals, truth
 
 
 @app.cell(hide_code=True)
-def _(counts, mo, samples, truth):
+def _(counts, mo, truth):
     mo.md(
         f"""
-        Simulated **{counts.shape[0]:,} guides** over **{counts.shape[1]} samples**
-        ({len(truth)} genes, {int(truth["active"].sum())} of them active).
-        Median count per guide per sample: **{counts.mean():,.0f}**.
+    Simulated **{counts.shape[0]:,} guides** over **{counts.shape[1]} samples**
+    ({len(truth)} genes, {int(truth["active"].sum())} of them active).
+    Median count per guide per sample: **{counts.mean():,.0f}**.
 
-        The design is a continuous dose crossed with three batches:
-        `~ dose + batch`. That is the whole reason for the regression --
-        the dose column is a number, not a label, and the batch adjustment
-        happens inside the same fit rather than as a preprocessing step.
-        """
+    The design is a continuous dose crossed with three batches:
+    `~ dose + batch`. That is the whole reason for the regression --
+    the dose column is a number, not a label, and the batch adjustment
+    happens inside the same fit rather than as a preprocessing step.
+    """
     )
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-        ## 2. One guide, in detail
+    mo.md("""
+    ## 2. One guide, in detail
 
-        Before the screen, a single fit. This is what `bbreg()` returns for one
-        guide: a coefficient table indexed by the design-matrix columns, plus
-        the estimated `rho`.
-        """
-    )
+    Before the screen, a single fit. This is what `bbreg()` returns for one
+    guide: a coefficient table indexed by the design-matrix columns, plus
+    the estimated `rho`.
+    """)
     return
 
 
 @app.cell(hide_code=True)
-def _(counts, mo):
-    guide_index = mo.ui.slider(
-        0, counts.shape[0] - 1, value=0, label="guide index", full_width=True
+def _(guide, mo):
+    guide_index = mo.ui.dropdown(
+        options={name: i for i, name in enumerate(guide)},
+        value=guide[0],
+        label="guide",
+        searchable=True,
+        full_width=True,
     )
     guide_index
     return (guide_index,)
 
 
 @app.cell
-def _(bbreg, counts, guide_index, mo, samples, totals, truth, guides_per_gene):
+def _(
+    bbreg,
+    counts,
+    guide,
+    guide_index,
+    guides_per_gene,
+    mo,
+    samples,
+    totals,
+    truth,
+):
+    # R does the fitting; `BBRegResult` is the R object's fields unpacked into
+    # a dataclass, with the untouched R object kept on `.r_object` so
+    # `bb_contrast` can pass it straight back rather than refitting.
     single_fit = bbreg(
         counts[guide_index.value],
         totals,
@@ -232,29 +261,28 @@ def _(bbreg, counts, guide_index, mo, samples, totals, truth, guides_per_gene):
     mo.vstack(
         [
             mo.md(
-                f"**True dose effect for this guide: {true_for_guide:+.2f}** &nbsp;·&nbsp; "
+                f"**{guide[guide_index.value]}** &nbsp;·&nbsp; "
+                f"true dose effect: **{true_for_guide:+.2f}** &nbsp;·&nbsp; "
                 f"estimated rho: `{single_fit.rho:.2e}` &nbsp;·&nbsp; "
                 f"converged: `{single_fit.converged}`"
             ),
             single_fit.coefficient_table.round(6),
         ]
     )
-    return single_fit, true_for_guide
+    return (single_fit,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-        ### A contrast
+    mo.md("""
+    ### A contrast
 
-        Coefficients answer "per one unit of dose". Questions that span more
-        than one unit, or that combine coefficients, are contrasts.
-        `bb_contrast()` takes the linear combination and carries the covariance
-        through, which is not the same as scaling the coefficient's standard
-        error by hand once covariates are correlated.
-        """
-    )
+    Coefficients answer "per one unit of dose". Questions that span more
+    than one unit, or that combine coefficients, are contrasts.
+    `bb_contrast()` takes the linear combination and carries the covariance
+    through, which is not the same as scaling the coefficient's standard
+    error by hand once covariates are correlated.
+    """)
     return
 
 
@@ -267,38 +295,37 @@ def _(bb_contrast, single_fit):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-        ## 3. The whole screen, and why the binomial is not enough
+    mo.md("""
+    ## 3. The whole screen, and why the binomial is not enough
 
-        `bb_screen()` fits every guide and reports one coefficient. Alongside
-        it, the same screen analysed with a plain binomial GLM -- the model that
-        assumes sequencing depth is the only source of variation.
+    `bb_screen()` fits every guide and reports one coefficient. Alongside
+    it, the same screen analysed with a plain binomial GLM -- the model that
+    assumes sequencing depth is the only source of variation.
 
-        Watch the **null rejection rate**. Under a correct model it should sit
-        near 0.05. Drag `rho` toward zero and the two converge; push it up and
-        the binomial's error rate climbs while BARCS stays put. That gap is the
-        entire argument for the method.
-        """
-    )
+    Watch the **null rejection rate**. Under a correct model it should sit
+    near 0.05. Drag `rho` toward zero and the two converge; push it up and
+    the binomial's error rate climbs while BARCS stays put. That gap is the
+    entire argument for the method.
+    """)
     return
 
 
 @app.cell
-def _(bb_screen, counts, gene, np, pd, samples, sm_binomial, totals):
+def _(bb_screen, counts, gene, guide, samples, sm_binomial, totals):
     screen = bb_screen(
         counts,
         samples,
         "~ dose + batch",
         term="dose",
         totals=totals,
+        guide=list(guide),
         gene=list(gene),
     )
     naive = sm_binomial(counts, samples, totals)
     screen_with_naive = screen.assign(
         naive_p_value=naive["p_value"], naive_estimate=naive["estimate"]
     )
-    return naive, screen, screen_with_naive
+    return (screen_with_naive,)
 
 
 @app.cell
@@ -363,7 +390,7 @@ def _(expit, norm, np, pd):
 
 
 @app.cell
-def _(bb_gene_original, mo, np, pd, screen_with_naive, truth):
+def _(bb_gene_original, mo, pd, screen_with_naive, truth):
     genes = bb_gene_original(screen_with_naive).merge(truth, on="gene", how="left")
 
     null_genes = genes[~genes["active"]]
@@ -406,11 +433,11 @@ def _(bb_gene_original, mo, np, pd, screen_with_naive, truth):
             summary.round(4),
         ]
     )
-    return active_genes, genes, guide_null, guide_truth, null_genes, summary
+    return genes, guide_null, guide_truth
 
 
 @app.cell(hide_code=True)
-def _(genes, mo, np):
+def _(genes, mo):
     called = genes[genes["fdr"] < 0.10]
     true_positive = int((called["active"]).sum())
     false_positive = int((~called["active"]).sum())
@@ -434,25 +461,23 @@ def _(genes, mo, np):
         happens to the realized proportion.
         """
     )
-    return called, false_positive, realized, recall, true_positive
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        """
-        ## 4. What the fit looks like
-
-        Left: estimated against true gene effect. Right: the p-value
-        distribution for genes with no effect, which should be flat -- a spike
-        near zero is exactly the miscalibration the table above counts.
-        """
-    )
     return
 
 
 @app.cell(hide_code=True)
-def _(active_genes, genes, guide_null, np, plt):
+def _(mo):
+    mo.md("""
+    ## 4. What the fit looks like
+
+    Left: estimated against true gene effect. Right: the p-value
+    distribution for genes with no effect, which should be flat -- a spike
+    near zero is exactly the miscalibration the table above counts.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(genes, guide_null, np, plt):
     figure, (left, right) = plt.subplots(1, 2, figsize=(11, 4.2))
 
     left.axhline(0, color="#BBBBBB", lw=0.8)
@@ -502,30 +527,28 @@ def _(active_genes, genes, guide_null, np, plt):
 
     figure.tight_layout()
     figure
-    return figure, left, limit, right
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-        ## 5. Negative-control calibration
+    mo.md("""
+    ## 5. Negative-control calibration
 
-        Real screens carry non-targeting guides whose true effect is zero. If
-        their statistics are wider than the reference distribution says they
-        should be, the whole screen is over-confident and can be rescaled to
-        match — a one-parameter empirical null.
+    Real screens carry non-targeting guides whose true effect is zero. If
+    their statistics are wider than the reference distribution says they
+    should be, the whole screen is over-confident and can be rescaled to
+    match — a one-parameter empirical null.
 
-        Here the true nulls stand in for those controls. `min_scale` defaults
-        to 1, so calibration can only ever make the analysis more conservative,
-        never less.
-        """
-    )
+    Here the true nulls stand in for those controls. `min_scale` defaults
+    to 1, so calibration can only ever make the analysis more conservative,
+    never less.
+    """)
     return
 
 
 @app.cell
-def _(bb_calibrate_controls, guide_truth, mo, np, pd, screen_with_naive):
+def _(bb_calibrate_controls, guide_truth, mo, pd, screen_with_naive):
     control = (~guide_truth["active"]).to_numpy()
 
     rows = []
@@ -556,30 +579,109 @@ def _(bb_calibrate_controls, guide_truth, mo, np, pd, screen_with_naive):
             pd.DataFrame(rows).round(4),
         ]
     )
-    return calibrated, calibrated_frames, control, method, rows
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(
-        """
-        ## 6. Where this stops
+    mo.md("""
+    ## 6. The four guide-to-gene statistics
 
-        This notebook and the `barcs` Python package cover the guide-level
-        inference path: `bbreg`, `bb_contrast`, `bb_screen`,
-        `bb_calibrate_controls`, and the `original` guide-to-gene statistic.
+    Guides have to be combined into genes somehow, and the choice is not
+    incidental -- it is what the manuscript's later comparisons are about.
+    All four are reachable here because `barcs` calls R rather than
+    reimplementing it.
 
-        The three later guide-to-gene statistics and the dispersion moderation
-        are **not** ported, and every committed result that involves them came
-        from the R implementation. For those, and for all of the benchmarking,
-        use the R scripts — `docs/repository-map.md` maps out which script
-        answers which question.
+    | | |
+    |---|---|
+    | `original` | signed-z aggregation, the historical default |
+    | `normal` | exchangeable normal guide coefficients |
+    | `partial_pool` | random-effects partial pooling |
+    | `eb_moderate` | empirical-Bayes moderation of guide heterogeneity |
 
-        The port is checked against R on every run of
-        `pixi run test-python-vs-r`, which requires the two to agree to eight
-        significant figures on a shared fixture.
-        """
+    They receive identical guide-level fits, so any difference below is
+    attributable to the pooling rule and nothing else.
+    """)
+    return
+
+
+@app.cell
+def _(
+    bb_gene_eb_moderate,
+    bb_gene_normal,
+    bb_gene_original,
+    bb_gene_partial_pool,
+    mo,
+    pd,
+    screen_with_naive,
+    truth,
+):
+    _statistics = {
+        "original": bb_gene_original,
+        "normal": bb_gene_normal,
+        "partial_pool": bb_gene_partial_pool,
+        "eb_moderate": bb_gene_eb_moderate,
+    }
+
+    _rows = []
+    for _label, _function in _statistics.items():
+        try:
+            _scored = _function(screen_with_naive).merge(truth, on="gene", how="left")
+        except Exception as _error:
+            # Some statistics need a minimum number of guides per gene, so a
+            # small slider setting can legitimately put one out of range. Say
+            # which, rather than blanking the whole cell.
+            _rows.append({"statistic": _label, "note": str(_error)[:70]})
+            continue
+        _called = _scored[_scored["fdr"] < 0.10]
+        _rows.append(
+            {
+                "statistic": _label,
+                "genes called": len(_called),
+                "true positives": int(_called["active"].sum()),
+                "realized FDP": (~_called["active"]).sum() / max(len(_called), 1),
+                "recall": int(_called["active"].sum())
+                / max(int(_scored["active"].sum()), 1),
+            }
+        )
+
+    mo.vstack(
+        [
+            mo.md("### At gene FDR 0.10"),
+            pd.DataFrame(_rows).round(4),
+            mo.md(
+                "Read realized FDP against the requested 0.10 first, then "
+                "recall. A statistic that calls more genes has not necessarily "
+                "done better -- it may simply be delivering a higher error rate "
+                "than it advertised."
+            ),
+        ]
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## 7. Where this stops
+
+    This notebook and the `barcs` Python package cover the guide-level
+    inference path: `bbreg`, `bb_contrast`, `bb_screen`,
+    `bb_calibrate_controls`, and all four guide-to-gene statistics.
+
+    Everything above ran in R. `barcs` is an rpy2 wrapper around
+    `R/bbreg.R` and reimplements none of it, so nothing here can drift away
+    from what the benchmarks and the manuscript used, and the whole API is
+    reachable rather than the subset somebody got round to porting.
+
+    `pixi run test-python` checks the marshalling, including a run of this
+    same pipeline against a native `Rscript` over one fixture, required to
+    agree to 1e-12.
+
+    This notebook is a demonstration, not a benchmark. The benchmarks are the
+    R scripts in `examples/`, and `docs/repository-map.md` says which one
+    answers what.
+    """)
     return
 
 
@@ -599,19 +701,27 @@ def _():
     from scipy.special import expit
     from scipy.stats import norm
 
+    # `barcs` is an rpy2 wrapper around `R/bbreg.R`, so everything below runs
+    # the same code the benchmarks and the manuscript used -- including the
+    # three later gene statistics, which exist only in R.
     from barcs import (
         bb_calibrate_controls,
         bb_contrast,
+        bb_gene_eb_moderate,
+        bb_gene_normal,
         bb_gene_original,
+        bb_gene_partial_pool,
         bb_screen,
         bbreg,
     )
 
     return (
-        Path,
         bb_calibrate_controls,
         bb_contrast,
+        bb_gene_eb_moderate,
+        bb_gene_normal,
         bb_gene_original,
+        bb_gene_partial_pool,
         bb_screen,
         bbreg,
         expit,
@@ -620,7 +730,6 @@ def _():
         np,
         pd,
         plt,
-        sys,
     )
 
 
