@@ -33,3 +33,7 @@ output/rendered/
 # Toolchains pixi cannot supply as conda packages, installed by
 # `pixi run setup-julia` and pinned by checksum in scripts/setup_julia.sh.
 .tools/
+
+# marimo / Python caches
+__marimo__/
+.pytest_cache/

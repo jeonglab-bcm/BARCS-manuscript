@@ -76,6 +76,55 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
+section "Python (port of the regression layer)"
+# ---------------------------------------------------------------------------
+
+if command -v python3 >/dev/null 2>&1; then
+  pass "python3" "$(python3 --version 2>&1)"
+
+  # As with R, one interpreter checks every package. `barcs` is checked last
+  # and separately: it is the port itself rather than a dependency, and it
+  # imports from the source tree rather than from an installed distribution.
+  py_report="$(mktemp)"
+  python3 - >"${py_report}" 2>/dev/null <<'EOF'
+import importlib
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("python").resolve()))
+
+packages = [
+    ("numpy", "arrays and linear algebra"),
+    ("scipy", "distributions and the rho root-finder"),
+    ("pandas", "result tables"),
+    ("formulaic", "R-style formula parsing"),
+    ("marimo", "the interactive notebook"),
+    ("matplotlib", "notebook figures"),
+    ("pytest", "the Python test suite"),
+    ("barcs", "the port itself (python/barcs/)"),
+]
+for name, note in packages:
+    try:
+        module = importlib.import_module(name)
+        version = getattr(module, "__version__", "")
+    except Exception:
+        print(f"FAIL\t{name}\t\t{note}")
+    else:
+        print(f"ok\t{name}\t{version}\t{note}")
+EOF
+
+  while IFS=$'\t' read -r status name version note; do
+    case "${status}" in
+      ok)   pass "${name}" "${version}  (${note})" ;;
+      FAIL) fail "${name}" "missing -- needed for ${note}" ;;
+    esac
+  done <"${py_report}"
+  rm -f "${py_report}"
+else
+  fail "python3" "not on PATH"
+fi
+
+# ---------------------------------------------------------------------------
 section "Julia (CRISPulator simulations)"
 # ---------------------------------------------------------------------------
 

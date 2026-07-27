@@ -108,6 +108,21 @@ perl = "*"
 # tarballs.
 curl = "*"
 
+# The Python port of the regression layer (`python/barcs/`) and the marimo
+# notebook that drives it. MAGeCK already pulls in a Python interpreter; these
+# are what the port itself needs.
+python = ">=3.11"
+numpy = "*"
+scipy = "*"
+pandas = "*"
+# R-style formula parsing, so `~ dose + batch` means the same thing in both
+# implementations -- including treatment coding with the first factor level as
+# the reference, which is what R's default contrasts do.
+formulaic = "*"
+marimo = "*"
+matplotlib-base = "*"
+pytest = "*"
+
 # ---------------------------------------------------------------------------
 # Optional: recounting the Liang screens from raw reads
 #
@@ -176,6 +191,25 @@ test = "Rscript tests/run_tests.R"
 test-package = { cmd = "Rscript -e 'devtools::test(\"CB2\")'", depends-on = ["setup-cb2"] }
 
 check-package = { cmd = "R CMD build CB2 && R CMD check --no-manual CB2_*.tar.gz" }
+
+# -- Python port -------------------------------------------------------------
+#
+# `python/barcs/` reimplements the guide-level inference path of `R/bbreg.R`
+# with no R dependency. It covers bbreg, bb_contrast, bb_screen, the control
+# calibration, and the `original` guide-to-gene statistic -- not the three
+# later gene statistics and not dispersion moderation. See python/README.md.
+
+# Pure Python; runs anywhere, no R needed.
+test-python = "python3 -m pytest python/tests -q -k 'not matches_r'"
+
+# The one that matters: fits a shared fixture in both languages and requires
+# agreement to eight significant figures.
+test-python-vs-r = "python3 -m pytest python/tests -q"
+
+# Interactive walkthrough. marimo notebooks are plain Python, so this one
+# diffs and reviews like source rather than like a .ipynb.
+notebook = "marimo edit python/notebooks/barcs_walkthrough.py"
+notebook-run = "marimo run python/notebooks/barcs_walkthrough.py"
 
 # -- Manuscript -------------------------------------------------------------
 

@@ -41,6 +41,8 @@ per minute spent:
 | `R/bbreg.R` | A dependency-free copy of the regression layer used by the benchmark scripts, so a benchmark can be read and run without installing the package. Keep it in step with the package. |
 | `R/method_palette.R` | One colour per method, shared by every figure so a method is the same colour throughout the manuscript. |
 | `tests/run_tests.R` | Tests for the analysis-side copy. The package has its own suite under `CB2/tests`. |
+| `python/barcs/` | A Python port of the guide-level regression, with no R dependency. Covers the inference path only -- not the later guide-to-gene statistics, and not dispersion moderation. Checked against R to eight significant figures by `python/tests/`. See [`python/README.md`](../python/README.md). |
+| `python/notebooks/` | An interactive marimo walkthrough of the method on simulated data. A demonstration, not a benchmark. |
 
 ## Question 1 — backward compatibility
 

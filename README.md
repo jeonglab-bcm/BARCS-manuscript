@@ -168,6 +168,19 @@ supports. Start there if you are returning to the project after time away.
   gene-level copy-number profiles from DepMap 19Q3 (ACH-000219) and 20Q2
   (ACH-000552).
 
+**The method in Python**
+
+- `python/barcs/`: a Python port of the guide-level regression -- `bbreg`,
+  `bb_contrast`, `bb_screen`, control calibration, and the `original`
+  guide-to-gene statistic. No R dependency. The later gene statistics and
+  dispersion moderation are deliberately not ported.
+- `python/tests/`: fits a shared fixture in both languages and requires them to
+  agree to eight significant figures.
+- `python/notebooks/barcs_walkthrough.py`: an interactive marimo notebook, kept
+  as plain Python so it diffs like source.
+- See [`python/README.md`](python/README.md) for the boundary of the port and
+  exactly how closely the two implementations agree.
+
 **Documentation and manuscript**
 
 - `docs/repository-map.md`: what everything above is for.
@@ -216,6 +229,9 @@ pixi run bench-waterbear      # ordered four-bin FACS screen
 
 pixi run manuscript        # build main.pdf
 pixi run test-package      # the CB2 package's own suite
+
+pixi run test-python-vs-r  # check the Python port against R
+pixi run notebook          # interactive marimo walkthrough
 ```
 
 Every task is a plain command, so anything can also be run directly inside
