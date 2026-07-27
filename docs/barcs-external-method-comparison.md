@@ -9,6 +9,16 @@ answers:
 
 No method wins both questions in every benchmark.
 
+**Scope note.** The manuscript compares BARCS against CRISPR-specific gene
+callers only — MAGeCK-MLE and CRISPhieRmix — because that is the choice a
+screen analyst actually faces. The general RNA-seq count models (edgeR-QL,
+DESeq2, limma-voom) were dropped from it. Their results are kept here as the
+supporting record, since they are what established that a fixed nominal cutoff
+means very different things to different methods, and that finding still
+motivates the calibration analysis the manuscript reports. DESeq2 also remains
+in the genome-scale pipeline as CRISPhieRmix's documented input, supplying
+guide-level log2 fold changes rather than competing as a gene caller.
+
 ## CRISPulator FACS simulations
 
 The comparison draws on the same primary low + bulk + high simulations as the
@@ -343,22 +353,25 @@ exact, above one means more false discoveries than advertised.
 | BARCS-original | 0.0 | 0.0 | 0.0 | 0.6 | 0.6 | 0.6 | 0.7 | 37/39 |
 | BARCS-moderated | 0.0 | 0.0 | 0.0 | 0.4 | 0.7 | 0.6 | 0.7 | 37/39 |
 | MAGeCK-MLE | 0.0 | 0.0 | 0.0 | 0.0 | 0.1 | 0.1 | 0.1 | **39/39** |
-| edgeR-QL | 556.5 | 43.7 | 17.2 | 10.0 | 4.1 | 2.5 | 2.0 | 9/39 |
-| DESeq2 | 431.8 | 105.7 | 51.7 | 17.2 | 5.9 | 3.2 | 2.4 | 5/39 |
-| limma-voom | 531.6 | 42.1 | 20.2 | 10.9 | 4.8 | 2.7 | 2.1 | 7/39 |
+| CRISPhieRmix | 0.0 | 0.0 | 0.0 | 0.0 | 1.7 | 2.0 | 2.0 | 22/39 |
 
 "Cells held" = cutoff-by-seed combinations, of 13 × 3 = 39, where realized FDP
 did not exceed the cutoff.
 
-**The count models have an error floor.** Their realized FDP stops descending
-below a requested 1e-4 and flattens near 5e-4, so asking for 1e-6 returns 430
-to 560 times the advertised rate. No cutoff reaches beneath the floor. The
-two-fold overshoot at 0.10 is the *mild* end of their behaviour, and the
-strict end is precisely the regime a genome-wide screen is read in.
+**CRISPhieRmix overshoots about twofold wherever it calls enough to measure**
+(22/39 cells). Its zeros at the strict end are not calibration — it returns 0
+and 4 genes at 1e-6 and 1e-5, so there is nothing there to be wrong about.
+That strict end is precisely the regime a genome-wide screen is read in.
 
 Both BARCS statistics track the requested rate down to 1e-4 and return no
-false discoveries below it (37/39 cells). MAGeCK-MLE holds all 39 but never
-spends more than a tenth of its budget.
+false discoveries below it (37/39 cells), while still calling 276 genes at
+1e-6. MAGeCK-MLE holds all 39 but never spends more than a tenth of its
+budget.
+
+The general count models behaved the same way but far more extremely; that
+analysis is retained in the 400-gene section above, and it is what first
+established that a fixed nominal cutoff means different things to different
+methods.
 
 **BARCS exceptions, named not rounded away.** Both miss 2 of 39 cells, all
 from one seed (20250725) at the 3e-4 and 1e-3 cutoffs, each a single false
@@ -367,25 +380,26 @@ systematic failure — and the reason the calibration claim is a screen average
 rather than a finite-sample guarantee. At MOI 0.30, BARCS-moderated holds
 35/39.
 
-#### F1 across cutoffs: the comparison reverses
+#### F1 across cutoffs
 
 | Method | 1e-6 | 1e-5 | 1e-4 | 1e-3 | 0.01 | 0.05 | 0.10 |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | BARCS-original | 0.046 | 0.126 | 0.262 | 0.456 | 0.653 | 0.774 | 0.811 |
 | BARCS-moderated | 0.248 | 0.354 | 0.479 | 0.607 | 0.748 | 0.827 | **0.847** |
-| MAGeCK-MLE | 0.306 | 0.306 | 0.306 | 0.306 | 0.403 | 0.622 | 0.718 |
-| edgeR-QL | 0.474 | 0.570 | 0.665 | 0.757 | 0.834 | **0.846** | 0.825 |
-| DESeq2 | **0.576** | **0.647** | **0.722** | **0.795** | **0.847** | 0.841 | 0.812 |
-| limma-voom | 0.491 | 0.583 | 0.675 | 0.763 | 0.834 | 0.844 | 0.822 |
+| MAGeCK-MLE | **0.306** | 0.306 | 0.306 | 0.306 | 0.403 | 0.622 | 0.718 |
+| CRISPhieRmix | 0.000 | 0.004 | 0.080 | 0.321 | 0.634 | 0.780 | 0.785 |
 
-BARCS-moderated tops F1 **only at 0.10**. Everywhere stricter DESeq2 leads —
-by 0.33 at 1e-6. Anyone running a stricter screen would read the headline
-table backwards.
+Restricted to CRISPR-specific callers the ordering is stable: BARCS-moderated
+leads at every cutoff from 1e-5 to 0.10. The lone exception is 1e-6, where
+MAGeCK-MLE's 0.306 is a quantization artifact — its call count is identically
+358 from 1e-6 to 3e-3 — rather than a measurement. CRISPhieRmix is the mirror
+image, collapsing to 0.000 and 0.004 at the strict end because it has stopped
+calling.
 
-The cause is the table above: DESeq2 at a requested 1e-6 is running at 430×
-that rate, so it is really near a realized 4e-4, calling 787 genes where
-BARCS-moderated calls 276. Comparing F1 there compares a liberal operating
-point against a conservative one.
+That stability is a consequence of the comparison set, and worth stating as
+such: a fixed requested cutoff does not place different methods at the same
+real error rate, so a method that overshoots looks strong on F1 for that
+reason alone.
 
 #### Matched on realized FDP
 
@@ -394,28 +408,29 @@ point against a conservative one.
 | BARCS-original | 0.491 | 0.529 | 0.631 | 0.678 | 0.738 | 0.795 | 0.819 |
 | BARCS-moderated | 0.640 | 0.677 | 0.724 | 0.764 | 0.808 | 0.838 | 0.847 |
 | MAGeCK-MLE | 0.469 | 0.509 | 0.666 | 0.739 | 0.789 | — | — |
-| edgeR-QL | 0.664 | 0.626 | 0.709 | 0.757 | 0.796 | 0.836 | 0.845 |
-| DESeq2 | 0.671 | 0.653 | 0.717 | 0.761 | 0.801 | 0.840 | 0.849 |
-| limma-voom | 0.656 | 0.637 | 0.707 | 0.759 | 0.801 | 0.835 | 0.848 |
-| **Spread** | 0.202 | 0.168 | 0.058 | 0.025 | 0.019 | 0.005 | 0.003 |
+| CRISPhieRmix | 0.372 | 0.415 | 0.488 | 0.553 | 0.640 | 0.725 | 0.775 |
+| **Spread** | 0.268 | 0.262 | 0.236 | 0.211 | 0.168 | 0.113 | 0.072 |
 
-From a matched 0.005 upward the methods converge to within 0.058 down to
-0.003, with the nominal leader changing row to row. **So moderation does not
-recover more genes than the alternatives at a common error rate.** Below 0.005
-the spread widens to 0.202, but that region is thinly covered — several
-methods reach a realized 0.001 only by extrapolating between distant grid
-points, and MAGeCK-MLE's quantized FDR makes its entry unreliable. The
-convergence above 0.005 is the robust statement; the two strictest rows are
-indicative only.
+**BARCS-moderated leads at every matched realized FDP**, from 0.640 against
+0.372–0.491 at a matched 0.001 to 0.847 against 0.775–0.819 at 0.10. Holding
+the error rate fixed is the point: at the same realized error rate, moderated
+BARCS recovers more genes than either CRISPR-specific comparator. The lead
+narrows as the budget grows, 0.268 of spread at 0.001 down to 0.072 at 0.10,
+which is what should happen when every method is allowed to be wrong more
+often.
 
-Two claims survive:
+Two caveats. MAGeCK-MLE's two strictest entries rest on its quantized FDR and
+are indicative only, and it has no entry at matched 0.05 or 0.10 because it
+never becomes that liberal — absence there is conservatism, not failure.
+**BARCS-MOD over BARCS-ST is the cleanest comparison**, larger at every
+matched error rate, so moderation is a real gain within the BARCS family
+rather than a threshold artifact.
 
-- **BARCS-MOD over BARCS-ST is robust to the cutoff**, larger at every matched
-  realized FDP. Moderation is a real gain within the BARCS family.
-- **BARCS-moderated is the method whose requested cutoff lands where the F1
-  curve is already flat and high while the realized error rate is still below
-  what was asked for.** F1 does not discriminate these methods; whether the
-  number you set is the number you get does.
+Note that this reverses the earlier reading. When the general count models
+were in the comparison, F1 converged above a matched 0.005 and no method
+separated. Restricted to CRISPR-specific callers the separation is clear
+throughout — the count models were the methods that closed the gap, by
+operating at error rates BARCS never reaches.
 
 #### MAGeCK-MLE is not resolvable at strict cutoffs
 

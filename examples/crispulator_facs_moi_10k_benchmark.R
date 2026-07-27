@@ -1,7 +1,13 @@
 #!/usr/bin/env Rscript
 
 # Genome-scale CRISPulator FACS benchmark: two BARCS gene statistics against
-# the general count models, at two multiplicities of infection.
+# the CRISPR-specific gene callers, at two multiplicities of infection.
+#
+# The comparators are MAGeCK-MLE and CRISPhieRmix. Both were designed for
+# pooled screens, which is the comparison a screen analyst actually faces.
+# The general RNA-seq count models are deliberately not scored here: DESeq2
+# still runs, but only to supply the guide-level log2 fold changes that
+# CRISPhieRmix documents as its input, not as a competing gene caller.
 #
 # This replaces the earlier 400-gene sensitivity grid for the headline
 # simulation. The library is 10,000 genes and 50,000 guides, which is the
@@ -18,7 +24,7 @@
 #
 #     Rscript examples/crispulator_facs_moi_10k_benchmark.R --simulate
 #
-# Stage two fits and evaluates, and needs edgeR, limma, and DESeq2:
+# Stage two fits and evaluates, and needs DESeq2 and CRISPhieRmix:
 #
 #     Rscript examples/crispulator_facs_moi_10k_benchmark.R
 #
@@ -85,20 +91,22 @@ if ("--simulate" %in% commandArgs(trailingOnly = TRUE)) {
   quit(save = "no")
 }
 
-needed <- c("edgeR", "limma", "DESeq2")
+needed <- c("DESeq2", "CRISPhieRmix")
 absent <- needed[!vapply(needed, requireNamespace, logical(1), quietly = TRUE)]
 if (length(absent)) {
   stop(
     "This comparison needs ", paste(absent, collapse = ", "),
-    ". Install them from Bioconductor, or on Debian/Ubuntu with ",
-    "apt-get install r-bioc-edger r-bioc-limma r-bioc-deseq2.",
+    ". DESeq2 comes from Bioconductor, or on Debian/Ubuntu with ",
+    "apt-get install r-bioc-deseq2. CRISPhieRmix is installed from source ",
+    "with R CMD INSTALL after cloning github.com/timydaley/CRISPhieRmix; it ",
+    "needs sn and nloptr, which in turn need gfortran and BLAS/LAPACK ",
+    "headers (apt-get install gfortran libblas-dev liblapack-dev).",
     call. = FALSE
   )
 }
 suppressPackageStartupMessages({
-  library(edgeR)
-  library(limma)
   library(DESeq2)
+  library(CRISPhieRmix)
 })
 source(file.path("R", "bbreg.R"))
 
@@ -206,24 +214,6 @@ fit_one_run <- function(directory) {
   names(low_high$results) <- paste0(names(low_high$results), " (low-high)")
   gene_results <- c(gene_results, low_high$results)
 
-  dge <- calcNormFactors(DGEList(counts = y[keep_guide, , drop = FALSE]))
-  dge <- estimateDisp(dge, model_matrix, robust = TRUE)
-  quasi_likelihood <- glmQLFTest(
-    glmQLFit(dge, model_matrix, robust = TRUE), coef = "phenotype_z"
-  )
-  gene_results[["edgeR-QL"]] <- bb_gene_original(data.frame(
-    gene = guide_truth$gene[keep_guide],
-    estimate = quasi_likelihood$table$logFC,
-    p_value = quasi_likelihood$table$PValue
-  ), min_guides = 1L)
-
-  voom_fit <- eBayes(lmFit(voom(dge, model_matrix), model_matrix))
-  gene_results[["limma-voom"]] <- bb_gene_original(data.frame(
-    gene = guide_truth$gene[keep_guide],
-    estimate = voom_fit$coefficients[, "phenotype_z"],
-    p_value = voom_fit$p.value[, "phenotype_z"]
-  ), min_guides = 1L)
-
   # MAGeCK-MLE, official binary, on the same low-bulk-high samples.
   mageck_dir <- file.path(directory, "mageck")
   dir.create(mageck_dir, showWarnings = FALSE, recursive = TRUE)
@@ -288,15 +278,45 @@ fit_one_run <- function(directory) {
     fdr = mle_raw[["phenotype|fdr"]]
   )
 
+  # DESeq2 supplies guide-level log2 fold changes. It is CRISPhieRmix's
+  # documented input, not a scored gene caller: nothing below reads its
+  # p-values, only the shrunken effect per guide.
   deseq_result <- results(DESeq(DESeqDataSetFromMatrix(
     countData = round(y[keep_guide, , drop = FALSE]),
     colData = design_data, design = formula
   ), quiet = TRUE), name = "phenotype_z")
-  gene_results[["DESeq2"]] <- bb_gene_original(data.frame(
-    gene = guide_truth$gene[keep_guide],
-    estimate = deseq_result$log2FoldChange,
-    p_value = deseq_result$pvalue
-  ), min_guides = 1L)
+
+  # CRISPhieRmix: a hierarchical mixture over guides within a gene, with the
+  # negative-control guides supplying the empirical null. BIMODAL = TRUE
+  # because this screen has both phenotype-increasing and -decreasing genes;
+  # the one-sided default would score only one of them. The control guides are
+  # consumed as the null, so control genes get no gene-level call, exactly as
+  # they get none from MAGeCK-MLE.
+  guide_gene <- guide_truth$gene[keep_guide]
+  guide_control <- guide_truth$class[keep_guide] == "negcontrol"
+  log_fold_change <- deseq_result$log2FoldChange
+  usable <- is.finite(log_fold_change)
+  targeting <- usable & !guide_control
+  set.seed(20250724L)
+  mixture <- CRISPhieRmix::CRISPhieRmix(
+    x = log_fold_change[targeting],
+    geneIds = factor(guide_gene[targeting]),
+    negCtrl = log_fold_change[usable & guide_control],
+    BIMODAL = TRUE, VERBOSE = FALSE
+  )
+  mixture_genes <- as.character(mixture$genes)
+  # CRISPhieRmix reports a local false-discovery rate rather than a p-value
+  # and no signed effect, so the gene effect is the mean guide log fold change
+  # and the local fdr stands in for the p-value wherever a ranking is needed.
+  gene_effect <- tapply(
+    log_fold_change[targeting], guide_gene[targeting], mean
+  )
+  gene_results[["CRISPhieRmix"]] <- data.frame(
+    gene = mixture_genes,
+    estimate = unname(gene_effect[mixture_genes]),
+    p_value = mixture$locfdr,
+    fdr = mixture$FDR
+  )
 
   # MAGeCK-MLE drops genes its own filters reject, so without this every
   # method would be scored on a different gene universe and the metrics would
@@ -654,11 +674,9 @@ method_colours <- c(
   `BARCS-original` = "#0072B2",
   `BARCS-moderated` = "#D55E00",
   `MAGeCK-MLE` = "#6A3D9A",
-  `edgeR-QL` = "#CC79A7",
-  DESeq2 = "#56B4E9",
-  `limma-voom` = "#666666"
+  CRISPhieRmix = "#009E73"
 )
-method_pch <- c(16, 17, 15, 8, 4, 3)
+method_pch <- c(16, 17, 15, 8)
 names(method_pch) <- names(method_colours)
 curve_methods <- names(method_colours)
 x_positions <- -log10(thresholds)

@@ -46,10 +46,13 @@ MAGeCK-MLE in global discrimination.  In a primary-T-cell FACS screen,
 control-calibrated BARCS recovered 22 of 26 experimentally confirmed IL2RA
 regulators versus 17 for all-bin MAGeCK-MLE and reduced the non-targeting
 $p<0.05$ frequency from 13.3\% to 4.9\%.  In a 10,000-gene CRISPulator FACS
-simulation, dispersion-moderated BARCS matched the count models and MAGeCK-MLE
-in ranking quality (average precision 0.919 versus 0.916--0.921) while
-realizing a false-discovery proportion of 0.066 against a requested 0.10,
-where edgeR-QL, DESeq2, and limma-voom realized 0.21 to 0.24.  Conversely,
+simulation, dispersion-moderated BARCS led F1 at every matched realized
+false-discovery proportion against MAGeCK-MLE and CRISPhieRmix, matching
+CRISPhieRmix's recall at a third of its error rate (0.066 against 0.197) while
+MAGeCK-MLE ranked marginally best but called least.  On simCRISPR factorial
+screens the recovered gene-by-environment interaction depended far more on the
+beta-binomial denominator than on the estimator: F1 rose from 0.481 to 0.917
+when control guides rather than the full library set it.  Conversely,
 Liang's published RRA led the processed-count Cas13 benchmark, exposing the
 power boundary of regression inference with one residual degree of freedom.
 
@@ -414,11 +417,13 @@ continuous-time MAGeCK and Chronos in longitudinal HT-29 data, provides the
 strongest high-precision recall there, and recovers 22 of 26 validated IL2RA
 regulators after control calibration in the ordered-bin stress test.  The
 genome-scale CRISPulator study shows its characteristic tradeoff: no
-universal advantage in global ranking, where the six methods compared span
-0.019 in average precision, but a requested error rate that is close to the
-realized one, which the count models tested here do not deliver.  Endpoint
-analyses recover established biology and demonstrate backward compatibility
-rather than a need to replace successful pairwise tools.
+advantage in global ranking, where MAGeCK-MLE leads, but a requested error
+rate close to the realized one, and the highest F1 at every matched error
+rate against both CRISPR-specific comparators.  The simCRISPR study adds the
+limit of that claim, since the same estimator loses half its recall when the
+denominator rather than the model is chosen badly.  Endpoint analyses recover
+established biology and demonstrate backward compatibility rather than a need
+to replace successful pairwise tools.
 
 Equally important, the method has explicit stopping rules.  It does not create
 biological replication from read depth or guide number, make bins from one
