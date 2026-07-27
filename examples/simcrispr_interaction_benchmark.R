@@ -51,6 +51,10 @@
 #
 #     Rscript examples/simcrispr_interaction_benchmark.R
 #
+# This is the fitting stage and writes the tables in `data/derived`. The figure
+# is drawn separately by `examples/simcrispr_interaction_figure.R`, which reads
+# only those tables, so the plot can be redrawn without refitting.
+#
 # MAGeCK-MLE uses the official 0.5.9.5 binary located by `R/mageck.R`, with
 # each sgRNA as its own gene because the truth is guide-level.
 
@@ -487,101 +491,6 @@ write.csv(
   file.path("data", "derived", "simcrispr_interaction_null_estimates.csv"),
   row.names = FALSE
 )
-
-# ---- figure ----------------------------------------------------------------
-# Coloured by denominator rather than by estimator, because the denominator is
-# what the experiment varies.
-denominator_colours <- c(
-  Library = "#0072B2", `Non-targeting` = "#D55E00",
-  `Safe-harbor` = "#009E73", `MAGeCK-MLE` = "#6A3D9A"
-)
-curves <- list(
-  Library = "BARCS-moderated [library]",
-  `Non-targeting` = "BARCS-moderated [non-targeting]",
-  `Safe-harbor` = "BARCS-moderated [safe-harbor]",
-  `MAGeCK-MLE` = "MAGeCK-MLE [non-targeting]"
-)
-curve_pch <- c(16, 17, 15, 8)
-names(curve_pch) <- names(curves)
-x_at <- -log10(thresholds)
-x_text <- as.expression(lapply(thresholds, function(value) {
-  exponent <- round(log10(value))
-  if (isTRUE(all.equal(value, 10^exponent)) && exponent <= -3) {
-    bquote(10^.(exponent))
-  } else {
-    format(value, trim = TRUE, scientific = FALSE)
-  }
-}))
-
-scan_curve <- function(metric, title, ylab, ylim, identity_line = FALSE) {
-  plot(
-    NA, xlim = range(x_at), ylim = ylim, xaxt = "n",
-    xlab = "Nominal gene FDR", ylab = ylab, main = title, bty = "l"
-  )
-  axis(1, at = x_at, labels = x_text)
-  if (identity_line) {
-    lines(x_at, thresholds, lty = 2, lwd = 1.5, col = "#333333")
-  }
-  for (label in names(curves)) {
-    rows <- scan_summary[
-      scan_summary$method == curves[[label]] & scan_summary$metric == metric,
-      , drop = FALSE
-    ]
-    rows <- rows[match(thresholds, rows$nominal_fdr), , drop = FALSE]
-    lines(x_at, rows$mean, type = "o", pch = curve_pch[[label]], lwd = 2,
-          col = denominator_colours[[label]])
-  }
-}
-
-pdf(
-  file.path("figures", "simcrispr_interaction.pdf"),
-  width = 10.5, height = 8, useDingbats = FALSE
-)
-layout(matrix(c(1, 2, 3, 4, 5, 5), nrow = 3, byrow = TRUE),
-       heights = c(1, 1, 0.18))
-par(mar = c(4.5, 4.3, 2.8, 1))
-
-scan_curve("f1", "A  Interaction detection", "F1 score", c(0, 1))
-scan_curve(
-  "held_out_control_call_rate",
-  "B  Calibration on held-out true zeros", "Call rate", c(0, 0.22),
-  identity_line = TRUE
-)
-
-# Panel C: the mechanism. Where the estimated interaction sits for guides
-# whose true interaction is exactly zero.
-null_panels <- names(curves)[1:3]
-null_values <- lapply(null_panels, function(label) {
-  null_estimates$estimate[null_estimates$method == curves[[label]]]
-})
-names(null_values) <- null_panels
-par(mar = c(4.5, 6.6, 2.8, 1))
-boxplot(
-  rev(null_values), horizontal = TRUE, las = 1, outline = FALSE,
-  col = rev(unname(denominator_colours[null_panels])),
-  border = "#333333", xlab = "Estimated interaction coefficient",
-  main = "C  Bias on guides whose true interaction is zero",
-  ylim = c(-0.35, 0.35)
-)
-abline(v = 0, lty = 2, lwd = 1.5, col = "#333333")
-
-# Panel D: the cutting artifact the two control classes handle differently.
-par(mar = c(4.5, 4.3, 2.8, 1))
-scan_curve(
-  "safe_harbor_call_rate",
-  "D  Safe-harbor guides called (cutting artifact)", "Call rate", c(0, 0.22)
-)
-
-par(mar = c(0, 0, 0, 0))
-plot.new()
-legend(
-  "center", legend = names(curves),
-  col = unname(denominator_colours[names(curves)]),
-  pch = unname(curve_pch[names(curves)]),
-  lty = 1, lwd = 2, horiz = TRUE, bty = "n", cex = 0.9,
-  title = "Beta-binomial denominator (BARCS-MOD unless noted)"
-)
-dev.off()
 
 cat("\nsimCRISPR interaction recovery,", n_guides, "guides,",
     replicates, "replicates per arm, over", length(seeds), "seeds\n")
