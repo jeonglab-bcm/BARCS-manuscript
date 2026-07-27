@@ -377,6 +377,17 @@ bb_screen <- function(counts, data, formula, term, totals = NULL,
   if (any(counts > rep(totals, each = nrow(counts)))) {
     .bb_stop("A guide count cannot exceed its sample's `total`.")
   }
+  # Checked here as well as per guide because the per-guide failure is silent:
+  # every fit would return an all-NA row with `converged = FALSE`, which reads
+  # as a modelling failure rather than a malformed argument. Size-factor
+  # normalization is the usual way to arrive with non-integer totals.
+  if (any(abs(totals - round(totals)) >= sqrt(.Machine$double.eps))) {
+    .bb_stop(paste0(
+      "`totals` must be integer-valued library sizes; round them first. ",
+      "A beta-binomial denominator counts sequenced reads, so a fractional ",
+      "total has no likelihood."
+    ))
+  }
   if (is.null(guide)) {
     guide <- sprintf("guide_%d", seq_len(nrow(counts)))
   }

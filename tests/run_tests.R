@@ -434,4 +434,41 @@ bad_design_failed <- inherits(
 )
 stopifnot(bad_response_failed, bad_design_failed)
 
+# Non-integer totals must fail loudly at the screen level. Without the guard
+# every guide fails to converge individually and `bb_screen()` reports a table
+# of NA rows, which reads as a modelling failure rather than a bad argument.
+# Size-factor normalization is the usual route to a fractional total.
+set.seed(909)
+guides_scaled <- 40L
+samples_scaled <- 6L
+counts_scaled <- matrix(
+  rpois(guides_scaled * samples_scaled, 300),
+  guides_scaled, samples_scaled,
+  dimnames = list(
+    sprintf("guide_%d", seq_len(guides_scaled)),
+    sprintf("sample_%d", seq_len(samples_scaled))
+  )
+)
+data_scaled <- data.frame(
+  sample = colnames(counts_scaled),
+  arm = rep(0:1, each = samples_scaled / 2)
+)
+fractional_totals_failed <- inherits(
+  try(
+    bb_screen(
+      counts = counts_scaled, totals = colSums(counts_scaled) + 0.5,
+      data = data_scaled, formula = ~arm, term = "arm",
+      guide = rownames(counts_scaled)
+    ),
+    silent = TRUE
+  ),
+  "try-error"
+)
+integer_totals <- bb_screen(
+  counts = counts_scaled, totals = colSums(counts_scaled),
+  data = data_scaled, formula = ~arm, term = "arm",
+  guide = rownames(counts_scaled)
+)
+stopifnot(fractional_totals_failed, all(integer_totals$converged))
+
 cat("All beta-binomial regression tests passed.\n")
