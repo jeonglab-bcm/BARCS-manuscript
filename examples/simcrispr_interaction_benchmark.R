@@ -321,6 +321,11 @@ evaluate_one <- function(seed) {
   negative <- held_out_common
   scored <- positive | negative
 
+  # The estimated interaction on guides whose true interaction is exactly
+  # zero. Under a denominator that imports a composition shift this
+  # distribution sits away from zero, which is the whole mechanism.
+  null_rows <- list()
+
   point_rows <- list()
   scan_rows <- list()
   for (method in names(results)) {
@@ -328,6 +333,11 @@ evaluate_one <- function(seed) {
     score <- -log10(pmax(result$p_value, .Machine$double.xmin))
     called <- result$fdr < nominal_fdr
     sign_match <- sign(result$estimate) == sign(interaction_truth)
+
+    null_rows[[method]] <- data.frame(
+      analysis_protocol = analysis_protocol, method = method, seed = seed,
+      guide = common_guides[negative], estimate = result$estimate[negative]
+    )
 
     true_positive <- sum(called[scored] & positive[scored])
     false_positive <- sum(called[scored] & negative[scored])
@@ -404,7 +414,8 @@ evaluate_one <- function(seed) {
   }
   list(
     point = do.call(rbind, point_rows),
-    scan = do.call(rbind, scan_rows)
+    scan = do.call(rbind, scan_rows),
+    null = do.call(rbind, null_rows)
   )
 }
 
@@ -412,14 +423,17 @@ evaluate_one <- function(seed) {
 
 point_list <- list()
 scan_list <- list()
+null_list <- list()
 for (seed in seeds) {
   evaluated <- evaluate_one(seed)
   point_list[[length(point_list) + 1L]] <- evaluated$point
   scan_list[[length(scan_list) + 1L]] <- evaluated$scan
+  null_list[[length(null_list) + 1L]] <- evaluated$null
   message("evaluated simCRISPR seed ", seed)
 }
 metrics <- do.call(rbind, point_list)
 scan <- do.call(rbind, scan_list)
+null_estimates <- do.call(rbind, null_list)
 
 dir.create(file.path("data", "derived"), showWarnings = FALSE, recursive = TRUE)
 write.csv(
@@ -472,6 +486,106 @@ write.csv(
   file.path("data", "derived", "simcrispr_interaction_scan_summary.csv"),
   row.names = FALSE
 )
+write.csv(
+  null_estimates,
+  file.path("data", "derived", "simcrispr_interaction_null_estimates.csv"),
+  row.names = FALSE
+)
+
+# ---- figure ----------------------------------------------------------------
+# Coloured by denominator rather than by estimator, because the denominator is
+# what the experiment varies.
+denominator_colours <- c(
+  Library = "#0072B2", `Non-targeting` = "#D55E00",
+  `Safe-harbor` = "#009E73", `MAGeCK-MLE` = "#6A3D9A"
+)
+curves <- list(
+  Library = "BARCS-moderated [library]",
+  `Non-targeting` = "BARCS-moderated [non-targeting]",
+  `Safe-harbor` = "BARCS-moderated [safe-harbor]",
+  `MAGeCK-MLE` = "MAGeCK-MLE [non-targeting]"
+)
+curve_pch <- c(16, 17, 15, 8)
+names(curve_pch) <- names(curves)
+x_at <- -log10(thresholds)
+x_text <- as.expression(lapply(thresholds, function(value) {
+  exponent <- round(log10(value))
+  if (isTRUE(all.equal(value, 10^exponent)) && exponent <= -3) {
+    bquote(10^.(exponent))
+  } else {
+    format(value, trim = TRUE, scientific = FALSE)
+  }
+}))
+
+scan_curve <- function(metric, title, ylab, ylim, identity_line = FALSE) {
+  plot(
+    NA, xlim = range(x_at), ylim = ylim, xaxt = "n",
+    xlab = "Nominal gene FDR", ylab = ylab, main = title, bty = "l"
+  )
+  axis(1, at = x_at, labels = x_text)
+  if (identity_line) {
+    lines(x_at, thresholds, lty = 2, lwd = 1.5, col = "#333333")
+  }
+  for (label in names(curves)) {
+    rows <- scan_summary[
+      scan_summary$method == curves[[label]] & scan_summary$metric == metric,
+      , drop = FALSE
+    ]
+    rows <- rows[match(thresholds, rows$nominal_fdr), , drop = FALSE]
+    lines(x_at, rows$mean, type = "o", pch = curve_pch[[label]], lwd = 2,
+          col = denominator_colours[[label]])
+  }
+}
+
+pdf(
+  file.path("figures", "simcrispr_interaction.pdf"),
+  width = 10.5, height = 8, useDingbats = FALSE
+)
+layout(matrix(c(1, 2, 3, 4, 5, 5), nrow = 3, byrow = TRUE),
+       heights = c(1, 1, 0.18))
+par(mar = c(4.5, 4.3, 2.8, 1))
+
+scan_curve("f1", "A  Interaction detection", "F1 score", c(0, 1))
+scan_curve(
+  "held_out_control_call_rate",
+  "B  Calibration on held-out true zeros", "Call rate", c(0, 0.22),
+  identity_line = TRUE
+)
+
+# Panel C: the mechanism. Where the estimated interaction sits for guides
+# whose true interaction is exactly zero.
+null_panels <- names(curves)[1:3]
+null_values <- lapply(null_panels, function(label) {
+  null_estimates$estimate[null_estimates$method == curves[[label]]]
+})
+names(null_values) <- null_panels
+par(mar = c(4.5, 6.6, 2.8, 1))
+boxplot(
+  rev(null_values), horizontal = TRUE, las = 1, outline = FALSE,
+  col = rev(unname(denominator_colours[null_panels])),
+  border = "#333333", xlab = "Estimated interaction coefficient",
+  main = "C  Bias on guides whose true interaction is zero",
+  ylim = c(-0.35, 0.35)
+)
+abline(v = 0, lty = 2, lwd = 1.5, col = "#333333")
+
+# Panel D: the cutting artifact the two control classes handle differently.
+par(mar = c(4.5, 4.3, 2.8, 1))
+scan_curve(
+  "safe_harbor_call_rate",
+  "D  Safe-harbor guides called (cutting artifact)", "Call rate", c(0, 0.22)
+)
+
+par(mar = c(0, 0, 0, 0))
+plot.new()
+legend(
+  "center", legend = names(curves),
+  col = unname(denominator_colours[names(curves)]),
+  pch = unname(curve_pch[names(curves)]),
+  lty = 1, lwd = 2, horiz = TRUE, bty = "n", cex = 0.9,
+  title = "Beta-binomial denominator (BARCS-MOD unless noted)"
+)
+dev.off()
 
 cat("\nsimCRISPR interaction recovery,", n_guides, "guides,",
     replicates, "replicates per arm, over", length(seeds), "seeds\n")
