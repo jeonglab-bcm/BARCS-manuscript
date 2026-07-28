@@ -38,16 +38,10 @@ if (!all(file.exists(c(count_source, validation_source)))) {
   )
 }
 
-cpp_library <- file.path("CB2", "src", paste0("CB2", .Platform$dynlib.ext))
-if (file.exists(cpp_library) &&
-    requireNamespace("Rcpp", quietly = TRUE) &&
-    requireNamespace("RcppArmadillo", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(Rcpp))
-  suppressPackageStartupMessages(library(RcppArmadillo))
-  if (!"CB2" %in% names(getLoadedDLLs())) {
-    dyn.load(cpp_library)
-  }
-  source(file.path("CB2", "R", "RcppExports.R"))
+# Use BARCS's own compiled RcppArmadillo kernels when the package is installed.
+# The base-R fallback in R/bbreg.R remains valid but is slower.
+if (requireNamespace("BARCS", quietly = TRUE)) {
+  suppressPackageStartupMessages(library(BARCS))
 }
 source(file.path("R", "bbreg.R"))
 

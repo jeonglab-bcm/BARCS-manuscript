@@ -1,0 +1,55 @@
+% !TeX root = ../../main.tex
+\subsubsection{Liang Cas13 fitness benchmark}
+
+We used the transcriptome-scale RfxCas13d fitness screens of Liang
+et al.\ across HAP1, HEK293FT, K562, MDA-MB-231, and THP1 cells
+\citep{liang2026lncrna}.  The library contains 56,322 guides targeting 5,496
+lncRNAs, 3,156 protein-coding genes, and 1,000 non-targeting controls.
+The primary comparison used day 14 versus day 0 and the deposited normalized
+guide values in Table S2, retaining two biological replicates where available.
+Table S2C contains one K562 day-0 column and both day-14 columns.  We used this
+deposited layout directly and applied no additional MAGeCK normalization.
+These are fractional processed values after the authors' median-of-ratios
+normalization, ComBat correction, and replicate-outlier procedure, not raw
+integer read counts.  Because BARCS enforces integer counts, we explicitly
+rounded each value to the nearest pseudo-count, recorded the rounding error,
+and supplied the identical rounded matrix to BARCS, MAGeCK-RRA, and
+MAGeCK-MLE.  Thus this analysis is explicitly a processed-count sensitivity
+comparison: BARCS's beta-binomial and MAGeCK's negative-binomial likelihoods
+do not retain their literal sampling interpretations.  Its purpose is to
+compare rankings obtained from exactly the same public input, not to present
+pseudo-count $p$-values as a raw-count validation.
+
+For an optional raw-count confirmation, the repository also supplies a
+restartable pipeline that streams endpoint reads from BioProject
+PRJNA1344834 without retaining FASTQ files.  It implements the two stated
+Cutadapt \citep{martin2011cutadapt} anchor rules and aligns 23-nucleotide
+inserts to the Table S1B reference using Bowtie
+\citep{langmead2009bowtie} arguments \texttt{-v 1 -m 3 --best -q}.  The article
+prose describes ``up to three mismatches,'' whereas \texttt{-v 1} permits one;
+the executable argument is therefore the reproducible contract.
+
+Four gene-level analyses were kept distinct.  ``Liang RRA'' denotes the
+authors' deposited day-14 results from \texttt{RobustRankAggreg} 1.2.1
+\citep{kolde2012rra}; it is not MAGeCK-RRA.  Official MAGeCK-RRA used
+\texttt{mageck test} without renormalizing Table S2, and official MAGeCK-MLE
+used a day-14 coefficient with a
+replicate indicator when two complete pairs were available
+\citep{li2014mageck,li2015mageckvispr}.  BARCS used the identical
+replicate-plus-day design, calibrated guide statistics with the 1,000
+non-targeting controls, and applied the prespecified directional Stouffer
+gene summary.  Each method retained its native gene statistic; agreement was
+reported separately as Spearman correlation of gene effects.
+
+The published Liang RRA calls were treated as a comparator, not ground truth.
+The positive set comprised the library's known-essential protein-coding
+genes, defined in the study from DepMap knockout screens.  Cell-line-specific
+nulls were targeted lncRNAs with TPM equal to zero in both available
+expression assays.  Primary operating metrics were average precision,
+essential-control recall at an empirical 5\% null false-positive rate, the
+absolute difference between the null $p<0.05$ fraction and its nominal 0.05
+target, and directional essential-control recall at gene FDR 0.10.  Liang and
+BARCS gene $p$-values were Benjamini--Hochberg adjusted within each cell line;
+the official MAGeCK outputs supplied their gene FDR values.  These controls
+test ranking and calibration without assuming that disagreement with the
+published discovery list is an error.

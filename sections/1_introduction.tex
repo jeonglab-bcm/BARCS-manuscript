@@ -1,0 +1,138 @@
+% !TeX root = ../main.tex
+Many pooled CRISPR screens no longer ask only whether guide abundance differs
+between a control group and one treatment group.  Libraries may be collected
+across time, dose, ordered FACS bins, donors, batches, or combinations of these
+variables.  The scientific target is then a trend, adjusted association,
+interaction, or prespecified contrast.  Dichotomizing the design into
+``high'' and ``low'' groups discards intermediate information and makes
+covariate adjustment opaque.
+
+Pooled-screen tools inherited their count distribution from RNA-seq, where read
+counts were first treated as Poisson \citep{marioni2008rnaseq} and then, to
+admit overdispersion, as negative binomial
+\citep{anders2010deseq,love2014deseq2}; several widely used sgRNA tools adopted
+the negative binomial directly \citep{li2014mageck,spahn2017pinaplpy}.  Screen
+counts are not structured like transcript counts, however: transcript lengths
+span orders of magnitude, whereas sgRNAs are synthesized to a single fixed
+length.  CB\textsuperscript{2} therefore modeled each guide count as
+beta-binomial against its library total, and demonstrated that the
+beta-binomial fits CRISPR pooled-screen data better than the negative binomial
+\citep{jeong2019beta}.
+
+The limitation was never that variance model but the mean model beside it.  The
+statistical construction for regression on overdispersed sequencing counts has
+existed since \citet{baggerly2004overdispersed}, but no CRISPR-screen
+implementation has made the beta-binomial available beyond a comparison of two
+groups.
+A time course, a dose series, a set of ordered FACS bins, or a donor-adjusted
+contrast must first be collapsed into ``high'' and ``low'' before the
+better-fitting likelihood can be used at all, so an analyst with a quantitative
+design has had to choose between the right variance model and the right mean
+model.  Closing that gap requires only the same beta-binomial hierarchy under
+an arbitrary design matrix.
+
+Stated concretely, for guide $g$ suppose we observe counts $K_{gi}$, full
+mapped-guide totals $N_i$, and one row $\mathbf{x}_i^\top$ of a full-rank
+design matrix for each independent biological screen unit $i$, represented by a
+sequenced library.  We want to estimate
+\begin{equation}
+  \logit(\mu_{gi})
+  =
+  \mathbf{x}_i^\top\boldsymbol{\beta}_g
+  \quad\text{and test}\quad
+  H_0:\mathbf{c}^\top\boldsymbol{\beta}_g=0,
+  \label{eq:intro-target}
+\end{equation}
+while allowing unequal library depths and extra-binomial variation.  The
+output should be an interpretable guide coefficient, standard error, and
+$p$-value for the scientific contrast selected before examining the guide
+results.
+
+Terminology matters: guide count or proportion is the response in
+Equation~\eqref{eq:intro-target}.  Time, dose, treatment, or an ordered
+phenotype summary enters as a sample-level predictor.  BARCS does not analyze
+a continuous per-cell outcome unless that outcome has first been observed or
+validly summarized at the library level.
+
+Four familiar approaches fall short of the target in
+Equation~\eqref{eq:intro-target}, each for a different reason, in rough order
+of how close they come.  Supplementary Table~\ref{tab:problem} states the same
+specification component by component, including what the model does not
+identify.
+
+\emph{Regressing on individual reads misidentifies the information unit.}
+Each read becomes an observation, so residual degrees of freedom grow with
+sequencing depth and a library sequenced twice as deeply appears to carry twice
+the biological evidence.  It carries no additional biological evidence; it
+remains a single screen unit, measured more precisely.
+
+\emph{Repeating a two-group test misspecifies the estimand.}  Separate pairwise
+contrasts cannot express a single coefficient adjusted for the remaining
+columns of $X$, and splitting an ordered design into pairs discards the
+intermediate levels that motivated collecting it.
+
+\emph{General RNA-seq count models satisfy both requirements and differ in the
+treatment of depth.}  edgeR and limma--voom fit a design matrix and test contrasts,
+but they enter library size as an offset or as a precision weight on a
+normalized scale \citep{lun2016edger,law2014voom}.  A guide count is instead a
+draw from a known total, and using $N_i$ as that total is what splits the
+variance into a sequencing term that shrinks with depth and a between-library
+term that does not, as in Equation~\eqref{eq:propvar}.
+
+\emph{Specialist screen models lie at the opposite extreme.}  Chronos and
+Waterbear answer richer questions---growth dynamics, joint bin
+membership---but each is built around one experimental structure, and neither
+returns an arbitrary prespecified coefficient or contrast as its output.
+
+What has changed in the seven years since CB\textsuperscript{2}
+\citep{jeong2019beta} is not the estimating equation but the evidence available
+to test a multiple-group extension.  Each
+dataset that discriminates one is recent: deposited longitudinal fitness screens
+with a joint population-dynamics model to compare against
+\citep{dempster2021chronos}, an ordered-bin FACS screen carrying 26
+individually knockout-validated regulators alongside hundreds of non-targeting
+guides \citep{freimer2022il2ra,pimentel2024waterbear}, a simulator that gives
+every guide a genuine interaction rather than one scalar effect
+\citep{zhu2026simcrispr}, and transcriptome-scale Cas13 screens with
+cell-line-matched null controls \citep{liang2026lncrna}.  Seven years ago a
+quantitative-design extension could be argued from first principles; it can now
+be settled per design class against validated biology.  The designs in which
+BARCS is outperformed are reported here as part of that assessment.
+
+BARCS---Beta-binomial Analysis and Regression for CRISPR Screens---keeps the
+better-fitting likelihood and replaces the two group means with a design
+matrix.  It models each guide count against the corresponding full-library
+total, uses a beta-binomial variance to separate sequencing precision from
+between-library heterogeneity, and places continuous variables, factors,
+interactions, and covariates in an ordinary R model matrix.  Independent
+libraries, not read depth or guide number, determine the sample-level
+reference degrees of freedom.  The evaluation below therefore concentrates on
+designs a two-group test cannot express---ordered bins, a factorial
+interaction, and a genome-scale sorted screen---and treats the longitudinal
+case as a check that nothing is lost where specialist methods already
+apply.
+
+The manuscript makes four contributions.  First, it defines the quantitative
+pooled-screen target as a coefficient or contrast rather than a forced binary
+comparison.  Second, it establishes precisely how that regression framework
+relates to the original CB\textsuperscript{2} statistic: exact nesting on the
+legacy group-summary scale and first-order local equivalence for the default
+logit fit under stated asymptotics, not finite-sample identity.  Third, it
+provides control-based diagnostics and an optional shared-effect gene
+statistic without making Fisher or Stouffer aggregation part of the core
+method.  Fourth, it evaluates both the intended use case and failure
+boundaries against MAGeCK \citep{li2014mageck,li2015mageckvispr}, Chronos
+\citep{dempster2021chronos}, BAGEL2 \citep{kim2021bagel2}, Waterbear
+\citep{pimentel2024waterbear}, MAUDE \citep{deboer2020maude}, CRISPhieRmix
+\citep{daley2018crisphiermix}, and the published
+\texttt{RobustRankAggreg} analysis of \citet{liang2026lncrna}
+\citep{kolde2012rra}, which is a rank aggregation distinct from MAGeCK-RRA.
+
+The scope is deliberately narrower than continuous per-cell phenotype
+analysis.  BARCS analyzes a quantitative coordinate attached to each
+biological screen unit.  It cannot reconstruct a continuous phenotype for
+each cell when guide identity and phenotype were never observed jointly.  It
+also does not make correlated FACS bins independent, infer mechanistic
+viability dynamics, correct copy number automatically, or replace missing
+biological replication.  Those boundaries determine the benchmark design and
+the method choice rules reported below.

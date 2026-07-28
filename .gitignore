@@ -25,3 +25,9 @@ results/
 
 # Rendered page images used only for visual QA
 output/rendered/
+.Rproj.user
+
+# R package compiled artifacts and session history
+src/*.o
+src/*.so
+.Rhistory

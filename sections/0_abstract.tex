@@ -1,0 +1,30 @@
+% !TeX root = ../main.tex
+\begin{abstract}
+\noindent\textbf{Background.}  Pooled CRISPR screens increasingly place
+libraries along time, dose, FACS bins, or donors, making the estimand a trend,
+adjusted association, or interaction, not a binary contrast.
+
+\noindent\textbf{Methods.}  BARCS fits
+$\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g$ per guide against
+unfiltered library totals, with a beta-binomial variance separating
+sequencing precision from between-library heterogeneity, and refers a
+prespecified coefficient or contrast to $t_{m-q}$ on independent libraries.
+Two new additional components could improve accuracy: negative-control
+calibration and guide-dispersion moderation.
+
+\noindent\textbf{Results.}  In a primary-T-cell IL2RA FACS screen BARCS
+recovered 22 of 26 validated regulators versus 17 for MAGeCK-MLE, calibration
+cutting non-targeting $p<0.05$ from 13.3\% to 4.9\%.  In a 10,000-gene
+CRISPulator simulation, moderation raised F1 from 0.811 to 0.847, leading
+MAGeCK-MLE and CRISPhieRmix at every matched false-discovery proportion.  On
+simCRISPR, interaction F1 rose from 0.481 to 0.917 when control guides replaced
+the full library as denominator.  Two benchmarks bound the claim: a
+longitudinal HT-29 screen gave parity with continuous-time MAGeCK-MLE and
+Chronos rather than gain, and the original authors' rank aggregation led a
+processed-count Cas13 benchmark with one residual degree of freedom.
+
+\noindent\textbf{Conclusions.}  BARCS bridges CB\textsuperscript{2}'s
+two-group test and specialist generative models: transparent, scalable
+coefficient inference for quantitative and adjusted designs, with diagnostics
+for those it cannot repair.
+\end{abstract}

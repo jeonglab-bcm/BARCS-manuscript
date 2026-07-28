@@ -1,0 +1,61 @@
+% !TeX root = ../main.tex
+BARCS is distributed as an R package whose regression layer runs on base R
+alone, so it remains usable without a compiler.  Its two inner kernels, the
+weighted IRLS cross-products and the symmetric solve, are implemented in
+RcppArmadillo \citep{eddelbuettel2014rcpparmadillo} within the package itself
+and are selected automatically when the compiled library is available; the base
+R path is retained as an exactly equivalent fallback.  The package imports
+CB\textsuperscript{2} rather than vendoring it, so the original two-group
+functions and the FASTQ quantifier remain available and unchanged from their
+own package: BARCS is an additive analysis path rather than a breaking
+replacement.
+\begin{verbatim}
+library(BARCS)
+
+# One guide: K contains guide counts; N contains sample library sizes.
+fit <- bbreg(
+  count   = K,
+  total   = N,
+  formula = ~ scale(dose) + batch,
+  data    = sample_data
+)
+summary(fit)
+
+# A named contrast; unspecified coefficient weights are zero.
+bb_contrast(fit, c("scale(dose)" = 1))
+
+# A complete guide-by-sample screen.
+result <- bb_screen(
+  counts  = count_matrix,
+  totals  = N,
+  data    = sample_data,
+  formula = ~ scale(dose) + batch,
+  term    = "scale(dose)",
+  gene    = guide_annotation$gene,
+  ncores  = 4
+)
+
+# Optional empirical-null scaling when prespecified negative controls exist.
+result <- bb_calibrate_controls(
+  result,
+  control = guide_annotation$gene == "Non-Targeting Control"
+)
+result[order(result$fdr), ]
+
+# Optional direct shared-effect gene inference; no Fisher/Stouffer step.
+gene_result <- bb_gene_consistency(
+  result,
+  control = guide_annotation$gene == "Non-Targeting Control"
+)
+\end{verbatim}
+Column order in the count matrix must match row order in
+\texttt{sample\_data}.  The phenotype should be defined before looking at guide
+results, and all independent biological replicates should remain separate.
+For the negative-binomial benchmark, the project calls the official
+\texttt{mageck mle} executable with the same design matrix rather than
+embedding a partial MAGeCK reimplementation.
+On the development machine, the installed package analyzes 10,000 guides in
+4.73 seconds serially and 1.36 seconds with four forked workers.  The longitudinal analysis fits 86,882 filtered guides across
+eight aggregated time points in 21.4 seconds with four workers (4,068 guides
+per second); 86,840 fits reached the strict convergence tolerance, and all
+fits returned finite time coefficients.

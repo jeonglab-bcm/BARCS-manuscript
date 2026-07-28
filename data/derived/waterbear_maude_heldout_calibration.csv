@@ -1,0 +1,5 @@
+"arm","method","control_guides_total","control_guides_calibrating","control_guides_held_out","held_out_tests","nominal_threshold","observed_rate","ratio_to_nominal","seed"
+"High_Coverage_High_MOI","MAUDE",593,296,297,891,0.01,0.021324354657688,2.1324354657688,20250724
+"High_Coverage_High_MOI","MAUDE",593,296,297,891,0.05,0.0953984287317621,1.90796857463524,20250724
+"High_Coverage_High_MOI","MAUDE",593,296,297,891,0.1,0.189674523007856,1.89674523007856,20250724
+"High_Coverage_High_MOI","MAUDE",593,296,297,891,0.2,0.377104377104377,1.88552188552189,20250724

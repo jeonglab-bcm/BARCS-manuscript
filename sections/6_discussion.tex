@@ -1,0 +1,46 @@
+% !TeX root = ../main.tex
+The methods answer related but different questions.  Original
+CB\textsuperscript{2} remains the direct choice when the biological estimand is
+one prespecified difference between two independent conditions.
+BARCS should be preferred when the design itself carries
+information that a pairwise split would discard: three or more ordered levels,
+a dose or time axis, donor or batch adjustment, an interaction, or a named
+contrast from a multivariable model.
+
+\begin{table}[ht]
+\centering
+\caption{Practical method choice by experimental design.}
+\label{tab:choice}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{p{0.30\textwidth}p{0.28\textwidth}p{0.32\textwidth}}
+\toprule
+Design & Primary method & Reason\\
+\midrule
+Two independent groups &
+\methodswatch{cbtwocyan} CB\textsuperscript{2} or
+\methodswatch{mageckorange} MAGeCK &
+The estimand is already a pairwise contrast\\
+Independent libraries across dose, time, or ordered phenotype &
+\methodswatch{barcsblue} BARCS &
+Uses the full quantitative axis with sample-level $t$ inference\\
+Multivariable independent samples & \methodswatch{barcsblue} BARCS &
+Adjusts batch, donor, and interactions in one explicit model matrix\\
+FACS bins partitioning the same donor pool &
+\methodswatch{waterbearpurple} Waterbear &
+Models the joint bin probabilities and within-donor dependence\\
+Multi-line viability dynamics & \methodswatch{chronosgreen} Chronos, with
+\methodswatch{barcsblue} BARCS as a transparent trend analysis &
+Mechanistic growth and knockout timing may matter\\
+Cancer screen with suspected CNV artifact & Diagnose before correction &
+Post-fit CNV normalization can help, do nothing, or over-correct\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This decision rule defines the problem BARCS is intended to solve.  It does
+not ask users to abandon a validated two-group workflow or replace a
+purpose-built generative model.  It supplies the missing middle layer: a
+depth-aware coefficient test when the observed units are independent
+libraries and the scientific question is a trend, adjusted association,
+interaction, or contrast rather than one group label.

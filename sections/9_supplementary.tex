@@ -1,0 +1,38 @@
+% !TeX root = ../main.tex
+Supplementary material referenced from the main text.
+
+\begin{table}[ht]
+\centering
+\caption{Supplementary: operational definition of the problem BARCS
+addresses.  Referenced from the Introduction.}
+\label{tab:problem}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{p{0.22\textwidth}p{0.68\textwidth}}
+\toprule
+Component & Definition\\
+\midrule
+Observed data &
+Guide counts $K_{gi}$, unfiltered full-library totals $N_i$, and a
+prespecified sample design matrix $X$\\
+Primary estimand &
+A guide-level coefficient or contrast
+$\mathbf{c}^\top\boldsymbol{\beta}_g$ conditional on the other columns of
+$X$\\
+Information unit &
+An independent biological screen unit represented by a sequenced library;
+additional reads refine that unit but do not create another one\\
+Primary output &
+Guide effect, standard error, $t$ statistic, residual degrees of freedom,
+$p$-value, FDR, and dispersion diagnostics\\
+Optional gene output &
+An inverse-variance shared-effect Wald statistic with empirical-null
+calibration; no Fisher or Stouffer step is required\\
+Not identified &
+Unobserved single-cell phenotypes, dependence among bins from one biological
+pool, mechanistic growth dynamics, or uncertainty that would have required
+missing biological replicates\\
+\bottomrule
+\end{tabular}
+\end{table}
+

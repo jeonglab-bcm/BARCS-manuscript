@@ -1,0 +1,36 @@
+% Loaded by main.tex
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{unsrtnat}
+
+\newcommand{\E}{\operatorname{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\logit}{\operatorname{logit}}
+
+% Repository paths render verbatim and link to the file on GitHub.  Write the
+% path with real underscores: \repofile{examples/foo_bar.R}
+\newcommand{\repobase}{https://github.com/jeonglab-bcm/BARCS/blob/main}
+\newcommand{\repotree}{https://github.com/jeonglab-bcm/BARCS/tree/main}
+\newcommand{\repofile}[1]{\href{\repobase/#1}{\nolinkurl{#1}}}
+\newcommand{\repodir}[1]{\href{\repotree/#1}{\nolinkurl{#1/}}}
+\definecolor{barcsblue}{HTML}{0072B2}
+\definecolor{mageckorange}{HTML}{D55E00}
+\definecolor{chronosgreen}{HTML}{009E73}
+\definecolor{mageckpink}{HTML}{CC79A7}
+\definecolor{bagelgold}{HTML}{E69F00}
+\definecolor{waterbearpurple}{HTML}{7A3E9D}
+\definecolor{maudered}{HTML}{A33D3D}
+\definecolor{naivegray}{HTML}{767676}
+\definecolor{cbtwocyan}{HTML}{56B4E9}
+\newcommand{\methodswatch}[1]{\textcolor{#1}{\rule{1.1ex}{1.1ex}}}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
