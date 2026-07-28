@@ -121,7 +121,12 @@ commits the updated submodule pointer. See
   directionally validated genes and the selected 33-gene follow-up panel.
 - `examples/waterbear_facs_external_head_to_head.R`: comparison of the four
   BARCS methods with rerun MAGeCK-MLE/MAGeCK test and the published
-  Waterbear/MAUDE recovery totals.
+  Waterbear/MAUDE recovery totals.  Writes the metrics tables only;
+  `examples/waterbear_facs_external_head_to_head_figure.R` draws
+  `figures/waterbear_facs_external_head_to_head.pdf` from the committed
+  `data/derived` table, so the manuscript figure can be redrawn without the
+  ignored `results/` tree.  BARCS-NORM is in the tables but not the figure,
+  because it makes no calls at FDR 0.10 on this screen and its bars are empty.
 - `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
   processed-count sensitivity analysis using Liang's deposited
   RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
@@ -166,6 +171,7 @@ Rscript examples/crispulator_facs_external_head_to_head.R
 Rscript examples/crispulator_facs_f1_threshold_curves.R
 Rscript examples/waterbear_facs_benchmark.R
 Rscript examples/waterbear_facs_external_head_to_head.R
+Rscript examples/waterbear_facs_external_head_to_head_figure.R
 Rscript examples/liang_cas13_benchmark.R
 Rscript examples/liang_hap1_specificity_volcano.R
 Rscript -e 'devtools::test("CB2")'

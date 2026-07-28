@@ -271,94 +271,9 @@ write.csv(
   row.names = FALSE
 )
 
-method_colours <- c(
-  `BARCS-original` = "#0072B2",
-  `BARCS-NORM` = "#7A3E9D",
-  `BARCS-partial` = "#009E73",
-  `BARCS-EB` = "#D55E00",
-  `MAGeCK-MLE` = "#6A3D9A",
-  `MAGeCK-test` = "#CC79A7",
-  Waterbear = "#E69F00",
-  MAUDE = "#999999"
-)
-pdf(
-  file.path("figures", "waterbear_facs_external_head_to_head.pdf"),
-  width = 11.5,
-  height = 4.5,
-  useDingbats = FALSE
-)
-layout(matrix(1:3, nrow = 1))
-
-par(mar = c(7.6, 4.2, 2.7, 0.8))
-positions <- barplot(
-  metrics$directionally_validated_recovered,
-  names.arg = metrics$method,
-  col = unname(method_colours[metrics$method]),
-  border = NA,
-  las = 2,
-  cex.names = 0.68,
-  ylim = c(0, 28),
-  ylab = "Genes recovered",
-  main = "A  Directional recovery"
-)
-abline(h = 26, lty = 3, col = "#555555")
-text(
-  positions,
-  metrics$directionally_validated_recovered,
-  labels = paste0(
-    metrics$directionally_validated_recovered, "/",
-    metrics$validated_total
-  ),
-  pos = 3,
-  cex = 0.72
-)
-
-par(mar = c(7.6, 4.2, 2.7, 0.8))
-positions <- barplot(
-  metrics$discoveries_at_fdr_0_10,
-  names.arg = metrics$method,
-  col = unname(method_colours[metrics$method]),
-  border = NA,
-  las = 2,
-  cex.names = 0.68,
-  ylim = c(0, 440),
-  ylab = "Screen discoveries",
-  main = "B  Calls at reported threshold"
-)
-text(
-  positions,
-  metrics$discoveries_at_fdr_0_10,
-  labels = metrics$discoveries_at_fdr_0_10,
-  pos = 3,
-  cex = 0.72
-)
-
-par(mar = c(7.6, 4.2, 2.7, 0.8))
-selected_metrics <- c("f1", "average_precision", "balanced_accuracy")
-panel_matrix <- t(as.matrix(rerun_metrics[, selected_metrics]))
-colnames(panel_matrix) <- rerun_metrics$method
-barplot(
-  panel_matrix,
-  beside = TRUE,
-  names.arg = rerun_metrics$method,
-  col = c("#4C78A8", "#F2CF5B", "#59A14F"),
-  border = NA,
-  las = 2,
-  cex.names = 0.68,
-  ylim = c(0, 1.12),
-  ylab = "Metric value",
-  main = "C  Selected 33-gene panel"
-)
-legend(
-  "top",
-  legend = c("F1", "Average precision", "Balanced accuracy"),
-  fill = c("#4C78A8", "#F2CF5B", "#59A14F"),
-  border = NA,
-  bty = "n",
-  cex = 0.62,
-  horiz = TRUE,
-  inset = 0.01
-)
-dev.off()
+# The figure is drawn by examples/waterbear_facs_external_head_to_head_figure.R,
+# which reads only the committed metrics table written above. Keeping the two
+# stages apart means the plot can be redrawn without the ignored `results/`
+# tree, and there is one place where the drawn method set is decided.
 
 print(metrics)

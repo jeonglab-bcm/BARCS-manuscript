@@ -39,39 +39,57 @@ for quantitative and covariate-adjusted CRISPR pooled screens}
 \maketitle
 
 \begin{abstract}
-BARCS was strongest when a pooled screen contained information beyond one
-binary contrast.  In a longitudinal HT-29 screen, it achieved the highest
-recall at 90\% precision while essentially matching continuous-time
-MAGeCK-MLE in global discrimination.  In a primary-T-cell FACS screen,
-control-calibrated BARCS recovered 22 of 26 experimentally confirmed IL2RA
-regulators versus 17 for all-bin MAGeCK-MLE and reduced the non-targeting
-$p<0.05$ frequency from 13.3\% to 4.9\%.  In a 10,000-gene CRISPulator FACS
-simulation, dispersion-moderated BARCS led F1 at every matched realized
-false-discovery proportion against MAGeCK-MLE and CRISPhieRmix, matching
-CRISPhieRmix's recall at a third of its error rate (0.066 against 0.197) while
-MAGeCK-MLE ranked marginally best but called least.  On simCRISPR factorial
-screens the recovered gene-by-environment interaction depended far more on the
-beta-binomial denominator than on the estimator: F1 rose from 0.481 to 0.917
-when control guides rather than the full library set it.  Conversely,
-Liang's published RRA led the processed-count Cas13 benchmark, exposing the
-power boundary of regression inference with one residual degree of freedom.
+Pooled CRISPR screens increasingly carry information that no two-group
+comparison can express: a dose or time axis, ordered FACS bins, donor and
+batch structure, or an interaction.  The available tools sit at two extremes.
+Pairwise testers require the design to be collapsed into ``high'' and ``low''
+before they can be used, discarding intermediate levels and making covariate
+adjustment opaque.  Specialist generative models answer richer mechanistic
+questions but are not general-purpose coefficient interfaces.  There is no
+transparent, depth-aware way to ask the ordinary regression question of a
+pooled screen.
 
-The problem addressed is coefficient inference from pooled-screen counts when
-independent biological screen units, represented by libraries, lie on a
-quantitative or covariate-adjusted design.
-BARCS extends the depth-aware beta-binomial principle of
+BARCS supplies it.  It extends the depth-aware beta-binomial principle of
 CB\textsuperscript{2} from two group means to
 $\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g$ and tests a
-prespecified coefficient or contrast.  Full-library totals determine
-sequencing precision, extra-binomial dispersion limits the information gained
-from depth, and residual degrees of freedom come from independent libraries.
-Fisher or Stouffer aggregation is not required by the guide-level model; an
-optional shared-effect Wald procedure provides exploratory gene inference
-when several guides target one gene.  Parallel RcppArmadillo kernels analyzed
-86,882 guides in 19.4 seconds.  BARCS therefore solves a specific gap between
-pairwise testing and specialist generative models: transparent, scalable
-inference for quantitative and adjusted pooled-screen designs, with explicit
-diagnostics for designs it cannot repair.
+prespecified coefficient or contrast written as an ordinary R model matrix.
+Full-library totals determine sequencing precision, extra-binomial dispersion
+limits the information gained from depth, and residual degrees of freedom come
+from independent libraries rather than from reads or guides.  Fisher or
+Stouffer aggregation is not required by the guide-level model.  Parallel
+RcppArmadillo kernels analyze 86,882 guides in 19.4 seconds.
+
+Across nine benchmark datasets, BARCS is strongest exactly where the design
+carries information beyond one binary contrast, and its threshold means what
+it says.  In a longitudinal HT-29 screen it achieves the highest recall at
+90\% precision and the fewest false positives among five methods including
+Chronos, while matching continuous-time MAGeCK-MLE in global discrimination
+to within 0.0004 AUROC.  In a primary-T-cell FACS screen it recovers 23 of 26
+experimentally confirmed IL2RA regulators from 60 calls, against 17 for
+all-bin MAGeCK-MLE and 24 from 79 calls for the purpose-built joint-bin model,
+and reduces the non-targeting $p<0.05$ frequency from 13.3\% to 4.9\%.  In a
+10,000-gene CRISPulator FACS simulation, dispersion-moderated BARCS leads F1
+at every matched realized false-discovery proportion against MAGeCK-MLE and
+CRISPhieRmix, matching CRISPhieRmix's recall at a third of its error rate
+(0.066 against 0.197) while MAGeCK-MLE ranks marginally best but calls least.
+Against general RNA-seq count models on held-out and confirmatory simulation
+splits, moderated BARCS ties on ranking and F1 while delivering a realized
+error rate of 0.079--0.085 where theirs is 0.199--0.232 at the same nominal
+0.10.  On simCRISPR factorial screens the recovered gene-by-environment
+interaction depends far more on the beta-binomial denominator than on the
+estimator: F1 rises from 0.481 to 0.917 when control guides rather than the
+full library set it.
+
+The boundaries are reported with the same specificity.  Liang's published
+rank aggregation leads the processed-count Cas13 benchmark, where one residual
+degree of freedom leaves a $t$ test no power; the step from guides to genes is
+shown to move thresholded recall by more than 0.45 while barely moving AUROC,
+so it is exposed as an explicit argument rather than a default; and post-fit
+copy-number correction is shown to help in one screen and over-correct in
+another.  BARCS therefore fills a specific gap between pairwise testing and
+specialist generative models: transparent, scalable inference for quantitative
+and adjusted pooled-screen designs, with explicit diagnostics for the designs
+it cannot repair.
 \end{abstract}
 
 \section{Introduction}
@@ -167,8 +185,10 @@ logit fit under stated asymptotics, not finite-sample identity.  Third, it
 provides control-based diagnostics and an optional shared-effect gene
 statistic without making Fisher or Stouffer aggregation part of the core
 method.  Fourth, it evaluates both the intended use case and failure
-boundaries against MAGeCK, Chronos, BAGEL2, Waterbear, MAUDE, and published
-rank aggregation.
+boundaries against MAGeCK, Chronos, BAGEL2, Waterbear, MAUDE, CRISPhieRmix,
+published rank aggregation, and the general RNA-seq count models, and it
+reports the guide-to-gene step as a measured choice rather than an
+implementation detail.
 
 The scope is deliberately narrower than continuous per-cell phenotype
 analysis.  BARCS analyzes a quantitative coordinate attached to each
@@ -189,9 +209,67 @@ method remain competitive in ordinary endpoint screens?  We therefore begin
 with a longitudinal intended use case, examine a low-replication
 processed-count boundary, stress-test ordered-bin FACS data, and then use
 controlled simulations, backward-compatibility screens, and copy-number
-diagnostics to delimit the claim.  Method colors are fixed throughout: BARCS
-is blue, MAGeCK orange, Chronos green, published endpoint MAGeCK pink, BAGEL2
-gold, Waterbear purple, and MAUDE red.
+diagnostics to delimit the claim.  In the tables and in every figure that
+compares BARCS against other software, method colors are fixed: BARCS is blue,
+MAGeCK orange, Chronos green, published endpoint MAGeCK pink, BAGEL2 gold,
+Waterbear purple, MAUDE red, edgeR-QL green, DESeq2 pink, and limma-voom gold.
+Three figures instead compare BARCS gene statistics with one another
+(Figures~\ref{fig:waterbear}, \ref{fig:crispulator-benchmark},
+and~\ref{fig:crispulator-external}); there each BARCS variant needs its own
+color and keeps the same one across all three, which displaces MAGeCK to
+purple.  Every series in those panels is labeled directly, so no panel depends
+on the reader carrying a color between sections.
+
+Two conventions make the benchmarks comparable.  First, the guide regression
+is one method but the step from guides to genes is a separate, switchable
+choice, and Table~\ref{tab:variants} names the variants so that a reported
+number can be attributed to the right component.  Only the guide model is
+BARCS proper; the gene statistics are interfaces on top of it, and
+Section~\ref{sec:genestat} shows that the choice between them is as
+consequential as the count model.  Second, comparators are chosen per
+question rather than pooled into a league table.  MAGeCK-MLE appears
+throughout as the design-matched reference; Chronos, BAGEL2, Waterbear, MAUDE,
+CRISPhieRmix, and the authors' own rank aggregation appear where each is the
+specialist a screen analyst would actually reach for; and the general RNA-seq
+count models edgeR-QL, DESeq2, and limma-voom appear in two places only, not
+as recommended CRISPR gene callers but as the sharpest available test of
+whether a nominal false-discovery rate delivers what it advertises.
+
+\begin{table}[ht]
+\centering
+\caption{What each reported BARCS variant changes.  Rows one and two are
+guide-level and are the method; rows three to six are gene-level interfaces
+that consume identical guide fits, so any difference between them is
+attributable to the aggregation step alone.  The figure labels are the
+internal names that appear in the plotted panels.}
+\label{tab:variants}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{p{0.15\textwidth}p{0.16\textwidth}p{0.57\textwidth}}
+\toprule
+Name & In figures & What it does\\
+\midrule
+BARCS-ST & \texttt{BARCS-original} &
+The default.  Beta-binomial guide regression, then directional Stouffer
+aggregation of the signed guide scores\\
+BARCS-MOD & \texttt{BARCS-moderated} &
+The same, after each guide's dispersion is shrunk toward a library-wide trend.
+A guide-level change, so it moves every gene statistic below it\\
+BARCS-RE & \texttt{BARCS-partial} &
+Measurement-error random-effects pooling of the guide coefficients\\
+BARCS-RE-EB & \texttt{BARCS-EB} &
+The same pooling with the guide-disagreement variance moderated toward a
+screen-wide prior\\
+BARCS-NORM & \texttt{BARCS-NORM} &
+Guide coefficients as exchangeable normal draws, tested against $t_{m_g-1}$.
+Calibrated but underpowered at three to six guides; reported as a documented
+negative result\\
+BARCS-GC & --- &
+Inverse-variance shared-effect Wald statistic with an empirical null, for the
+one-replicate diagnostic boundary only\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \input{sections/barcs-results}
 
@@ -283,6 +361,10 @@ Two independent groups &
 \methodswatch{cbtwocyan} CB\textsuperscript{2} or
 \methodswatch{mageckorange} MAGeCK &
 The estimand is already a pairwise contrast\\
+Hit list that will be acted on without validating every call &
+\methodswatch{barcsblue} BARCS-MOD &
+Delivers close to the requested false-discovery rate; general count models
+overshoot theirs by two to three times\\
 Independent libraries across dose, time, or ordered phenotype &
 \methodswatch{barcsblue} BARCS &
 Uses the full quantitative axis with sample-level $t$ inference\\
@@ -367,7 +449,17 @@ interaction, or contrast rather than one group label.
   \item \textbf{Guide-to-gene inference.}  The BARCS regression itself is
   guide-level and requires no Fisher or Stouffer combination.  Some replicated
   benchmark analyses use a directional Stouffer summary only as a transparent,
-  explicitly labeled comparison adapter.  BARCS-GC instead estimates one
+  explicitly labeled comparison adapter.  This step is not a neutral one, and
+  Section~\ref{sec:genestat} measures how far from neutral: on identical guide
+  fits, four gene statistics span 0.241 to 0.696 of directional recall while
+  their AUROC spans 0.035.  Any gene-level number reported for BARCS, or for
+  any guide-level count model given a gene combiner, is therefore a joint
+  property of the count model and the aggregation rule, and comparisons that
+  leave the second unstated are not interpretable.  We report the variants
+  named in Table~\ref{tab:variants} rather than a single fixed default, and
+  BARCS-RE-EB rather than BARCS-RE should be preferred when genes carry three
+  to six guides, because the unmoderated heterogeneity estimate is then the
+  weakest term in the chain.  BARCS-GC instead estimates one
   shared guide coefficient by inverse-variance weighting and calibrates its
   Wald statistic against a robust gene-level empirical null for the
   one-replicate diagnostic.  That fixed-effect construction assumes a common
@@ -412,18 +504,30 @@ therefore be a time slope, dose response, adjusted treatment effect,
 interaction, or named contrast without reducing the experiment to an
 arbitrary binary split.
 
-The benchmarks support that focused claim.  BARCS is competitive with
-continuous-time MAGeCK and Chronos in longitudinal HT-29 data, provides the
-strongest high-precision recall there, and recovers 22 of 26 validated IL2RA
-regulators after control calibration in the ordered-bin stress test.  The
-genome-scale CRISPulator study shows its characteristic tradeoff: no
-advantage in global ranking, where MAGeCK-MLE leads, but a requested error
-rate close to the realized one, and the highest F1 at every matched error
-rate against both CRISPR-specific comparators.  The simCRISPR study adds the
-limit of that claim, since the same estimator loses half its recall when the
-denominator rather than the model is chosen badly.  Endpoint analyses recover
-established biology and demonstrate backward compatibility rather than a need
-to replace successful pairwise tools.
+The benchmarks support that focused claim, and they converge on one property
+rather than on a scattered set of wins.  BARCS is competitive with
+continuous-time MAGeCK and Chronos in longitudinal HT-29 data and provides the
+strongest high-precision recall there; it recovers 22 to 23 of 26 validated
+IL2RA regulators in the ordered-bin stress test, within one regulator of a
+purpose-built joint-bin model and well ahead of the design-matched MAGeCK-MLE
+fit.  The property they share is that the threshold is honest.  The
+genome-scale CRISPulator study makes it explicit: no advantage in global
+ranking, where MAGeCK-MLE leads, but a requested error rate close to the
+realized one, and the highest F1 at every matched error rate against both
+CRISPR-specific comparators.  The comparison with edgeR-QL, DESeq2, and
+limma-voom sharpens it further, because those models rank as well or better
+and are indistinguishable on F1 while delivering two to three times the
+false-discovery proportion they advertise, on held-out and confirmatory splits
+alike.  Recall bought at an unmeasured error rate is the failure mode BARCS is
+built to avoid, and a screen that cannot afford to validate its whole hit list
+is exactly the setting in which that matters.  The simCRISPR study adds the
+limit of the claim, since the same estimator loses half its recall when the
+denominator rather than the model is chosen badly, and the four-way
+gene-statistic comparison adds another: the step from guides to genes moves
+thresholded recall by more than 0.45 on identical guide fits, so it must be
+reported, not assumed.  Endpoint analyses recover established biology and
+demonstrate backward compatibility rather than a need to replace successful
+pairwise tools.
 
 Equally important, the method has explicit stopping rules.  It does not create
 biological replication from read depth or guide number, make bins from one

@@ -568,7 +568,11 @@ literature-reported aggregates only.
 BARCS-EB is the best of the six rerun analyses for validated recovery and
 selected-panel F1. BARCS-original makes fewer calls and has the best selected-
 panel ranking. BARCS-NORM retains useful ranking but makes no FDR-0.10 calls,
-which is consistent with its small-guide t-reference penalty. The reported
+which is consistent with its small-guide t-reference penalty; that is also why
+it is in this table but not in
+`figures/waterbear_facs_external_head_to_head.pdf`, where three of its bars
+would be structurally empty and the fourth fixed at 0.5 by construction. The
+reported
 Waterbear and MAUDE recoveries are higher, but
 they cannot be assigned F1 or average precision without their complete
 per-gene results for the seven non-validating candidates. MAUDE's 25/26
@@ -650,7 +654,9 @@ Rscript examples/crispulator_facs_f1_threshold_curves_aggregate.R
 - `data/derived/crispulator_facs_external_head_to_head_metrics.csv`
 - `data/derived/crispulator_facs_external_head_to_head_provenance.csv`
 - `examples/waterbear_facs_external_head_to_head.R`
+- `examples/waterbear_facs_external_head_to_head_figure.R`
 - `data/derived/waterbear_facs_external_head_to_head_metrics.csv`
+- `figures/waterbear_facs_external_head_to_head.pdf`
 - `examples/crispulator_facs_f1_threshold_curves.R`
 - `examples/crispulator_facs_f1_threshold_curves_aggregate.R`
 - `data/derived/crispulator_facs_f1_by_fdr.csv`

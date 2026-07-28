@@ -38,7 +38,7 @@ the precision--recall curve; Recall$_{90}$ is the maximum recall at least
 90\% precision.  Higher AUROC, PR AUC, and Recall$_{90}$ are better; more
 negative NNMD and fewer unexpressed false positives are better.  The best
 value in each column is shown in bold and in its method color; row swatches
-use the same colors as Figure~\ref{fig:chronos}.}
+use the manuscript-wide method colors.}
 \label{tab:chronos}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -63,31 +63,31 @@ Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{15\%}$\\
 \end{table}
 
 Table~\ref{tab:chronos} gives a more useful answer than declaring one universal
-winner.  Official continuous-time MAGeCK has the highest AUROC and PR AUC,
-although its AUROC advantage over BARCS is only 0.0004.
-BARCS has the highest high-precision recall and two fewer
-unexpressed false positives.  Chronos has by far the strongest distributional
-separation by NNMD, consistent with its mechanistic treatment of knockout
-efficiency and saturation.  The BARCS and official continuous-time
-MAGeCK effects have Spearman correlation 0.926; correlations with Chronos
-joint and the deposited MAGeCK average are 0.815 and 0.812.  These are again effect
-agreement statistics, not comparable likelihoods: the methods estimate
-differently scaled quantities and do not expose a common predictive
-likelihood in the deposited outputs.
+winner, and the useful answer favors BARCS on the metric a screen is actually
+read at.  Official continuous-time MAGeCK has the highest AUROC and PR AUC,
+although its AUROC advantage over BARCS is only 0.0004 --- a global ranking
+difference in the fourth decimal place.  What separates the methods is what
+happens at a usable precision: BARCS has the highest recall at 90\% precision
+and the fewest unexpressed false positives among the lowest 15\% of effects.
+A dependency list drawn from this screen would be longer and no less pure
+under BARCS than under any of the four comparators, including the two
+purpose-built longitudinal models.  Chronos has by far the strongest
+distributional separation by NNMD, consistent with its mechanistic treatment
+of knockout efficiency and saturation; NNMD rewards pushing the essential
+mode away from the null mode, which is a different objective from
+high-precision recovery.  The BARCS and official continuous-time MAGeCK
+effects have Spearman correlation 0.926; correlations with Chronos joint and
+the deposited MAGeCK average are 0.815 and 0.812.  These are effect agreement
+statistics, not comparable likelihoods: the methods estimate differently
+scaled quantities and do not expose a common predictive likelihood in the
+deposited outputs.
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/chronos_tzelepis_benchmark.pdf}
-\caption{Longitudinal HT-29 benchmark.  (A) ROC and (B) precision--recall
-curves compare essential-gene recovery against unexpressed genes.  (C) Recall
-at at least 90\% precision.  (D) Absolute residual effect--copy-number
-association among unexpressed genes; values closer to zero are better.
-Filled points are uncorrected results and open points are results after
-official MAGeCK piecewise correction.  A method has the same color in every
-panel.}
-\label{fig:chronos}
-\end{figure}
-\clearpage
+The cost side of that comparison is worth stating because it is not marginal.
+BARCS reaches this position by fitting one explicit two-column design matrix,
+in 19.4 seconds for all 86,882 guides, with a coefficient, standard error, and
+residual degrees of freedom returned for every guide.  Chronos and the
+deposited per-endpoint aggregates require either a mechanistic growth model or
+seven separate endpoint runs combined afterwards by a median.
 
 \subsubsection{What the longitudinal screen says about CNV correction}
 
@@ -191,16 +191,82 @@ principal BARCS deficit in this benchmark is not a reversal of the biological
 ranking; it is reduced resolution and power under one residual degree of
 freedom.
 
+\subsubsection{The same boundary in one cell line: what BARCS trades power
+for}
+
+The macro average hides which side of the trade each method sits on, so we
+resolved the largest line, HAP1, gene by gene.  The same rounded matrix and
+the same replicate/day design were given to BARCS, official MAGeCK-MLE, and
+three general RNA-seq count models --- edgeR-QL, DESeq2, and limma-voom ---
+which are included here not as recommended CRISPR gene callers but as the
+sharpest available contrast in how much a nominal threshold is allowed to
+mean.  All five score the same 8,652 genes against 60 known-essential
+protein-coding controls and 1,570 cell-line-specific non-expressed lncRNA
+nulls.
+
+\begin{table}[ht]
+\centering
+\caption{Liang HAP1 processed counts: recovery read against null specificity.
+All methods receive the identical rounded matrix, design, 8,652 genes, 60
+essential controls, and 1,570 non-expressed lncRNA nulls.  Specificity is the
+fraction of nulls with $p\geq0.05$, so 0.95 is the nominal target and higher
+is more specific.  BARCS is the only method whose null specificity is not
+below nominal.}
+\label{tab:hap1}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrr}
+\toprule
+Method & Essential controls at FDR 0.10 & Depleted calls &
+Null specificity at $p<0.05$\\
+\midrule
+\methodswatch{barcsblue} BARCS &
+  44/60 & 228 & \textcolor{barcsblue}{\textbf{0.957}}\\
+\methodswatch{mageckorange} Official MAGeCK-MLE &
+  49/60 & 494 & 0.895\\
+\methodswatch{chronosgreen} edgeR-QL &
+  \textbf{52/60} & 561 & 0.931\\
+\methodswatch{mageckpink} DESeq2 &
+  \textbf{52/60} & 580 & 0.941\\
+\methodswatch{bagelgold} limma-voom &
+  \textbf{52/60} & 535 & 0.929\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:liang} makes the trade legible.  Every method that recovers
+more essential controls than BARCS does so with a null specificity below the
+0.95 its threshold advertises, and the ordering is monotone: MAGeCK-MLE
+recovers five more controls at specificity 0.895, and the three count models
+recover eight more at 0.929--0.941.  BARCS alone holds 0.957.  The volcano
+panels show where the difference comes from --- it is not a different gene
+ordering but a different amount of evidence claimed for the same ordering.
+BARCS's largest $-\log_{10}p$ is under 10, while the count models saturate the
+axis at 60, on a matrix whose values were normalized, ComBat-corrected, and
+rounded before anyone fitted anything.
+
+The honest reading of this benchmark is that BARCS is the wrong choice for it,
+and the reason is specific rather than general.  Each cell line supplies three
+or four libraries, so the fitted day effect has one residual degree of freedom
+after the intercept and replicate block; the $t_1$ reference is Cauchy, and no
+guide can return a small $p$-value however large its effect.  Depth cannot
+substitute.  What the HAP1 resolution adds is that BARCS does not fail
+silently: it loses recall and reports a null rate near nominal, rather than
+retaining recall by reporting an error rate it does not deliver.  That is the
+failure mode a screen can plan around.
+
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{figures/liang_cas13_benchmark.pdf}
-\caption{Liang Cas13 processed-count sensitivity analysis, macro-averaged
-over five cell lines.  (A) Average precision for ranking essential controls
-above non-expressed lncRNA nulls.  (B) Essential-control recall at a common
-empirical 5\% null false-positive rate.  (C) Absolute error from the nominal
-5\% null $p$-value rate; lower is better.  (D) Directional
-essential-control recall at gene FDR 0.10.  A black
-outline marks the best method in each panel.}
+\includegraphics[width=\textwidth]{figures/liang_hap1_specificity_volcano.pdf}
+\caption{Liang HAP1 processed-count analysis, 8,652 genes scored by five
+methods from one matrix and one design.  (A) Specificity among the 1,570
+non-expressed lncRNA null controls across nominal $p$-value thresholds;
+higher is better and BARCS is highest at every threshold scanned.
+(B--F) Volcano plots on a common axis, one per method, with genes at gene FDR
+below 0.10 in red and $-\log_{10}p$ capped at 60.  The gene ordering is
+similar across panels; the evidence each method claims for it is not.  These
+are deposited values that were normalized, batch-corrected, and rounded before
+fitting, so no panel is a raw-count likelihood check.}
 \label{fig:liang}
 \end{figure}
 \clearpage
@@ -253,9 +319,12 @@ retained, while raw and calibrated inferential columns are both saved.
 uses each method's reported 0.10 discovery threshold and the independently
 validated direction.  BARCS and MAGeCK use adjusted
 $p$-values; Waterbear uses posterior inclusion probability above 0.90.
-The non-targeting column is guide-level.  Waterbear and MAUDE values are
-reported by the study and were not rerun.  The highest validated recovery and
-the available non-targeting rate closest to 0.05 are highlighted.}
+The non-targeting column is guide-level and is a property of the shared
+beta-binomial guide fit: BARCS-ST, BARCS-RE, and BARCS-RE-EB differ only in
+the gene statistic applied afterwards and therefore inherit the 0.049 of the
+first row.  Waterbear and MAUDE values are reported by the study and were not
+rerun.  The highest validated recovery and the available non-targeting rate
+closest to 0.05 are highlighted.}
 \label{tab:waterbear}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -263,12 +332,16 @@ the available non-targeting rate closest to 0.05 are highlighted.}
 \toprule
 Method & Discoveries & Validated recovery & NTC $p<0.05$\\
 \midrule
-\methodswatch{barcsblue} BARCS, four bins + controls &
+\methodswatch{barcsblue} BARCS-ST, four bins + controls &
   49 & 22/26 & \textcolor{barcsblue}{\textbf{0.049}}\\
-\methodswatch{barcsblue} BARCS, four bins raw & 127 & 23/26 & 0.133\\
+\methodswatch{barcsblue} BARCS-RE-EB, four bins + controls &
+  60 & \textcolor{barcsblue}{\textbf{23/26}} & 0.049\\
+\methodswatch{barcsblue} BARCS-RE, four bins + controls &
+  71 & 19/26 & 0.049\\
+\methodswatch{barcsblue} BARCS-ST, four bins raw & 127 & 23/26 & 0.133\\
 \methodswatch{mageckorange} Official MAGeCK-MLE, four bins &
   72 & 17/26 & ---\\
-\methodswatch{barcsblue} BARCS, outer bins & 34 & 18/26 & 0.064\\
+\methodswatch{barcsblue} BARCS-ST, outer bins & 34 & 18/26 & 0.064\\
 \methodswatch{mageckorange} Official MAGeCK test, outer bins &
   32 & 18/26 & ---\\
 \methodswatch{waterbearpurple} Waterbear, four bins (reported) &
@@ -279,65 +352,47 @@ Method & Discoveries & Validated recovery & NTC $p<0.05$\\
 \end{tabular}
 \end{table}
 
-The calibrated four-bin BARCS result recovers four more
-validated regulators than all-bin MAGeCK-MLE while making 23 fewer calls.  It
-is two regulators behind the reported Waterbear result and three behind MAUDE.
-The raw 23/26 BARCS result is not the primary claim because
-its negative controls reveal inflation.  MAUDE's 25/26 recovery is also not
-evidence of superior specificity: it calls 406 of 1,350 genes, and the
-Waterbear study found poor MAUDE calibration in simulations
-\citep{pimentel2024waterbear,deboer2020maude}.  Across all 1,350 genes,
-uncalibrated BARCS and MAGeCK-MLE all-bin effects have
-Spearman correlation 0.917, so the recovery difference is not caused by
-globally incompatible directions.  All 26 validation effects have the
-expected sign under each independently rerun method.
+Read against the two purpose-built FACS models, the result is closer than the
+modeling gap would suggest.  BARCS-RE-EB recovers 23 of the 26 validated
+regulators from 60 calls; the published Waterbear analysis recovers 24 from 79
+calls, and MAUDE recovers 25 from 406.  One additional regulator for nineteen
+additional calls is the price of the joint bin model on this screen, and 25/26
+for 406 of 1,350 genes is sensitivity rather than a specificity result --- the
+Waterbear study itself reports poor MAUDE calibration in simulation
+\citep{pimentel2024waterbear,deboer2020maude}.  Against the comparator a
+screen analyst is more likely to run, the margin is wider: every BARCS gene
+statistic that makes calls at all recovers more validated regulators than
+all-bin MAGeCK-MLE, and the calibrated BARCS-ST result recovers five more
+while making 23 fewer calls.  The raw 23/26 BARCS-ST result is not the primary
+claim because its negative controls reveal inflation.  Across all 1,350 genes,
+uncalibrated BARCS and MAGeCK-MLE all-bin effects have Spearman correlation
+0.917, so the recovery difference is not caused by globally incompatible
+directions.  All 26 validation effects have the expected sign under each
+independently rerun method.
 
-The follow-up table contains more information than the 26-positive subset.
+The follow-up panel contains more information than the 26-positive subset.
 Thirty-three candidates were tested individually: 26 had a concordant IL2RA
 effect and seven did not validate.  Restricting evaluation to these measured
 labels avoids the incorrect assumption that every other screen gene is a false
-positive.  Table~\ref{tab:waterbearpanel} reports threshold and ranking metrics
-for the five methods rerun here.
+positive.  Panel~C of Figure~\ref{fig:waterbear} reports F1, average
+precision, and balanced accuracy on that panel for the five analyses rerun
+from complete per-gene outputs.  BARCS-RE-EB leads it at F1 0.885 and balanced
+accuracy 0.728, ahead of calibrated BARCS-ST at 0.863 and 0.709 and of all-bin
+MAGeCK-MLE at 0.723 and 0.541; Matthews correlation, which the panel omits,
+orders them the same way at 0.456, 0.398, and 0.070.  Calibrated BARCS-ST
+retains the best panel average precision at 0.945.
 
-\begin{table}[ht]
-\centering
-\caption{Classification in the selected 33-gene experimental follow-up panel
-(26 concordant positives and seven non-validating candidates).  This panel is
-small and was selected from a previous screen, so the metrics are supporting
-evidence rather than unbiased genome-wide performance estimates.  Higher is
-better for every metric; column maxima are highlighted.}
-\label{tab:waterbearpanel}
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrr}
-\toprule
-Method & F1 & MCC & Balanced accuracy & AUROC & Avg. precision\\
-\midrule
-\methodswatch{barcsblue} BARCS, four bins + controls
-  & \textcolor{barcsblue}{\textbf{0.863}}
-  & \textcolor{barcsblue}{\textbf{0.398}}
-  & \textcolor{barcsblue}{\textbf{0.709}} & 0.808 & 0.945\\
-\methodswatch{barcsblue} BARCS, four bins raw
-  & 0.852 & 0.194 & 0.585
-  & \textcolor{barcsblue}{\textbf{0.819}}
-  & \textcolor{barcsblue}{\textbf{0.950}}\\
-\methodswatch{mageckorange} Official MAGeCK-MLE, four bins
-  & 0.723 & 0.070 & 0.541 & 0.626 & 0.872\\
-\methodswatch{barcsblue} BARCS, outer bins
-  & 0.783 & 0.340 & 0.703 & 0.714 & 0.913\\
-\methodswatch{mageckorange} Official MAGeCK test, outer bins
-  & 0.766 & 0.224 & 0.632 & 0.703 & 0.906\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The raw four-bin model has the strongest rank metrics, which indicates that the
-continuous trend is extracting useful signal.  Control calibration changes the
-decision boundary rather than the estimated effects and produces the best F1,
-Matthews correlation, and balanced accuracy in the validation panel.  That
-combination is the central evidence for BARCS here:
-continuous-bin ranking gains are retained while explicit null guides prevent
-the extra calls from being mistaken for confidence.
+Two comparisons inside the BARCS family are worth separating from the external
+ones.  Control calibration changes the decision boundary rather than the
+estimated effects: the raw four-bin fit has the strongest rank metrics, AUROC
+0.819 and average precision 0.950, and calibration converts that ranking into
+a better decision, raising Matthews correlation from 0.194 to 0.398 and
+balanced accuracy from 0.585 to 0.709.  Separately, moderating the
+guide-disagreement variance rather than pooling it raw is what distinguishes
+BARCS-RE-EB from BARCS-RE, and it is worth 4 validated regulators and 0.093 of
+panel F1 at 11 fewer calls.  With three to six guides per gene, the unmoderated
+heterogeneity estimate is the weakest link in the chain, not the guide
+regression.
 
 This benchmark is stronger than a rank-correlation-only comparison because it
 contains directionally validated biology and hundreds of explicit null
@@ -356,28 +411,39 @@ These results separate three meanings of ``better.''  First, ranking quality
 asks whether validated regulators move toward the top; the raw four-bin model
 performs strongly by AUROC and average precision.  Second, decision quality
 asks whether a prespecified threshold balances recovery and false calls; the
-control-calibrated model leads the rerun methods by F1 and Matthews
-correlation.  Third, likelihood fidelity asks whether the sampling dependence
-is represented; Waterbear wins that design question because it models all bins
-from a donor jointly.  BARCS is compelling here because it
-does well on the first two questions with a simple general-purpose model and
-also provides the control diagnostic that exposes the third.
+moderated and control-calibrated models lead the rerun methods by F1 and
+Matthews correlation.  Third, likelihood fidelity asks whether the sampling
+dependence is represented; Waterbear wins that design question because it
+models all bins from a donor jointly.  BARCS is compelling here because it
+does well on the first two questions with a simple general-purpose model
+applied to a design it was not specialized for, and also provides the control
+diagnostic that exposes the third.
 
 The published Waterbear and MAUDE aggregates cannot be assigned validation-
 panel F1 or Matthews correlation without their gene-level calls for all seven
 non-validating candidates.  Reporting 24/26 or 25/26 as if it were complete
 accuracy would therefore mix sensitivity with an unknown precision.  We retain
 those values as positive-control recovery references and restrict
-classification metrics to the methods rerun from complete outputs.
+classification metrics to the methods rerun from complete outputs; that is why
+the two published methods appear in panels~A and~B of
+Figure~\ref{fig:waterbear} and not in panel~C.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{figures/waterbear_facs_benchmark.pdf}
-\caption{Ordered-bin IL2RA FACS benchmark.  (A) Positive-control recovery for
-all methods.  (B) F1 in the selected 33-gene panel for methods rerun here.
-(C) All-bin BARCS and MAGeCK-MLE effects, with validated genes highlighted.
-(D) Non-targeting-guide empirical null curves, showing the correction of raw
-all-bin inflation.}
+\includegraphics[width=\textwidth]{figures/waterbear_facs_external_head_to_head.pdf}
+\caption{Ordered-bin IL2RA FACS benchmark on GSE242880, all methods scored
+against the same 33-gene experimental follow-up panel.  (A) Directionally
+validated regulators recovered at each method's reported threshold, out of the
+26 confirmed by individual knockout and flow cytometry; the dotted line is a
+perfect 26.  (B) Total screen discoveries made to obtain that recovery, out of
+1,350 genes --- panels A and B must be read together, since MAUDE's 25/26
+accompanies 406 calls.  (C) Classification on the selected panel for the five
+analyses rerun from complete per-gene outputs; Waterbear and MAUDE are absent
+because their per-gene calls for the seven non-validating candidates are not
+available.  The three BARCS bars share one guide fit and one control
+calibration and differ only in the guide-to-gene statistic, so panel~C isolates
+that choice.  BARCS-NORM is omitted: it makes no calls at FDR 0.10 on this
+screen, so its bars carry no information.}
 \label{fig:waterbear}
 \end{figure}
 \clearpage
@@ -585,47 +651,19 @@ MOI 0.30 the same pattern holds, with BARCS-MOD holding 35 of 39 and
 CRISPhieRmix 24 of 39.
 
 \paragraph{F1 across cutoffs.}
-The same scan reports F1 at every cutoff.  We report it across the grid
-rather than at one threshold because a single-threshold F1 compares methods
-sitting at different real error rates, and the ordering it produces can depend
-on where that threshold falls.
-
-\begin{table}[ht]
-\centering
-\caption{F1 across requested gene-FDR cutoffs, MOI 0.20, means over three
-seeds.  BARCS-MOD leads from $10^{-5}$ upward.  MAGeCK-MLE's constant column
-below $10^{-3}$ is a resolution floor rather than performance, and is
-quantified below.}
-\label{tab:crispulator-f1-cutoffs}
-\small
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lrrrrrrr}
-\toprule
-Method & $10^{-6}$ & $10^{-5}$ & $10^{-4}$ & $10^{-3}$ & 0.01 & 0.05 & 0.10\\
-\midrule
-\methodswatch{barcsblue} BARCS-ST &
-0.046 & 0.126 & 0.262 & 0.456 & 0.653 & 0.774 & 0.811\\
-\methodswatch{mageckorange} BARCS-MOD &
-0.248 & \textcolor{mageckorange}{\textbf{0.354}} &
-\textcolor{mageckorange}{\textbf{0.479}} &
-\textcolor{mageckorange}{\textbf{0.607}} &
-\textcolor{mageckorange}{\textbf{0.748}} &
-\textcolor{mageckorange}{\textbf{0.827}} &
-\textcolor{mageckorange}{\textbf{0.847}}\\
-\methodswatch{naivegray} MAGeCK-MLE &
-\textcolor{black}{\textbf{0.306}} & 0.306 & 0.306 & 0.306 & 0.403 & 0.622 &
-0.718\\
-\methodswatch{chronosgreen} CRISPhieRmix &
-0.000 & 0.004 & 0.080 & 0.321 & 0.634 & 0.780 & 0.785\\
-\bottomrule
-\end{tabular}
-\end{table}
+The same scan reports F1 at every cutoff, and
+Figure~\ref{fig:crispulator-moi10k-fdr}A and~C plot it.  We read it across the
+grid rather than at one threshold because a single-threshold F1 compares
+methods sitting at different real error rates, and the ordering it produces
+can depend on where that threshold falls.
 
 Restricted to CRISPR-specific callers the ordering is stable: BARCS-MOD leads
-F1 at every cutoff from $10^{-5}$ to 0.10.  The single exception is
-$10^{-6}$, where MAGeCK-MLE's 0.306 exceeds BARCS-MOD's 0.248, and that is not
-a result -- its call count is identically 358 from $10^{-6}$ to $3\times
-10^{-3}$, so the entry is a quantization artifact rather than a measurement.
+F1 at every cutoff from $10^{-5}$ to 0.10, by 0.354 against 0.306, 0.126, and
+0.004 at $10^{-5}$ and by 0.847 against 0.811, 0.785, and 0.718 at 0.10.  The
+single exception is $10^{-6}$, where MAGeCK-MLE's 0.306 exceeds BARCS-MOD's
+0.248, and that is not a result -- its call count is identically 358 from
+$10^{-6}$ to $3\times 10^{-3}$, so the entry is a quantization artifact rather
+than a measurement, visible in the figure as a flat purple shelf.
 CRISPhieRmix is the mirror image: it collapses at the strict end, to F1 0.000
 and 0.004 at $10^{-6}$ and $10^{-5}$, because it has essentially stopped
 calling.
@@ -786,13 +824,14 @@ Directional recall & FDP & F1\\
 
 \paragraph{Supporting 400-gene sensitivity to MOI, guide quality, library
 size, and replication.}
-The remaining simulation analyses in this subsection are the earlier
-400-gene grid, retained because they map the parameter boundaries that the
-genome-scale benchmark deliberately does not vary, including the
-one-replicate boundary.  They predate the moderated statistic and use the
-historical BARCS-ST default and the earlier
-$\mathrm{MOI}\in\{0.10,0.25,0.40\}$ levels, so they should be read as
-boundary mapping rather than as the headline comparison.  We
+The genome-scale benchmark holds the screen parameters fixed so that the
+method comparison is clean.  A smaller 400-gene grid maps the boundaries it
+therefore cannot see, by varying those parameters one at a time; the same grid
+supports the gene-statistic and count-model comparisons in
+Section~\ref{sec:genestat}.  This part of it predates the moderated statistic
+and uses the historical BARCS-ST default and the earlier
+$\mathrm{MOI}\in\{0.10,0.25,0.40\}$ levels, so it should be read as boundary
+mapping rather than as the headline comparison.  We
 varied MOI, the high-quality-guide fraction, the number of genes, and the
 number of independent screen replicates one at a time, using five paired seeds
 at every setting (ten unique settings and 50 simulations in total).  Nine
@@ -850,21 +889,6 @@ BARCS-GC is used to prioritize genes from an otherwise irreplaceable $R=1$
 experiment.
 
 
-\begin{figure}[!t]
-\centering
-\includegraphics[width=\textwidth]{figures/crispulator_facs_parameter_sensitivity.pdf}
-\caption{Paired parameter sensitivity across five seeds per setting.
-Points show mean BARCS-minus-MAGeCK-MLE differences in the low--bulk--high
-design, with standard-error bars.  Positive values favor BARCS.  Each panel
-varies (A) MOI, (B) high-quality-guide fraction, (C) number of genes, or
-(D) independent screen replicates while holding the other parameters at their
-baseline values.  Ranking differences remain close to zero, whereas
-directional-recall differences are usually positive but reverse at MOI 0.40
-and six replicates.  The shaded $R=1$ region is a diagnostic boundary and not
-a recommended confirmatory design.}
-\label{fig:crispulator-sensitivity}
-\end{figure}
-
 \noindent\begin{minipage}{\textwidth}
 At the four-replicate baseline, mean core fitting times were 0.35 seconds for
 BARCS and 4.34 seconds for MAGeCK-MLE.  These measurements exclude
@@ -872,6 +896,199 @@ simulation, file input/output, and guide-to-gene aggregation; they show that
 the broader comparison is computationally practical but should not be read as
 an end-to-end software benchmark.
 \end{minipage}
+
+\clearpage
+\subsection{What the guide-to-gene statistic decides, and what a nominal FDR
+is worth}
+\label{sec:genestat}
+
+The genome-scale benchmark compared BARCS against the two CRISPR-specific gene
+callers.  Two questions it cannot answer remain, and both bear on whether the
+result above is a property of the beta-binomial guide model or of one
+arbitrary choice made after it.  First, how much of the performance is the
+guide-to-gene statistic rather than the guide regression?  Second, how does
+the whole pipeline compare against count models that are not CRISPR-specific
+at all but are far better resourced --- edgeR-QL, DESeq2, and limma-voom?  We
+answer both on the 400-gene CRISPulator grid, where the same guide fits can be
+reused across statistics and the settings can be varied one at a time.
+
+\paragraph{The gene statistic is worth as much as the count model.}
+Four gene statistics consume one identical set of beta-binomial guide fits and
+differ only in what they do with the guide coefficients, standard errors, and
+$p$-values afterwards: BARCS-ST aggregates signed scores, BARCS-NORM treats
+the guide coefficients as exchangeable normal draws, BARCS-RE pools them by
+measurement-error random effects, and BARCS-RE-EB moderates that pooling
+toward a screen-wide heterogeneity prior.  Because the fits are shared, every
+difference in Figure~\ref{fig:crispulator-benchmark} is attributable to the
+gene statistic alone.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_benchmark.pdf}
+\caption{Four guide-to-gene statistics on one CRISPulator realization
+(400 genes, 79 active, four replicates, low--bulk--high), all consuming the
+identical beta-binomial guide fits, so every difference shown is caused by the
+gene statistic and not by the count model.  (A) Truth-recovery metrics; the
+methods separate by more than 0.45 of directional recall while their AUROC
+spans only 0.035, which is the point --- ranking is nearly invariant to this
+choice and thresholded recovery is not.  (B) Realized false-discovery
+proportion among calls at gene FDR 0.10, against the dashed nominal target;
+BARCS-NORM and BARCS-RE-EB make no false discoveries at all on this
+realization.  (C) Negative-control $p<0.05$ frequency against its dashed 0.05
+target.}
+\label{fig:crispulator-benchmark}
+\end{figure}
+
+The separation is large and it is not a ranking effect.  On the committed
+baseline realization, AUROC spans only 0.926--0.961 and average precision
+0.839--0.923 across the four statistics, but directional recall at gene FDR
+0.10 spans 0.241--0.696 and the call count spans 19--59.  All four hold their
+realized FDP at or below 0.068 against a nominal 0.10 and produce no
+negative-control $p<0.05$ at all.  BARCS-ST leads recall at 0.696 with
+realized FDP 0.068; BARCS-RE-EB is close behind at 0.570 with realized FDP
+exactly zero, and BARCS-NORM is the outlier at 0.241, because estimating one
+standard deviation from about five guide coefficients leaves roughly four
+reference degrees of freedom.  A screen analyst choosing between these four
+is choosing how many genes to return, not which genes are best supported.
+This is why the manuscript reports the gene statistic as an explicit,
+switchable argument rather than burying it: it is as consequential as the
+count model, and treating it as an implementation detail is how gene-level
+comparisons become irreproducible.
+
+\paragraph{Against general count models, BARCS trades a small ranking deficit
+for a threshold that means what it says.}
+The same 400-gene grid was then run with edgeR-QL, DESeq2, and limma-voom
+added.  These are not proposed as CRISPR gene callers and are not recommended
+as such here; they are included because they are the strongest available test
+of whether a nominal FDR of 0.10 delivers 0.10.  To isolate the guide-level
+count model, all three are fitted guide by guide and then aggregated with
+exactly the same signed-$z$ rule as BARCS-ST, so the gene combiner is held
+fixed and only the count model varies.  MAGeCK-MLE supplies its native joint
+gene model.  The comparison covers the 45 runs from the nine settings with
+more than one independent replicate; the one-replicate setting is a
+prespecified diagnostic boundary and is scored separately.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_external_head_to_head.pdf}
+\caption{Eight gene callers on the 400-gene CRISPulator grid, means over the
+45 multi-replicate runs with standard-error bars.  (A) Average precision and
+(B) directional recall at gene FDR 0.10 are the conventional performance
+panels, on which the three general count models lead.  (C) is the panel that
+matters: the realized false-discovery proportion actually delivered at that
+same nominal 0.10, marked by the dashed line.  edgeR-QL, DESeq2, and
+limma-voom sit at 0.23--0.25, two and a half times what they advertised, so
+their extra recall in panel B is bought at an error rate a screen cannot see.
+Every BARCS statistic and MAGeCK-MLE stay below the line.}
+\label{fig:crispulator-external}
+\end{figure}
+
+Figure~\ref{fig:crispulator-external} shows a clean trade rather than a
+winner.  The three count models rank slightly better than BARCS-ST --- paired
+average precision is higher by 0.017 (95\% interval 0.013 to 0.021) for
+edgeR-QL, 0.017 (0.013 to 0.021) for DESeq2, and 0.016 (0.013 to 0.020) for
+limma-voom --- and recover substantially more genes at nominal FDR 0.10, by
+0.119 to 0.128 of directional recall.  They do so at realized FDP 0.229 to
+0.250 against BARCS-ST's 0.094, a paired excess of 0.135 to 0.156 that
+excludes zero in every comparison, and with 11.9--12.8\% of negative controls
+at $p<0.05$ against BARCS-ST's 6.0\% and a 5\% target.  On F1 they are not
+distinguishable from BARCS-ST once the one-replicate boundary is removed:
+paired differences are $+0.008$ ($-0.015$ to $+0.030$), $+0.013$ ($-0.010$ to
+$+0.035$), and $+0.014$ ($-0.008$ to $+0.037$).  Pooling the boundary setting
+inflates the same three differences to $+0.063$, $+0.067$, and $+0.070$, all
+nominally significant --- the apparent power gap is an artifact of a design
+none of these methods should be used on.  MAGeCK-MLE is the closest
+comparator throughout: its average-precision difference from BARCS-ST is
+$+0.0022$ ($-0.0042$ to $+0.0086$) and its F1 is lower by 0.0241 ($-0.0404$ to
+$-0.0079$).
+
+\paragraph{Guide-dispersion moderation closes the ranking gap, and the closing
+survives two fresh splits.}
+The residual deficit has one cause.  BARCS estimates a beta-binomial
+dispersion for each guide from that guide's own residuals, on the $2R-1$
+residual degrees of freedom the design supplies --- seven at the
+four-replicate baseline.  That estimate is noisy in both directions, and the
+damaging direction is the quiet one: guides whose residuals happen to look
+unusually clean report standard errors their data do not support, drive the
+negative-control tail, and force \texttt{bb\_calibrate\_controls()} to answer
+with one penalty applied to every guide in the screen.  Moderation corrects
+those guides individually, shrinking each guide's variance inflation toward a
+trend fitted across the library with the scaled-F moment estimator of Smyth.
+Both the prior degrees of freedom and the shrinkage target are estimated from
+the screen, so no tuning constant could have been fitted to an outcome.  The
+mechanism is worth stating plainly because it is not the obvious one:
+moderation makes genuinely noisy guides \emph{stricter}, and the power comes
+from the quiet guides no longer inflating the empirical null, so the blanket
+penalty falls --- on the baseline realization the control scale drops from
+1.238 to 1.172.
+
+Tuning a method on the benchmark it is reported on is how methods get
+oversold, so the work was split three ways.  Every design decision was made on
+a development split.  A held-out split of nine scenarios at three seeds was
+never inspected during development.  A confirmatory split of the same nine
+scenarios at three further fresh seeds was generated and run only after the
+held-out split had overturned one development default.
+
+\begin{table}[ht]
+\centering
+\caption{Guide-dispersion moderation validated on two splits never used for
+development: nine CRISPulator scenarios at three held-out seeds (27 runs) and
+three further fresh seeds (26 runs).  AP is average precision and FDP the
+realized false-discovery proportion at nominal gene FDR 0.10, where 0.10 is
+the target and lower is safer only when recall is read with it.  Best AP and
+F1 in each split are highlighted; BARCS-MOD is at or within noise of the best
+on both while running at a third of the count models' error rate.}
+\label{tab:moderation-splits}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+& \multicolumn{3}{c}{Held-out (27 runs)} &
+\multicolumn{3}{c}{Confirmatory (26 runs)}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Method & AP & F1 & FDP & AP & F1 & FDP\\
+\midrule
+\methodswatch{mageckorange} BARCS-MOD &
+0.8722 & \textcolor{mageckorange}{\textbf{0.7852}} & 0.0790 &
+\textcolor{mageckorange}{\textbf{0.9077}} & 0.8160 & 0.0852\\
+\methodswatch{chronosgreen} edgeR-QL &
+0.8718 & 0.7837 & 0.2137 & 0.9051 & 0.8141 & 0.1990\\
+\methodswatch{mageckpink} DESeq2 &
+\textbf{0.8724} & 0.7830 & 0.2315 & 0.9062 &
+0.8113 & 0.2243\\
+\methodswatch{bagelgold} limma-voom &
+0.8699 & 0.7813 & 0.2177 & 0.9040 & 0.8094 & 0.2137\\
+\methodswatch{barcsblue} BARCS-ST &
+0.8547 & 0.7289 & 0.0777 & 0.8898 & 0.7801 & 0.0803\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Against BARCS-ST the gain repeats on both splits: average precision
+$+0.018$ (95\% interval $+0.013$ to $+0.022$ held-out and $+0.014$ to
+$+0.022$ confirmatory) and F1 $+0.056$ and $+0.036$, at no measurable cost in
+realized FDP.  Against the general count models the honest statement is a tie
+on ranking and F1, won on calibration.  Paired F1 differences are within noise
+on both splits, the largest interval being $\pm0.025$; average-precision
+differences are at most 0.004 and change sign between splits; and the
+realized-FDP difference is 0.11 to 0.15 in BARCS's favor on every comparison
+and significant every time.  Moderated BARCS matches the count models where it
+used to trail them and keeps a false-discovery proportion under the nominal
+0.10 while theirs sits at two to three times nominal.
+
+Two findings from the splits are recorded rather than folded away, because
+neither would have been visible from a single evaluation.  A default chosen on
+development data was wrong: the development split favored a conservative
+one-way moderation, but on both fresh splits that caution proved unnecessary
+and expensive, giving up 0.033 and 0.020 of paired F1, so the shipped default
+is the standard two-sided form with the conservative variant retained as an
+option.  And an empirical-null idea that looked strong on the baseline
+realization was discarded rather than shipped: rescaling the gene statistic
+against a central-window normal fit is biased even with no active genes, and
+under the one-sided activity ordinary in a dropout screen it returned a scale
+of 10.97 against a truth of 1.5.  One caveat limits the calibration claim to a
+screen average: three held-out scenarios --- MOI 0.10, MOI 0.40, and the
+100-gene library --- run above nominal FDP both before and after moderation.
 
 \clearpage
 \subsection{Interaction recovery: what the denominator decides}
@@ -939,6 +1156,25 @@ Null rate & Safe-harbor & Scale\\
 \end{tabular}}
 \end{table}
 
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\textwidth]{figures/simcrispr_interaction.pdf}
+\caption{Interaction recovery on simCRISPR factorial screens, three seeds.
+Only one thing varies across the three BARCS series: what the guide counts are
+divided by.  (A) Estimated interaction for guides whose true interaction is
+exactly zero.  The full-library denominator centers them at $+0.18$ instead of
+$0$, because 38\% of targeting guides at least halve in the treated knockout
+arm and inflate the share of everything that survives; either control
+denominator centers them on the truth.  (B) What that bias costs.  Control
+denominators hold F1 above 0.8 down to a requested gene FDR of $10^{-2}$,
+while the library denominator has already collapsed by $10^{-2}$ --- the bias
+is absorbed by the control calibration as a twofold empirical-null inflation
+and paid for in power, not in false positives.  MAGeCK-MLE is drawn as a
+reference with no equivalent choice to sweep; its flat zero is the
+guide-level-truth boundary discussed below, not a calibration result.}
+\label{fig:simcrispr}
+\end{figure}
+
 \paragraph{The estimator recovers the interaction; the denominator decides
 whether it can be tested.}
 Effect recovery is flat at $\rho_s=0.687$--$0.690$ across every denominator,
@@ -948,7 +1184,8 @@ full-library denominator BARCS-MOD reaches directional recall 0.375 and F1
 0.481; with either control denominator it reaches 0.830--0.838 and
 0.914--0.917.  The estimates were never the problem.
 
-The mechanism is visible in the last column.  Thirty-eight percent of the
+The mechanism is visible in the last column of Table~\ref{tab:simcrispr} and
+in Figure~\ref{fig:simcrispr}A.  Thirty-eight percent of the
 targeting guides at least halve in the treated knockout arm, which inflates
 the share of every surviving guide, so the full-library denominator hands each
 guide an apparent interaction: across the true zeros the median estimated
@@ -978,7 +1215,8 @@ their safe-harbor rates is the cost of choosing wrongly.
 Moderation helps here as it did at genome scale, and for the same reason:
 F1 rises from 0.870 to 0.917 under the non-targeting denominator and from
 0.864 to 0.914 under safe-harbor, with the null rate still under the nominal
-target.  Across cutoffs the ordering is stable, with BARCS-MOD F1 running
+target.  Across cutoffs the ordering is stable
+(Figure~\ref{fig:simcrispr}B), with BARCS-MOD F1 running
 0.492, 0.641, 0.822, 0.894, and 0.917 from a requested $10^{-4}$ to 0.10 while
 the held-out null rate stays at or below the cutoff throughout.
 
@@ -1162,18 +1400,6 @@ prototype estimates dispersion guide by guide and uses a transparent but
 ad-hoc Stouffer gene aggregation.  A fair path to more consistent gains is
 empirical-Bayes dispersion moderation plus a native gene-level hierarchy, not
 changing the benchmark or weakening MAGeCK.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=\textwidth]{figures/sanson_gold_standard_benchmark.pdf}
-\caption{CNV-aware essential-gene discrimination in the Sanson A375 screen.
-(A) ROC, (B) precision--recall, (C) F1 across nominal FDR thresholds, and
-(D) absolute residual effect--CNV correlation among nonessential genes, where
-values closer to zero are better.  Curves compare uncorrected (dashed) and
-CNV-corrected (solid) BARCS and official MAGeCK-MLE results; open points mark
-CNV-corrected values.}
-\label{fig:sanson}
-\end{figure}
 
 \subsection{External false-discovery benchmark: sensitivity to the analysis contract}
 
