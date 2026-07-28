@@ -1,0 +1,127 @@
+% !TeX root = ../../main.tex
+\subsection{Longitudinal HT-29 screening}
+
+The first question is whether a continuous predictor observed at more than two
+values costs anything relative to methods built for that setting.  We use the
+HT-29 time course of
+\citet{tzelepis2016dropout}, the longitudinal dataset used to evaluate
+Chronos \citep{dempster2021chronos}.  It contains a pDNA measurement and HT-29
+guide counts at days 7, 10, 13, 16, 19, 22, and 25.
+The three sequencing columns at each late day were summed before analysis.
+This distinction is important for the requested $t$ inference: three assays of
+one harvested population increase read depth but are not three independent
+biological units and therefore must not add residual degrees of freedom.
+Following the Chronos preprocessing, guides with fewer than 30 pDNA reads were
+removed, leaving 86,882 guides targeting 17,995 genes.
+
+The BARCS and official MAGeCK-MLE 0.5.9.5 fits received the same
+eight-column count matrix and the same numeric design, with an intercept and
+$d_i/25$.  This is a direct continuous-time comparison.  We also downloaded
+the all-seven-time-point Chronos joint result and the deposited per-endpoint
+MAGeCK and BAGEL2 results from the Chronos Figshare record
+\citep{chronosfigshare2021}.  Those matrices carry one column per day; we use
+the day-25 column itself rather than a summary across days, so the comparator
+is a single observed endpoint analysis at the deepest time point.
+
+For an external biological target, core essential genes are positives and
+HT-29 genes with DepMap 20Q2 expression below 0.5 are negatives, matching the
+deposited Chronos analysis.  All methods were
+restricted to the same 1,080 essential and 5,774 unexpressed genes.
+Null-normalized median difference (NNMD) follows the definition used for
+Chronos: the difference between the medians of the two control sets, divided by
+the median absolute deviation of the unexpressed effects
+\citep{dempster2021chronos}.  No scaling constant is applied, and more negative
+values indicate stronger separation.
+``False positives'' counts unexpressed genes in the lowest 15\% of all
+evaluated effects, following the deposited Chronos analysis.
+
+\begin{table}[ht]
+\centering
+\caption{Longitudinal HT-29 control-gene benchmark, restricted to the three
+methods that fit the full time course.  Deposited single-endpoint results are
+reported in the copy-number audit below.  PR AUC is the area under the
+precision--recall curve; Recall$_{90}$ is the maximum recall at least 90\%
+precision.  Higher AUROC, PR AUC, and Recall$_{90}$ are better; more negative
+NNMD and fewer unexpressed false positives are better.  No column maximum is
+highlighted, because the differences among these three methods are within the
+margins discussed in the text.}
+\label{tab:chronos}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{15\%}$\\
+\midrule
+\methodswatch{barcsblue} BARCS time & 0.9786 & 0.9494 & $-16.34$ & 0.9037 & 74\\
+\methodswatch{mageckorange} Official MAGeCK time & 0.9789 & 0.9534 & $-17.75$ &
+  0.8972 & 76\\
+\methodswatch{chronosgreen} Chronos joint & 0.9747 & 0.9356 & $-27.88$ &
+  0.8991 & 77\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:chronos} does not support declaring a winner.  Continuous-time
+MAGeCK has the highest AUROC and PR AUC, BARCS the highest high-precision
+recall and the fewest unexpressed false positives, and Chronos by far the
+strongest distributional separation.  Every margin except the last is slight:
+0.0004 of AUROC, 0.0040 of PR AUC, seven genes of recall out of 1,080, and two
+false positives, all from a single run without a resampling interval.  We
+therefore do not claim the recall or false-positive column as a BARCS
+advantage.  The defensible reading is parity in essential-gene discrimination,
+and the claim this benchmark supports is correspondingly modest: a
+general-purpose coefficient model gives up nothing here to two methods built
+specifically for longitudinal screens.
+
+The deposited single-endpoint results carry a separate caution about analysis
+contracts.  Summarising the same deposited MAGeCK matrix by its median across
+the seven days rather than by its day-25 column moves its AUROC from 0.9792 to
+0.9742 and its recall at 90\% precision from 0.9120 to 0.8602, a swing larger
+than any difference among the three models above.  Because early harvests carry
+little depletion, an across-day median attenuates the signal the screen was run
+to measure.  How a multi-endpoint result is reduced to one number can therefore
+matter more than which count model produced it, and the day-25 column is used
+wherever those deposited effects appear below.
+
+Chronos's NNMD margin is the one difference in Table~\ref{tab:chronos} that is
+not slight, and it is consistent with its mechanistic treatment of knockout
+efficiency and saturation.  It should be read as a statement about the shape of
+its effect distribution rather than about discrimination: NNMD is the only
+metric reported here that is not invariant to monotone rescaling of gene scores
+\citep{dempster2021chronos}, and Chronos leads it while trailing both
+rank-based metrics.  The BARCS and official continuous-time
+MAGeCK effects have Spearman correlation 0.926; correlations with Chronos
+joint and the deposited day-25 MAGeCK effects are 0.815 and 0.859.  These are again effect
+agreement statistics, not comparable likelihoods: the methods estimate
+differently scaled quantities and do not expose a common predictive
+likelihood in the deposited outputs.
+
+\clearpage
+
+\subsubsection{What the longitudinal screen says about CNV correction}
+
+We extracted the HT-29 profile (ACH-000552) from DepMap Public 20Q2
+\citep{depmap20q2} and repeated the same copy-number audit used for A375.
+Before correction, effect--copy-number Spearman correlation among unexpressed
+genes is already small: $-0.072$ for BARCS, $-0.075$ for official
+continuous-time MAGeCK, $-0.048$ for deposited Chronos joint effects,
+$-0.057$ for the published day-25 MAGeCK effects, and $+0.029$ for the
+published day-25 BAGEL2 effects.  The BAGEL2 association is the smallest in
+absolute value, but that is a narrow robustness observation rather than evidence
+of a better classifier: on the same control-gene universe its AUROC is 0.9698,
+the lowest of any method examined here.
+Applying MAGeCK 0.5.9.5's official piecewise normalizer makes the association
+larger in absolute value rather than smaller: $-0.145$ for BARCS and $-0.149$ for
+MAGeCK.  Thus the A375 result does not generalize automatically.
+
+This failure mode is informative.  The piecewise correction estimates one
+global effect--CNV trend across genes in one cell line and applies it after
+model fitting.  When the nuisance association is weak and biological
+dependencies are not exchangeable across copy-number regions, the fitted
+trend can have the wrong practical target and over-correct null genes.
+Chronos joint is shown without CNV correction because the published Chronos
+procedure requires multiple cell lines to identify common essential genes and
+was explicitly not applied to this single-line experiment
+\citep{dempster2021chronos}.  The DepMap profile was measured separately from
+the original screen, so cell-line drift is an additional limitation; the
+result supports diagnosing correction rather than applying it by default.

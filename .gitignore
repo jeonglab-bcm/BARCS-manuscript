@@ -22,6 +22,8 @@ main.pdf
 # Downloaded datasets and generated benchmark intermediates
 data/raw/
 results/
+# ...but the manuscript source directory of the same name is versioned
+!sections/results/
 
 # Rendered page images used only for visual QA
 output/rendered/
