@@ -391,7 +391,7 @@ curve_and_metrics <- function(effect) {
   null_mad <- median(abs(null - median(null)))
   nnmd <- (median(true) - median(null)) / null_mad
   nnmd_mad_scaled <- (median(true) - median(null)) / mad(null)
-  cutoff <- unname(quantile(effect, 0.15, na.rm = TRUE))
+  cutoff <- unname(quantile(effect, 0.10, na.rm = TRUE))
 
   list(
     metrics = data.frame(
@@ -402,7 +402,7 @@ curve_and_metrics <- function(effect) {
       recall_at_90_precision = max(
         c(0, recall[precision >= 0.9])
       ),
-      unexpressed_false_positives_15pct = sum(null < cutoff),
+      unexpressed_false_positives_10pct = sum(null < cutoff),
       AUROC = auroc,
       PR_AUC = pr_auc,
       average_precision = average_precision
@@ -502,10 +502,10 @@ names(colors) <- names(effects)
 line_types <- c(1, 1, 1, 2, 2)
 names(line_types) <- names(effects)
 
-pdf(figure_path, width = 10, height = 8)
+pdf(figure_path, width = 11, height = 3.8, useDingbats = FALSE)
 old_par <- par(
-  mfrow = c(2, 2), mar = c(4.2, 4.4, 3.0, 1.0),
-  las = 1, xaxs = "i", yaxs = "i"
+  mfrow = c(1, 3), mar = c(4.2, 4.2, 2.7, 0.8),
+  las = 1, xaxs = "i", yaxs = "i", family = "sans"
 )
 
 plot(
@@ -521,8 +521,12 @@ for (method in names(evaluations)) {
   )
 }
 legend(
-  "bottomright", legend = names(effects), col = colors,
-  lty = line_types, lwd = 2, cex = 0.72, bty = "n"
+  "bottomright",
+  legend = c(
+    "BARCS, time", "MAGeCK, time", "Chronos, joint",
+    "MAGeCK, day 25", "BAGEL2, day 25"
+  ),
+  col = colors, lty = line_types, lwd = 2, cex = 0.62, bty = "n"
 )
 
 plot(
@@ -540,55 +544,23 @@ for (method in names(evaluations)) {
   )
 }
 
-barplot(
+bar_positions <- barplot(
   metrics$recall_at_90_precision,
-  names.arg = c("BARCS", "MAGeCK\ntime", "Chronos\njoint",
-                "MAGeCK\nday 25", "BAGEL2\nday 25"),
+  names.arg = c(
+    "BARCS\n(time)", "MAGeCK\n(time)", "Chronos\n(joint)",
+    "MAGeCK\n(day 25)", "BAGEL2\n(day 25)"
+  ),
   col = unname(colors[metrics$method]), border = NA,
   ylim = c(0, 1), ylab = "Recall at >= 90% precision",
-  main = "(C) High-precision recovery", las = 2, cex.names = 0.72
+  main = "(C) High-precision recovery", las = 1, cex.names = 0.68
 )
 abline(h = seq(0, 1, 0.2), col = "white", lwd = 0.7)
-
-cnv_plot_methods <- c(
-  "BARCS time", "BARCS time + CNV",
-  "Official MAGeCK time", "Official MAGeCK time + CNV",
-  "Chronos joint", "Published MAGeCK day 25",
-  "Published BAGEL2 day 25"
-)
-cnv_values <- abs(cnv_bias$spearman_unexpressed[
-  match(cnv_plot_methods, cnv_bias$method)
-])
-cnv_labels <- c(
-  "BARCS", "BARCS + CNV", "MAGeCK time", "MAGeCK time + CNV",
-  "Chronos joint", "MAGeCK day 25", "BAGEL2 day 25"
-)
-cnv_colors <- c(
-  colors[["BARCS time"]], colors[["BARCS time"]],
-  colors[["Official MAGeCK time"]], colors[["Official MAGeCK time"]],
-  colors[["Chronos joint"]], colors[["Published MAGeCK day 25"]],
-  colors[["Published BAGEL2 day 25"]]
-)
-cnv_pch <- c(16, 1, 16, 1, 16, 16, 16)
-plot(
-  0, 0, type = "n",
-  xlim = c(0, max(cnv_values) * 1.08),
-  ylim = c(0.5, length(cnv_values) + 0.5),
-  xlab = "|Spearman(effect, copy number)| (closer to 0 is better)",
-  ylab = "", yaxt = "n",
-  main = "(D) Residual CNV association"
-)
-axis(2, at = seq_along(cnv_values), labels = rev(cnv_labels),
-     las = 1, cex.axis = 0.68)
-abline(v = pretty(c(0, cnv_values)), col = "grey92", lwd = 0.8)
-segments(
-  x0 = 0, y0 = seq_along(cnv_values),
-  x1 = rev(cnv_values), y1 = seq_along(cnv_values),
-  col = rev(cnv_colors), lwd = 2
-)
-points(
-  rev(cnv_values), seq_along(cnv_values),
-  col = rev(cnv_colors), pch = rev(cnv_pch), cex = 1.15, lwd = 2
+text(
+  bar_positions,
+  metrics$recall_at_90_precision,
+  labels = sprintf("%.3f", metrics$recall_at_90_precision),
+  pos = 3,
+  cex = 0.68
 )
 
 par(old_par)

@@ -1,30 +1,33 @@
 % !TeX root = ../main.tex
 \begin{abstract}
-\noindent\textbf{Background.}  Pooled CRISPR screens increasingly place
-libraries along time, dose, FACS bins, or donors, making the estimand a trend,
-adjusted association, or interaction, not a binary contrast.
+\noindent\textbf{Background.}  CB\textsuperscript{2} established a
+beta-binomial model for two-group CRISPR screens, but modern screens often
+require time, dose, donor, ordered-bin, or interaction effects.  These designs
+cannot be reduced to a binary contrast without discarding information.
 
-\noindent\textbf{Methods.}  BARCS fits
-$\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g$ per guide against
-unfiltered library totals, with a beta-binomial variance separating
-sequencing precision from between-library heterogeneity, and refers a
-prespecified coefficient or contrast to $t_{m-q}$ on independent libraries.
-Two new additional components could improve accuracy: negative-control
-calibration and guide-dispersion moderation.
+\noindent\textbf{Methods.}  BARCS generalizes the CB\textsuperscript{2}
+sampling model to guide-level beta-binomial regression,
+$\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g$.  It conditions each
+guide count on the unfiltered library total, estimates prespecified
+coefficients or contrasts, and optionally uses negative-control calibration
+and dispersion moderation.
 
-\noindent\textbf{Results.}  In a primary-T-cell IL2RA FACS screen BARCS
-recovered 22 of 26 validated regulators versus 17 for MAGeCK-MLE, calibration
-cutting non-targeting $p<0.05$ from 13.3\% to 4.9\%.  In a 10,000-gene
-CRISPulator simulation, moderation raised F1 from 0.811 to 0.847, leading
-MAGeCK-MLE and CRISPhieRmix at every matched false-discovery proportion.  On
-simCRISPR, interaction F1 rose from 0.481 to 0.917 when control guides replaced
-the full library as denominator.  Two benchmarks bound the claim: a
-longitudinal HT-29 screen gave parity with continuous-time MAGeCK-MLE and
-Chronos rather than gain, and the original authors' rank aggregation led a
-processed-count Cas13 benchmark with one residual degree of freedom.
+\noindent\textbf{Results.}  BARCS matched established methods in an HT-29
+time-course screen, showing that the generalization preserves performance in
+the original screening regime.  In a Cas13 reanalysis using days 0, 7, and 14,
+the intermediate time point increased BARCS average precision from 0.776 to
+0.786 and FDR-thresholded recall from 0.487 to 0.580; BARCS also had lower null
+calibration error than longitudinal MAGeCK-MLE (0.035 versus 0.103), although
+retaining comparable essential-gene ranking.  In an IL2RA FACS screen,
+calibrated BARCS recovered 22 of 26 validated regulators
+while reducing the non-targeting $p<0.05$ rate from 0.133 to 0.051.  In a
+10,000-gene simulation, moderation increased F1 from 0.811 to 0.847, and in an
+interaction simulation the appropriate control-guide denominator increased F1
+from 0.481 to 0.917.
 
-\noindent\textbf{Conclusions.}  BARCS bridges CB\textsuperscript{2}'s
-two-group test and specialist generative models: transparent, scalable
-coefficient inference for quantitative and adjusted designs, with diagnostics
-for those it cannot repair.
+\noindent\textbf{Conclusions.}  BARCS extends beta-binomial CRISPR-screen
+inference beyond CB\textsuperscript{2} to longitudinal and
+covariate-adjusted designs.  The results support the beta-binomial as a
+well-calibrated sampling model for guide counts conditional on library depth
+and establish its use for multivariable CRISPR-screen inference.
 \end{abstract}

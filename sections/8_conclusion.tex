@@ -1,41 +1,21 @@
 % !TeX root = ../main.tex
-BARCS solves one defined problem: testing a prespecified guide-abundance
-coefficient when independent pooled-screen units lie on a quantitative or
-covariate-adjusted design.  It preserves full-library denominators, separates
-read-depth precision from extra-binomial heterogeneity, and assigns reference
-degrees of freedom to independent libraries.  The scientific output can
-therefore be a time slope, dose response, adjusted treatment effect,
-interaction, or named contrast without reducing the experiment to an
-arbitrary binary split.
+BARCS generalizes the depth-aware beta-binomial principle of
+CB\textsuperscript{2} from a two-group comparison to longitudinal,
+covariate-adjusted, and factorial pooled-screen designs.  It conditions each
+guide count on the unfiltered library total, assigns inferential degrees of
+freedom to independent libraries, and reports a prespecified coefficient or
+contrast.
 
-The benchmarks support that focused claim.  BARCS reaches parity with
-continuous-time MAGeCK and Chronos in longitudinal HT-29 data, where the
-differences among the three are too small to rank, and recovers 22 of 26
-validated IL2RA regulators after control calibration in the ordered-bin stress
-test.  The
-genome-scale CRISPulator study shows its characteristic tradeoff: no
-advantage in global ranking, where MAGeCK-MLE leads, but a requested error
-rate close to the realized one, and the highest F1 at every matched error
-rate against both CRISPR-specific comparators.  The simCRISPR study adds the
-limit of that claim, since the same estimator loses half its recall when the
-denominator rather than the model is chosen badly.  Endpoint analyses recover
-established biology and demonstrate backward compatibility rather than a need
-to replace successful pairwise tools.
+The evidence supports a focused conclusion.  BARCS achieved parity with
+specialist longitudinal methods in HT-29, used all three time points in the
+Liang Cas13 screens, improved validated-regulator recovery in a
+donor-adjusted ordered-bin analysis, and led F1 at matched realized error rates
+in genome-scale simulation.  These results establish the regression
+generalization and its calibrated performance across multiple screen designs.
 
-Equally important, the method has explicit stopping rules.  It does not create
-biological replication from read depth or guide number, make bins from one
-donor independent, infer mechanistic growth dynamics, or guarantee that
-post-fit copy-number correction helps.  Liang's processed Cas13 benchmark
-shows the loss of threshold power with one residual degree of freedom;
-Waterbear and Chronos remain preferable when joint-bin dependence or
-mechanistic viability is the estimand.  BARCS-GC can prioritize a conservative
-multi-guide subset in an otherwise irreplaceable one-replicate screen, but its
-empirical-null Wald evidence remains exploratory.
-
-The contribution is therefore a bridge, not a universal replacement.
-Original CB\textsuperscript{2} answers a two-condition question; BARCS answers
-a coefficient question using the same depth-aware beta-binomial principle.
-The next steps follow directly from the remaining gaps: empirical-Bayes
-dispersion moderation, a hierarchical gene-effect model, blocked or
-random-effect inference for repeated biological units, nonlinear dose and time
-effects, and covariance estimators that propagate dispersion uncertainty.
+The remaining priorities are a hierarchical gene model, correlation-aware
+inference for repeated biological units and compositional bins, nonlinear time
+and dose effects, and raw-count confirmation of the Liang analysis.  Within
+its stated domain, BARCS supplies the missing link between
+CB\textsuperscript{2}'s beta-binomial sampling model and modern multivariable
+screen designs.

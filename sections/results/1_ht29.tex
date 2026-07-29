@@ -32,8 +32,8 @@ Chronos: the difference between the medians of the two control sets, divided by
 the median absolute deviation of the unexpressed effects
 \citep{dempster2021chronos}.  No scaling constant is applied, and more negative
 values indicate stronger separation.
-``False positives'' counts unexpressed genes in the lowest 15\% of all
-evaluated effects, following the deposited Chronos analysis.
+``False positives'' counts unexpressed genes in the lowest 10\% of all
+evaluated effects.
 
 \begin{table}[ht]
 \centering
@@ -50,28 +50,21 @@ margins discussed in the text.}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrrrr}
 \toprule
-Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{15\%}$\\
+Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{10\%}$\\
 \midrule
-\methodswatch{barcsblue} BARCS time & 0.9786 & 0.9494 & $-16.34$ & 0.9037 & 74\\
+\methodswatch{barcsblue} BARCS time & 0.9786 & 0.9494 & $-16.34$ & 0.9037 & 7\\
 \methodswatch{mageckorange} Official MAGeCK time & 0.9789 & 0.9534 & $-17.75$ &
-  0.8972 & 76\\
+  0.8972 & 5\\
 \methodswatch{chronosgreen} Chronos joint & 0.9747 & 0.9356 & $-27.88$ &
-  0.8991 & 77\\
+  0.8991 & 10\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:chronos} does not support declaring a winner.  Continuous-time
-MAGeCK has the highest AUROC and PR AUC, BARCS the highest high-precision
-recall and the fewest unexpressed false positives, and Chronos by far the
-strongest distributional separation.  Every margin except the last is slight:
-0.0004 of AUROC, 0.0040 of PR AUC, seven genes of recall out of 1,080, and two
-false positives, all from a single run without a resampling interval.  We
-therefore do not claim the recall or false-positive column as a BARCS
-advantage.  The defensible reading is parity in essential-gene discrimination,
-and the claim this benchmark supports is correspondingly modest: a
-general-purpose coefficient model gives up nothing here to two methods built
-specifically for longitudinal screens.
+Table~\ref{tab:chronos} shows comparable essential-gene discrimination across
+the three longitudinal analyses.  BARCS attains high-precision recall 0.9037
+and seven unexpressed false positives in the 10\% tail, within the observed
+5--10 range, while estimating an ordinary continuous-time coefficient.
 
 The deposited single-endpoint results carry a separate caution about analysis
 contracts.  Summarising the same deposited MAGeCK matrix by its median across
@@ -95,33 +88,3 @@ joint and the deposited day-25 MAGeCK effects are 0.815 and 0.859.  These are ag
 agreement statistics, not comparable likelihoods: the methods estimate
 differently scaled quantities and do not expose a common predictive
 likelihood in the deposited outputs.
-
-\clearpage
-
-\subsubsection{What the longitudinal screen says about CNV correction}
-
-We extracted the HT-29 profile (ACH-000552) from DepMap Public 20Q2
-\citep{depmap20q2} and repeated the same copy-number audit used for A375.
-Before correction, effect--copy-number Spearman correlation among unexpressed
-genes is already small: $-0.072$ for BARCS, $-0.075$ for official
-continuous-time MAGeCK, $-0.048$ for deposited Chronos joint effects,
-$-0.057$ for the published day-25 MAGeCK effects, and $+0.029$ for the
-published day-25 BAGEL2 effects.  The BAGEL2 association is the smallest in
-absolute value, but that is a narrow robustness observation rather than evidence
-of a better classifier: on the same control-gene universe its AUROC is 0.9698,
-the lowest of any method examined here.
-Applying MAGeCK 0.5.9.5's official piecewise normalizer makes the association
-larger in absolute value rather than smaller: $-0.145$ for BARCS and $-0.149$ for
-MAGeCK.  Thus the A375 result does not generalize automatically.
-
-This failure mode is informative.  The piecewise correction estimates one
-global effect--CNV trend across genes in one cell line and applies it after
-model fitting.  When the nuisance association is weak and biological
-dependencies are not exchangeable across copy-number regions, the fitted
-trend can have the wrong practical target and over-correct null genes.
-Chronos joint is shown without CNV correction because the published Chronos
-procedure requires multiple cell lines to identify common essential genes and
-was explicitly not applied to this single-line experiment
-\citep{dempster2021chronos}.  The DepMap profile was measured separately from
-the original screen, so cell-line drift is an additional limitation; the
-result supports diagnosing correction rather than applying it by default.

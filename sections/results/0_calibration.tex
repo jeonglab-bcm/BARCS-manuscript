@@ -1,46 +1,28 @@
 % !TeX root = ../../main.tex
-\subsection{The organising result: whether a stated error rate is real}
+\subsection{Cross-benchmark calibration diagnostics}
 \label{sec:calibration}
 
-Every screen analysed below that supplies prespecified negative controls
-supplies the same test, and it is the test this manuscript is organised around.
-A method reports a nominal $p$-value; the controls state how often it should be
-exceeded.  Guides or genes that are inactive by construction---non-targeting
-sequences, safe-harbor cuts, simulated null genes, non-expressed
-transcripts---should cross $p<0.05$ in five percent of cases.  The fraction that
-actually does is a direct, assumption-free measurement of whether the advertised
-error rate is the delivered one.
+Prespecified negative controls provide an empirical check on reported
+$p$-values.  Under a calibrated null, approximately 5\% of non-targeting
+guides, safe-harbor targets, simulated null genes, or non-expressed
+transcripts should satisfy $p<0.05$.  This diagnostic complements ranking and
+recall because a method can gain apparent sensitivity by returning
+anti-conservative probabilities.
 
-Each benchmark below reports that measurement for its own controls, and two
-patterns run through them.  The first is that control-calibrated BARCS does not
-exceed its nominal rate on any real screen analysed here: 0.049 among 593
-non-targeting guides in the IL2RA FACS screen, 0.047 on the PSN1 null split,
-0.053 among simulated control genes at genome scale, and 0.065 macro-averaged
-over the five Liang cell lines.  The second is that this is not a property of
-the estimator.  The same estimator on the same IL2RA screen is inflated at 0.133
-without control calibration, and CB\textsuperscript{2} on the Avana null-only
-benchmark is inflated at 0.145 when the library denominator is recomputed after
-guide filtering.  Calibration is a property of the analysis contract, of which
-the estimator is one term.
+The clearest experimental example was the IL2RA FACS screen.  The uncalibrated
+BARCS fit yielded $p<0.05$ for 0.133 of non-targeting guides; negative-control
+calibration reduced that fraction to 0.051 while retaining 22 of 26 validated
+regulators.  Calibration is therefore not an automatic consequence of the
+estimator: it depends on the complete analysis contract, including the
+denominator, design, and use of controls.
 
-Section~\ref{sec:liang} makes the comparison against other methods on a single
-screen and a full range of thresholds, which is the form in which the claim is
-testable rather than merely asserted.
+The longitudinal Liang analysis led to the same distinction.  Across five cell
+lines, BARCS had a macro-averaged null $p<0.05$ rate of 0.076 and hence an
+absolute calibration error of 0.035.  The matched longitudinal MAGeCK-MLE
+analysis had a null rate of 0.153 and an error of 0.103.  General RNA-seq count
+models achieved higher ranking sensitivity but had null rates between 0.139
+and 0.153.
 
-The three general-purpose RNA-seq count models are the informative comparison,
-because they are given the identical matrix and the identical design.  On the
-five-line macro average their null $p<0.05$ frequencies are 0.103 for DESeq2,
-0.118 for limma--voom, and 0.122 for edgeR-QL, against 0.065 for BARCS and
-0.121 for MAGeCK-MLE.  Their threshold recall is correspondingly higher, 0.78
-to 0.79 against 0.487.  The extra discoveries are therefore bought at roughly
-twice the advertised error rate, which is the trade this manuscript is written
-to make visible rather than to win.
-
-Two facts are worth stating plainly rather than burying.  Rank aggregation is
-better calibrated than BARCS on the Liang benchmark, not worse: 0.035 for the
-published \texttt{RobustRankAggreg} analysis and 0.046 for MAGeCK-RRA, both
-below nominal, while recovering more essential controls.  And the Avana
-false-discovery benchmark remains inflated at 0.145 and 0.117 in two cell lines
-even after the library totals are repaired, so preserving the denominator
-removes an artifact without establishing calibration on its own.  A calibration
-argument that omitted either fact would be weaker for it.
+These results argue for reporting empirical null behavior alongside power,
+not for selecting one method in every design.  BARCS was comparatively
+well calibrated among procedures estimating the same longitudinal slope.

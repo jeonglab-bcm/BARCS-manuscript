@@ -1,10 +1,17 @@
 % !TeX root = ../main.tex
 Supplementary material referenced from the main text.
 
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\figurename}{Supplementary Figure}
+\renewcommand{\tablename}{Supplementary Table}
+
 \begin{table}[ht]
 \centering
-\caption{Supplementary: operational definition of the problem BARCS
-addresses.  Referenced from the Introduction.}
+\caption{Operational definition of the problem BARCS addresses.  Referenced
+from the Introduction.}
 \label{tab:problem}
 \small
 \setlength{\tabcolsep}{5pt}
@@ -36,3 +43,27 @@ missing biological replicates\\
 \end{tabular}
 \end{table}
 
+\input{sections/results/0_calibration}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/waterbear_facs_main.pdf}
+\caption{\textbf{Supporting ordered-bin IL2RA benchmark.}  (A) Directional
+recovery of 26 independently validated regulators.  (B) Total discoveries at
+each method's threshold (log scale).  (C) Empirical non-targeting-guide
+$p<0.05$ rate before and after BARCS control calibration; the dashed line is
+the nominal rate.}
+\label{fig:waterbear}
+\end{figure}
+
+\input{sections/results/supp_ht29-cnv}
+
+\paragraph{Additional multivariable and endpoint benchmarks.}
+The following analyses test backward compatibility, multivariable effect
+concordance, copy-number sensitivity, and preprocessing contracts.  They are
+reported separately because none is a direct test of the primary longitudinal
+generalization.
+
+\input{sections/results/6_gse70038}
+\input{sections/results/7_sanson-a375}
+\input{sections/results/8_fdr-audit}

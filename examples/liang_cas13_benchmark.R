@@ -6,9 +6,10 @@
 # Comparators:
 #   1. Liang RRA: deposited RobustRankAggreg v1.2.1 results;
 #   2. MAGeCK-RRA: official `mageck test` on deposited processed counts;
-#   3. MAGeCK-MLE: official `mageck mle` with replicate blocking;
-#   4. BARCS: beta-binomial regression with the same replicate/day design;
-#   5. edgeR-QL, DESeq2, and limma-voom with the same design.
+#   3. MAGeCK-MLE: official `mageck mle` with replicate blocking and a numeric
+#      time effect across days 0, 7, and 14;
+#   4. BARCS: beta-binomial regression with the same longitudinal design;
+#   5. edgeR-QL, DESeq2, and limma-voom with that design.
 #
 # Liang RRA and MAGeCK-RRA are different algorithms.  The former ranks guide
 # fold changes using the CRAN RobustRankAggreg package; the latter is MAGeCK's
@@ -71,12 +72,12 @@ load_processed_counts <- function(cell_line) {
   )
   processed <- read.delim(processed_path, check.names = FALSE)
   count_columns <- grep(
-    "^Day(0|14) Replicate [12] +\\(Count\\)$",
+    "^Day(0|7|14) Replicate [12] +\\(Count\\)$",
     names(processed),
     value = TRUE
   )
-  if (length(count_columns) < 3L || length(count_columns) > 4L) {
-    stop("Unexpected endpoint-count layout for ", cell_line)
+  if (length(count_columns) < 5L || length(count_columns) > 6L) {
+    stop("Unexpected longitudinal count layout for ", cell_line)
   }
   guide_index <- match(processed$sgrna, guide$sgrna)
   keep <- !is.na(guide_index)
@@ -89,10 +90,10 @@ load_processed_counts <- function(cell_line) {
   maximum_absolute_rounding <- max(abs(counts - round(counts)))
   counts <- round(counts)
   day <- as.integer(sub(
-    "^Day(0|14) Replicate.*$", "\\1", count_columns
+    "^Day(0|7|14) Replicate.*$", "\\1", count_columns
   ))
   replicate <- as.integer(sub(
-    "^Day(?:0|14) Replicate ([12]).*$", "\\1", count_columns,
+    "^Day(?:0|7|14) Replicate ([12]).*$", "\\1", count_columns,
     perl = TRUE
   ))
   sample <- sprintf(
@@ -185,6 +186,13 @@ make_guide_result <- function(cell_guide, estimate, p_value,
   )
 }
 
+has_complete_trajectories <- function(sample_data) {
+  trajectory_table <- table(sample_data$replicate, sample_data$time_14)
+  nrow(trajectory_table) >= 2L &&
+    ncol(trajectory_table) >= 3L &&
+    all(trajectory_table > 0L)
+}
+
 fit_general_count_methods <- function(counts, sample_data, cell_guide,
                                       cell_stem) {
   required <- c("edgeR", "DESeq2", "limma")
@@ -198,16 +206,15 @@ fit_general_count_methods <- function(counts, sample_data, cell_guide,
     )
   }
 
-  formula <- if (nlevels(sample_data$replicate) >= 2L &&
-                 nrow(sample_data) >= 4L) {
-    ~ replicate + day14
+  formula <- if (has_complete_trajectories(sample_data)) {
+    ~ replicate + time_14
   } else {
-    ~ day14
+    ~ time_14
   }
   design <- model.matrix(formula, data = sample_data)
-  coefficient <- match("day14", colnames(design))
+  coefficient <- match("time_14", colnames(design))
   if (is.na(coefficient)) {
-    stop("The day-14 coefficient is absent from the design.")
+    stop("The longitudinal time coefficient is absent from the design.")
   }
 
   # The deposited matrix is already normalized and ComBat-corrected. We add
@@ -262,10 +269,10 @@ fit_general_count_methods <- function(counts, sample_data, cell_guide,
       minReplicatesForReplace = Inf
     ))
     coefficient_name <- grep(
-      "^day14($|_)", DESeq2::resultsNames(dds), value = TRUE
+      "^time_14($|_)", DESeq2::resultsNames(dds), value = TRUE
     )
     if (length(coefficient_name) != 1L) {
-      stop("Could not identify one DESeq2 day-14 coefficient.")
+      stop("Could not identify one DESeq2 time coefficient.")
     }
     table <- DESeq2::results(
       dds,
@@ -331,28 +338,29 @@ run_cell_line <- function(cell_line) {
   ), ]
   counts <- input$counts[, match(audit$sample, colnames(input$counts)), drop = FALSE]
   sample_data <- data.frame(
-    day14 = as.integer(audit$day == 14L),
+    time_14 = audit$day / 14,
     replicate = factor(audit$processed_replicate)
   )
 
-  cell_stem <- gsub("-", "_", cell_line)
+  # Include the estimand in every cache name. This prevents an earlier
+  # two-endpoint fit from being mistaken for the current three-time-point fit.
+  cell_stem <- paste0(gsub("-", "_", cell_line), "_longitudinal")
   barcs_guide_path <- file.path(
     result_dir, paste0(cell_stem, "_barcs_guide.csv.gz")
   )
   if (!file.exists(barcs_guide_path) ||
       identical(Sys.getenv("RERUN_LIANG"), "1")) {
-    formula <- if (nlevels(sample_data$replicate) >= 2L &&
-                   nrow(sample_data) >= 4L) {
-      ~ replicate + day14
+    formula <- if (has_complete_trajectories(sample_data)) {
+      ~ replicate + time_14
     } else {
-      ~ day14
+      ~ time_14
     }
     barcs_guide <- bb_screen(
       counts = counts,
       totals = colSums(counts),
       data = sample_data,
       formula = formula,
-      term = "day14",
+      term = "time_14",
       guide = cell_guide$sgrna,
       gene = cell_guide$gene,
       min_total_count = 30,
@@ -428,18 +436,18 @@ run_cell_line <- function(cell_line) {
   )
 
   design_path <- file.path(result_dir, paste0(cell_stem, "_design.tsv"))
-  if (nlevels(sample_data$replicate) >= 2L && nrow(sample_data) >= 4L) {
+  if (has_complete_trajectories(sample_data)) {
     design <- data.frame(
       samples = audit$sample,
       baseline = 1,
       replicate2 = as.integer(audit$processed_replicate == 2L),
-      day14 = as.integer(audit$day == 14L)
+      time_14 = audit$day / 14
     )
   } else {
     design <- data.frame(
       samples = audit$sample,
       baseline = 1,
-      day14 = as.integer(audit$day == 14L)
+      time_14 = audit$day / 14
     )
   }
   write.table(
@@ -470,9 +478,9 @@ run_cell_line <- function(cell_line) {
   mle_gene <- data.frame(
     gene = mle_raw$Gene,
     n_guides = mle_raw$sgRNA,
-    effect = mle_raw[["day14|beta"]],
-    p_value = mle_raw[["day14|wald-p-value"]],
-    fdr = mle_raw[["day14|wald-fdr"]]
+    effect = mle_raw[["time_14|beta"]],
+    p_value = mle_raw[["time_14|wald-p-value"]],
+    fdr = mle_raw[["time_14|wald-fdr"]]
   )
 
   liang <- published[published$cell_line == cell_line, ]

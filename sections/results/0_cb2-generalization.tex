@@ -1,0 +1,35 @@
+% !TeX root = ../../main.tex
+\subsection{\texorpdfstring{BARCS generalizes the CB\textsuperscript{2}
+sampling model}{BARCS generalizes the CB2 sampling model}}
+\label{sec:cb2-generalization}
+
+CB\textsuperscript{2} established that a guide count is naturally analyzed as
+a proportion conditional on the corresponding library total.  This
+conditioning matters because the beta-binomial variance separates two sources
+of uncertainty: binomial sampling variation, which decreases with sequencing
+depth, and between-library heterogeneity, which does not.  A
+negative-binomial model can accommodate overdispersion in marginal counts, but
+it does not encode the observed library total as the denominator of the guide
+proportion.  Prior goodness-of-fit analyses therefore support the
+beta-binomial sampling model for pooled-guide counts
+\citep{jeong2019beta}.  The present work asks a different question: can that
+sampling model support regression designs beyond the two groups handled by
+CB\textsuperscript{2}?
+
+BARCS changes the mean model while retaining the sampling model.  For guide
+$g$ in library $i$,
+\[
+  K_{gi}\mid N_i \sim
+  \operatorname{BetaBinomial}(N_i,\mu_{gi},\rho_g),
+  \qquad
+  \logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g.
+\]
+The original two-group question is recovered when $\mathbf{x}_i$ contains an
+intercept and one group indicator.  More generally, the columns of
+$\mathbf{X}$ can represent time, dose, donor, batch, an interaction, or a
+prespecified contrast.  Thus BARCS is a generalization of the statistical
+question that CB\textsuperscript{2} can ask; it is not claimed to outperform
+CB\textsuperscript{2} on the binary design for which the original method was
+developed.  Supplementary Methods establish exact equivalence on the legacy
+group-summary scale and first-order equivalence of the default logit statistic
+under local alternatives.

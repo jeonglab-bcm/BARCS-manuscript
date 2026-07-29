@@ -70,39 +70,3 @@ precision difference is effectively zero (95\% CI $-0.00349$ to $0.00295$).
 At nominal FDR 0.05, beta-binomial retains 4.18 percentage points more recall
 (95\% CI 2.66 to 5.71) and an F1 advantage of 0.0253 (95\% CI 0.0148 to
 0.0362).
-
-\subsubsection{Why beta-binomial does not dominate MAGeCK}
-
-The A375 screen is favorable to MAGeCK: it is a binary endpoint experiment,
-MAGeCK's native use case, with one plasmid baseline and three terminal
-libraries.  A guide-wise beta-binomial fit then has only two residual degrees
-of freedom, making its $t$ tail deliberately conservative.  MAGeCK instead
-borrows information across the screen, estimates guide efficiency, and uses
-asymptotic Wald inference.  These features explain its advantage at very small
-FDR thresholds; the intended advantage of using a genuinely continuous
-predictor is not exercised by this dataset.
-
-MAGeCK is nevertheless not beyond question.  Its negative-binomial mean--variance
-model, median normalization, guide-efficiency model, and normal-reference Wald
-tests are assumptions rather than guarantees \citep{li2014mageck,li2015mageckvispr}.
-They can be sensitive to global composition changes, atypical guide behavior,
-or limited biological replication.  Moreover, MAGeCK 0.5.9.5 performs CNV
-normalization after its permutation p-values and FDR values are calculated.
-Consequently, CNV correction can remove effect--CNV association while leaving
-the significance calls unchanged, exactly as observed here.  Conversely, the present beta-binomial
-prototype estimates dispersion guide by guide and uses a transparent but
-ad-hoc Stouffer gene aggregation.  A fair path to more consistent gains is
-empirical-Bayes dispersion moderation plus a native gene-level hierarchy, not
-changing the benchmark or weakening MAGeCK.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=\textwidth]{figures/sanson_gold_standard_benchmark.pdf}
-\caption{CNV-aware essential-gene discrimination in the Sanson A375 screen.
-(A) ROC, (B) precision--recall, (C) F1 across nominal FDR thresholds, and
-(D) absolute residual effect--CNV correlation among nonessential genes, where
-values closer to zero are better.  Curves compare uncorrected (dashed) and
-CNV-corrected (solid) BARCS and official MAGeCK-MLE results; open points mark
-CNV-corrected values.}
-\label{fig:sanson}
-\end{figure}

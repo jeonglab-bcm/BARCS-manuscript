@@ -19,8 +19,8 @@
   uncertainty.  The local-equivalence result likewise requires increasing
   numbers of independent libraries; deeper sequencing at fixed replication is
   not sufficient.  The optional \texttt{bb\_calibrate\_controls()} procedure
-  additionally requires all control guides to share one residual degree of
-  freedom, as they do when every guide uses the same complete design.  Guides
+  additionally requires all control guides to share the same residual degrees
+  of freedom, as they do when every guide uses the same complete design.  Guides
   fitted with heterogeneous designs require stratified or redesigned
   calibration.  The optional \texttt{bb\_gene\_consistency()} statistic can
   recover concordant multi-guide signal when sample-level degrees of freedom
@@ -77,16 +77,11 @@
   with held-out controls or phenotype permutations that preserve cross-guide
   dependence.
 
-  \item \textbf{Comparator assumptions.}  MAGeCK-MLE offers information
-  sharing and guide-efficiency estimation that the prototype lacks, but its
-  normalized negative-binomial model and asymptotic Wald inference must also be
-  diagnosed.  Head-to-head results should be stratified by replication,
-  phenotype type, signal strength, and composition shift rather than treating
-  either method as a universal reference.  The Liang benchmark illustrates
-  the converse limitation for BARCS: with one residual degree of freedom and
-  preprocessed pseudo-counts, that study's own \texttt{RobustRankAggreg}
-  analysis---not MAGeCK-RRA---is more powerful and better calibrated than
-  either regression likelihood.
+  \item \textbf{Processed longitudinal inputs.}  The Liang deposited values
+  are normalized, batch-corrected pseudo-counts, so the fitted likelihood does
+  not retain a literal raw-count interpretation.  The three-time-point
+  analysis is longitudinal, but raw-read confirmation remains necessary
+  before using it as a distributional validation.
   Likewise, post-fit CNV correction should be accepted only after a null-gene
   diagnostic: it succeeds in A375 and over-corrects the longitudinal HT-29
   screen.

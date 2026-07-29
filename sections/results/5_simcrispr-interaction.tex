@@ -22,47 +22,52 @@ calibrate are never the guides scored.
 \begin{table}[ht]
 \centering
 \caption{Interaction recovery on simCRISPR screens: 2,000 sgRNAs, three
-replicates of each of four arms, over three seeds (mean).  Positives are
-targeting guides with a simulated interaction of magnitude at least 0.2;
-negatives are the held-out non-targeting guides, whose interaction is exactly
-zero.  Effect $\rho_s$ is the Spearman correlation between the estimated and
-simulated interaction over all targeting guides and needs no threshold.  Null
-rate is the fraction of held-out true zeros called at gene FDR 0.10, and
-safe-harbor rate the fraction of cut-but-inactive guides called.  Scale is the
-empirical-null inflation the control calibration applied.}
+replicates per factorial arm, and three seeds (mean).  Recall and F1 use
+targeting guides with $|\mathrm{interaction}|\geq0.2$ as positives.  Null rate
+is the fraction of held-out non-targeting guides called at FDR 0.10;
+safe-harbor rate is the corresponding rate among cut-but-inactive guides.}
 \label{tab:simcrispr}
 \small
-\setlength{\tabcolsep}{4pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{llrrrrrrr}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrr}
 \toprule
-Method & Denominator & Effect $\rho_s$ & AUROC & Dir.\ recall & F1 &
-Null rate & Safe-harbor & Scale\\
+Method & Denominator & Dir.\ recall & F1 & Null rate & Safe-harbor\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Library &
-0.690 & 0.815 & 0.376 & 0.488 & 0.004 & 0.002 & 1.99\\
-\methodswatch{mageckorange} BARCS-MOD & Library &
-0.690 & 0.866 & 0.375 & 0.481 & 0.000 & 0.000 & 2.24\\
+0.376 & 0.488 & 0.004 & 0.002\\
+\methodswatch{barcsblue} BARCS-MOD & Library &
+0.375 & 0.481 & 0.000 & 0.000\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Non-targeting &
-0.687 & 0.950 & 0.769 & 0.870 & 0.024 & 0.070 & 1.00\\
-\methodswatch{mageckorange} BARCS-MOD & Non-targeting &
-0.687 & \textcolor{mageckorange}{\textbf{0.957}} &
-\textcolor{mageckorange}{\textbf{0.838}} &
-\textcolor{mageckorange}{\textbf{0.917}} & 0.040 & 0.080 & 1.00\\
+0.769 & 0.870 & 0.024 & 0.070\\
+\methodswatch{barcsblue} BARCS-MOD & Non-targeting &
+\textcolor{barcsblue}{\textbf{0.838}} &
+\textcolor{barcsblue}{\textbf{0.917}} & 0.040 & 0.080\\
 \midrule
 \methodswatch{barcsblue} BARCS-ST & Safe-harbor &
-0.687 & 0.945 & 0.762 & 0.864 & 0.042 & 0.042 & 1.04\\
-\methodswatch{mageckorange} BARCS-MOD & Safe-harbor &
-0.687 & 0.953 & 0.830 & 0.914 & 0.027 &
-\textcolor{mageckorange}{\textbf{0.035}} & 1.07\\
+0.762 & 0.864 & 0.042 & 0.042\\
+\methodswatch{barcsblue} BARCS-MOD & Safe-harbor &
+0.830 & 0.914 & 0.027 &
+\textcolor{barcsblue}{\textbf{0.035}}\\
 \midrule
 \methodswatch{naivegray} MAGeCK-MLE & Non-targeting &
-\textcolor{black}{\textbf{0.698}} & 0.854 & 0.003 & 0.006 & 0.000 & 0.000 &
----\\
+0.003 & 0.006 & 0.000 & 0.000\\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/simcrispr_interaction.pdf}
+\caption{\textbf{Denominator choice controls interaction recovery.}  (A)
+Estimated interactions among true-zero guides.  A full-library denominator
+induces a positive shift because widespread depletion changes library
+composition; either control denominator removes it.  (B) F1 across requested
+FDR thresholds.  Non-targeting and safe-harbor denominators retain
+substantially more power than the full-library denominator.  MAGeCK-MLE is
+shown only as a reference because the simulated estimand is guide-level.}
+\label{fig:simcrispr}
+\end{figure}
 
 \paragraph{Effect recovery is insensitive to the denominator; detection is
 not.}
@@ -122,5 +127,3 @@ report the result to delimit the applicable range rather than to rank the
 method, and it is the quantization limit documented at genome scale,
 encountered from the opposite direction.  An estimand defined per guide
 requires a guide-level test.
-
-\clearpage

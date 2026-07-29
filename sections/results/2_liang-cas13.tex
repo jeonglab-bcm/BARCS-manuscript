@@ -1,176 +1,56 @@
 % !TeX root = ../../main.tex
-\subsection{Processed-count boundary: Liang Cas13 fitness screens}
+\subsection{Longitudinal Cas13 reanalysis separates ranking from calibration}
 \label{sec:liang}
 
-The five-cell-line Cas13 fitness study of \citet{liang2026lncrna} provides a
-useful head-to-head boundary because it contains a specialist published
-analysis, known-essential protein-coding controls, and cell-line-specific
-non-expressed lncRNA null controls.  We used the deposited normalized Table S2
-values requested for this comparison.  They are fractional after
-median-of-ratios normalization, ComBat correction, and replicate-outlier
-processing.  We rounded them once to the nearest pseudo-count and supplied
-the identical matrix, with no additional normalization, to BARCS, official
-MAGeCK-RRA, and official MAGeCK-MLE.  Throughout, ``Liang RRA'' denotes the
-authors' own deposited \texttt{RobustRankAggreg} result
-\citep{kolde2012rra}, a general-purpose rank-aggregation package applied by
-that study; it is a different method from MAGeCK's own robust rank aggregation
-\citep{li2014mageck}, which is reported separately as ``official MAGeCK-RRA.''
+The Cas13 fitness screens of \citet{liang2026lncrna} provide a stringent test
+of whether the CB\textsuperscript{2} sampling model can support a genuinely
+longitudinal design.  We analysed all deposited measurements from days 0, 7,
+and 14 in five cell lines.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and
+limma--voom estimated the same continuous time slope.  Replicate was included
+when complete trajectories were available; K562 lacked one day-0 replicate
+and was fitted without the replicate block.
 
-\begin{table}[ht]
-\centering
-\caption{Liang Cas13 processed-count sensitivity analysis, macro-averaged
-over five cell lines.  ``Liang RRA'' is that study's own deposited
-\texttt{RobustRankAggreg} result \citep{kolde2012rra} and is \emph{not}
-MAGeCK-RRA; MAGeCK's robust rank aggregation appears separately as ``official
-MAGeCK-RRA.''  Recall$_{5\%}$ fixes the empirical false-positive rate
-among non-expressed lncRNA null controls at 5\%.  Calibration error is the
-absolute difference between the observed null $p<0.05$ fraction and 0.05, so
-lower is better.  The other four metrics are higher-is-better.  The best value
-in each column is shown in bold and in its method color.}
-\label{tab:liang}
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrr}
-\toprule
-Method & AUROC & Avg. precision & Recall$_{5\%}$ &
-Calibration error & FDR$_{0.10}$ recall\\
-\midrule
-\methodswatch{mageckpink} Liang RRA &
-  \textcolor{mageckpink}{\textbf{0.9703}} &
-  \textcolor{mageckpink}{\textbf{0.8908}} &
-  \textcolor{mageckpink}{\textbf{0.9167}} &
-  \textcolor{mageckpink}{\textbf{0.0174}} &
-  \textcolor{mageckpink}{\textbf{0.8233}}\\
-\methodswatch{mageckorange} Official MAGeCK-RRA &
-  0.9522 & 0.8425 & 0.8733 & 0.0181 & 0.7400\\
-\methodswatch{mageckorange} Official MAGeCK-MLE &
-  0.9508 & 0.8356 & 0.8600 & 0.0710 & 0.6800\\
-\methodswatch{barcsblue} BARCS &
-  0.9386 & 0.7756 & 0.8233 & 0.0274 & 0.4867\\
-\bottomrule
-\end{tabular}
-\end{table}
+The deposited values had already undergone median-of-ratios normalization,
+ComBat correction, and replicate-outlier processing.  We rounded them once to
+the nearest pseudo-count and supplied the same matrix to every method.
+Accordingly, this is a processed-count sensitivity analysis rather than a
+raw-count likelihood comparison.
 
-Liang RRA leads every macro-averaged metric in
-Table~\ref{tab:liang}; BARCS does not beat it.  At a common empirical 5\% null
-false-positive rate, Liang RRA recovers 91.7\% of essential controls versus
-82.3\% for BARCS.  At the 0.10 gene-FDR threshold, the gap widens
-to 82.3\% versus 48.7\%.  The latter difference is consistent with
-finite-sample conservatism: every cell line supplies only three or four
-libraries, and the fitted day effect has one residual degree of freedom after
-the intercept and available replicate block.  K562 is the sharpest example:
-BARCS retains AUROC 0.911 but calls none of the essential controls at FDR
-0.10.  More sequencing depth cannot replace the missing independent
-libraries in a sample-level $t$ reference.
+Using the intermediate day improved BARCS average precision from 0.776 to
+0.786 and recall at gene FDR 0.10 from 0.487 to 0.580 relative to the
+two-endpoint fit.  Against longitudinal MAGeCK-MLE, BARCS substantially
+improved null calibration: calibration error was 0.035 versus 0.103, with
+average precision 0.786 versus 0.833.
+The three general RNA-seq models had null $p<0.05$ rates of 0.139--0.153,
+compared with 0.076 for BARCS.
 
-Official MAGeCK-RRA also modestly outperforms MAGeCK-MLE here.  Its null
-calibration error is 0.018 compared with 0.071 for MLE, while its average
-precision is 0.843 compared with 0.836.  This pattern supports a
-design-specific interpretation: guide-rank aggregation is well matched to a
-two-endpoint study with few replicates and already normalized inputs, whereas
-a regression likelihood has little sample-level information from which to
-estimate uncertainty.  It is not evidence that rank aggregation of any kind is
-universally superior to count regression.
-
-\paragraph{The inflation is systematic across thresholds, not an artifact of
-0.05.}
-A single threshold cannot distinguish a badly calibrated null from an unlucky
-one, so we scanned the HAP1 line, which has 1,570 non-expressed lncRNA controls,
-across six nominal cutoffs and gave every method the identical rounded matrix
-and replicate-plus-day design.  Table~\ref{tab:liang-hap1} reports the observed
-control rate divided by the cutoff requested, so one is exact calibration and
-values above one mean the method returns more nominally significant nulls than
-it advertised.
-
-\begin{table}[ht]
-\centering
-\caption{Observed non-expressed lncRNA control rate divided by the requested
-nominal $p$-value cutoff in Liang HAP1, over 1,570 controls.  One is exact
-calibration; above one is anti-conservative.  Every method received the same
-rounded pseudo-count matrix and the same replicate-plus-day design, so the
-column differences are attributable to the inference rather than to the input.}
-\label{tab:liang-hap1}
-\small
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lrrrrrr}
-\toprule
-Method & 0.001 & 0.005 & 0.01 & 0.05 & 0.10 & 0.20\\
-\midrule
-\methodswatch{barcsblue} BARCS & 0.00 & 0.51 & 0.38 & 0.87 & 0.96 & 1.02\\
-\methodswatch{cbtwocyan} DESeq2 & 1.27 & 0.89 & 1.15 & 1.19 & 1.12 & 1.10\\
-\methodswatch{bagelgold} limma--voom & 0.64 & 1.27 & 1.21 & 1.43 & 1.41 & 1.26\\
-\methodswatch{chronosgreen} edgeR-QL & 0.64 & 1.40 & 1.27 & 1.38 & 1.33 & 1.20\\
-\methodswatch{mageckorange} MAGeCK-MLE & 1.91 & 1.78 & 2.04 & 2.10 & 1.90 & 1.66\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Figure~\ref{fig:liang-hap1} shows the same comparison as a specificity curve
-with the matched volcano plots beneath it.  BARCS is the only method that does
-not exceed its requested rate anywhere on this grid, reaching 1.02 at the loosest cutoff and sitting below one everywhere
-else.  MAGeCK-MLE runs at roughly twice its requested rate at every cutoff,
-from 1.91 at $0.001$ to 2.10 at $0.05$, so its inflation is a property of the
-inference rather than of one threshold.  The three general count models sit
-between the two, at 1.10 to 1.43 across the usable range.  The ordering is the
-same one the genome-scale simulation produces from simulated controls, obtained
-here from experimental controls on a real screen, and it is the reason the
-calibration column of Table~\ref{tab:liang} is reported alongside recall rather
-than beneath it.
+The largest cell-line contrasts show where this difference matters.  In HAP1,
+6.2\% of BARCS null-control $p$-values fell below 0.05, compared with 12.8\%
+for MAGeCK-MLE and 11.7--13.3\% for the general RNA-seq models
+(Figure~\ref{fig:liang}).  In K562 the corresponding rates were 12.5\% for
+BARCS and 22.4--33.9\% for the alternatives; in MDA-MB-231 they were 7.5\%
+and 14.0--20.0\%.  Thus BARCS remained closest to the stated null rate in the
+cell lines where the other longitudinal procedures were most
+anti-conservative.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/liang_hap1_specificity_volcano.pdf}
-\caption{Liang HAP1 null specificity and matched volcano plots on the identical
-rounded pseudo-count matrix and replicate-plus-day design.  (A) Specificity
-among the 1,570 non-expressed lncRNA controls across nominal $p$-value
-thresholds; a method tracking its nominal rate sits at $1-p$, so a curve falling
-below that line is returning more nominally significant nulls than it
-advertised.  (B--F) Gene effect against $-\log_{10}(p)$ for BARCS, MAGeCK-MLE,
-edgeR-QL, DESeq2, and limma--voom, with genes called at gene FDR $0.10$ and a
-negative effect highlighted, a dashed line at nominal $p=0.05$, and the
-$-\log_{10}(p)$ axis capped at 60 with triangles marking clipped points.  The
-volcano panels show where the extra calls in Table~\ref{tab:liang-hap1} come
-from: the same null cloud is pushed further up the significance axis by the
-methods whose control rate exceeds nominal.}
-\label{fig:liang-hap1}
-\end{figure}
-
-That calibration comes at a cost which the same analysis measures.  At gene FDR
-0.10 in HAP1, BARCS makes 244 calls and recovers 44 of 60 essential controls;
-MAGeCK-MLE makes 528 and recovers 49; edgeR-QL, DESeq2 and limma--voom make 606
-to 638 and recover 52.  Two and a half times the calls buy eight more of sixty
-essential genes, at twice the null rate.  Which operating point is preferable is
-a decision about the cost of a false lead, not a fact about the methods, and we
-report both columns so the choice stays with the reader.
-
-Effect agreement remains substantial despite the threshold differences.
-Within each cell line we computed Spearman correlation across all genes with
-finite effects, then averaged the five correlations.  BARCS correlates 0.875
-with MAGeCK-MLE, 0.864 with MAGeCK-RRA, and 0.784 with Liang RRA.  Thus the
-principal BARCS deficit in this benchmark is not a reversal of the biological
-ranking; it is reduced resolution and power under one residual degree of
-freedom.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth]{figures/liang_cas13_benchmark.pdf}
-\caption{Liang Cas13 processed-count sensitivity analysis, macro-averaged
-over five cell lines.  (A) Average precision for ranking essential controls
-above non-expressed lncRNA nulls.  (B) Essential-control recall at a common
-empirical 5\% null false-positive rate.  (C) Absolute error from the nominal
-5\% null $p$-value rate; lower is better.  (D) Directional
-essential-control recall at gene FDR 0.10.  A black
-outline marks the best method in each panel.}
+\caption{Longitudinal HAP1 inference using days 0, 7, and 14.  All five
+methods use the identical rounded pseudo-count matrix and estimate the same
+continuous time slope with a replicate block.  (A) Specificity among 1,570
+non-expressed lncRNA controls across nominal $p$-value thresholds; the dashed
+black line is the expected specificity $1-p$.  At $p=0.05$, BARCS yields a
+6.2\% null-call rate, compared with 11.7--13.3\% for the alternatives.
+(B--F) Time-slope effect against $-\log_{10}(p)$ for BARCS, MAGeCK-MLE,
+edgeR-QL, DESeq2, and limma--voom.  Red points are negatively directed genes
+called at gene FDR 0.10; the dashed horizontal line marks nominal $p=0.05$,
+and triangles identify values clipped at 60.}
 \label{fig:liang}
 \end{figure}
-\clearpage
 
-This comparison has an important limit.  Rounding changes each deposited
-value by only 0.25 on average and by less than 0.5 at most, but the values
-were transformed before deposition.  Consequently, neither the
-beta-binomial nor negative-binomial likelihood has its literal raw-count
-sampling interpretation, and the nominal calibration panels are sensitivity
-diagnostics rather than raw-count likelihood validation.  The reproducible
-streaming pipeline supplied with BARCS makes a future raw-read confirmation
-possible; until that is complete, the defensible conclusion is that the
-published Liang RRA is the best fit to the deposited processed data.
+Rounding changed each deposited value by less than 0.5, but the upstream
+transformations mean that none of the fitted likelihoods retains its literal
+raw-count interpretation.  Confirmation from raw reads therefore remains
+necessary.  The supplied streaming workflow performs the full longitudinal
+preparation for that validation.

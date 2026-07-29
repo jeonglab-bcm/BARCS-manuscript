@@ -28,8 +28,8 @@ The current covariance is model based and treats the guide-wise
 dispersion estimate as a fixed plug-in value. Residual Student t degrees of
 freedom do not formally propagate dispersion-estimation uncertainty, so
 small-sample calibration remains a stated limitation. Control-tail calibration
-also requires controls to share one residual degree of freedom, as they do
-under one common complete design.
+also requires controls to share the same residual degrees of freedom, as they
+do under one common complete design.
 
 For a version written without matrix algebra, start with
 [`docs/cb2-generalization-high-school-proof.md`](docs/cb2-generalization-high-school-proof.md).
@@ -83,6 +83,9 @@ commits the updated submodule pointer. See
   guide-by-guide screens, historical signed-score aggregation, exchangeable
   normal guide-beta inference, random-effects guide partial pooling, and
   empirical-Bayes heterogeneity moderation.
+- `R/README.md`: source map, public workflow, and core input contracts.
+- `examples/barcs_quickstart.R`: minimal longitudinal analysis with annotated
+  counts, immutable library totals, sample metadata, and output.
 - `julia/simulate_crispulator_facs.jl`: pinned CRISPulator 0.5.1 simulation of
   low 25%, high 25%, overlapping 0--100% bulk, and input samples.
 - `examples/crispulator_facs_benchmark.R`: one-seed comparison of
@@ -123,17 +126,16 @@ commits the updated submodule pointer. See
   BARCS methods with rerun MAGeCK-MLE/MAGeCK test and the published
   Waterbear/MAUDE recovery totals.
 - `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
-  processed-count sensitivity analysis using Liang's deposited
-  RobustRankAggreg results, official MAGeCK-RRA, official MAGeCK-MLE, and
-  BARCS, edgeR-QL, DESeq2, and limma-voom on the same normalized
-  day-0/day-14 values.
+  processed-count sensitivity analysis. BARCS and MAGeCK-MLE fit a
+  longitudinal slope across days 0, 7, and 14, with edgeR-QL, DESeq2, and
+  limma-voom fitted to the same design.
 - `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
   across p-value thresholds and matched BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
   and limma-voom volcano plots using the processed pseudo-count inputs.
 - `scripts/prepare_liang_cas13.R`,
   `scripts/count_liang_cas13_run.sh`, and
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
-  tables, stream the 20 endpoint FASTQs through the published anchor/Bowtie
+  tables, stream the 30 longitudinal FASTQs through the published anchor/Bowtie
   rules without retaining reads, and submit restartable counting jobs.
 - `data/derived/A375_DepMap19Q3_CNV.tsv`: gene-level A375 copy-number profile
   extracted from DepMap Public 19Q3 (ACH-000219).
@@ -156,6 +158,7 @@ From the repository root:
 
 ```sh
 Rscript tests/run_tests.R
+Rscript examples/barcs_quickstart.R
 Rscript examples/cb2_generalization_proof.R
 Rscript examples/cb2_generalization_walkthrough.R
 Rscript examples/barcs_input_output_examples.R
@@ -177,38 +180,29 @@ workflows to compare the four BARCS guide-to-gene methods. Other historical
 benchmark scripts remain in the repository but do not define or tune these
 four-method results.
 
-The primary Liang comparison deliberately uses the deposited normalized
-guide-count values, as they make the processed-data comparison quick and fully
-reproducible. Liang's published “RRA” is `RobustRankAggreg` 1.2.1, not
-MAGeCK-RRA, so the benchmark keeps those as separate methods. The deposited
-values are fractional after median-ratio normalization, ComBat correction,
-and outlier processing. Because BARCS enforces integer counts, the script
-explicitly rounds them to nearest pseudo-counts and gives that identical
-matrix to the six newly fitted methods--BARCS, MAGeCK-RRA, MAGeCK-MLE,
-edgeR-QL, DESeq2, and limma-voom; it also records the rounding error. The
-general count methods use library-size offsets but no second
-composition-normalization step. Consequently, this is labelled a
-processed-count sensitivity analysis:
-none of the newly fitted methods has its literal raw-count sampling
-likelihood.
-Known-essential protein-coding controls are positives
-and cell-line-specific non-expressed lncRNAs are null controls. Published RRA
-calls are a comparator, not a circular definition of truth.
+The primary Liang comparison deliberately uses the deposited normalized guide
+values so that the processed-data analysis is fully reproducible. The values
+are fractional after median-ratio normalization, ComBat correction, and
+outlier processing. The script rounds them once to the nearest pseudo-count
+and supplies the identical matrix to all newly fitted methods. Accordingly,
+this is a processed-count sensitivity analysis: none of the count-based
+methods retains its literal raw-count sampling interpretation.
+Known-essential protein-coding genes are positives, and cell-line-specific
+non-expressed lncRNAs are null controls.
 
-The processed-count result is intentionally not a BARCS win. Macro-averaged
-over the five cell lines, Liang RRA has the highest AUROC (0.970), average
-precision (0.891), essential recall at 5% null FPR (0.917), and directional
-essential recall at FDR 0.10 (0.823). BARCS reaches 0.939, 0.776, 0.823, and
-0.487, respectively. edgeR-QL, DESeq2, and limma-voom have average precision
-of 0.840, 0.839, and 0.841 and FDR-0.10 essential recall of 0.790, 0.783, and
-0.787. Their greater threshold recall accompanies inflated null-tail rates:
-0.122, 0.103, and 0.118 of non-expressed lncRNAs have nominal \(p<0.05\),
-versus 0.065 for BARCS. In HAP1 specifically, null specificity at nominal
-\(p<0.05\) is 95.7% for BARCS, 89.5% for MAGeCK-MLE, 93.1% for edgeR-QL,
-94.1% for DESeq2, and 92.9% for limma-voom. Every BARCS day-effect fit has
-only one residual degree of freedom after the available replicate block, so
-its main limitation is threshold power rather than a complete loss of
-biological ranking.
+All compared methods use the three deposited time points and estimate a
+continuous time slope. A replicate block is included for complete
+trajectories; K562 lacks one baseline replicate and therefore uses an
+unblocked slope.
+
+Adding day 7 raises BARCS macro-average precision from 0.776 to 0.786 and
+FDR-0.10 essential-gene recall from 0.487 to 0.580. BARCS has lower null
+calibration error than longitudinal MAGeCK-MLE (0.035 versus 0.103), although
+MAGeCK-MLE has higher average precision (0.833) and FDR-thresholded recall
+(0.690). This is the intended boundary of the claim: BARCS generalizes
+beta-binomial inference to longitudinal regression and improves calibration
+relative to the matched negative-binomial regression without claiming
+an endpoint-only analysis.
 
 BARCS-original, edgeR-QL, DESeq2, and limma-voom all use unweighted signed-\(z\)
 aggregation after their respective guide-level fits. This holds the historical
@@ -216,17 +210,12 @@ gene combiner fixed while comparing guide-level models. MAGeCK-MLE instead
 uses its native joint gene model; BARCS-partial and BARCS-EB use
 inverse-variance random-effects pooling and are not signed-\(z\) methods.
 
-The primary Liang result uses every valid guide. Selecting the top five by
-mean Day-0 abundance is a pre-outcome, reproducible sensitivity analysis, but
-it does not improve BARCS: macro average precision falls from 0.776 to 0.638,
-and FDR-0.10 essential recall falls from 0.487 to 0.330. Selecting the five
-smallest observed p-values is not reported because it uses the outcome twice
-and would make significance anti-conservative. Mean BARCS--MAGeCK-MLE
-effect-rank correlation is 0.875 across cell lines. The versioned metrics and
-rounding audit are under `data/derived/`.
+The primary Liang result uses every valid guide. Mean BARCS--MAGeCK-MLE
+effect-rank correlation is 0.875 across cell lines. Versioned metrics,
+concordance estimates, and the rounding audit are under `data/derived/`.
 
-An optional raw-read confirmation remains available. It streams approximately
-14 GB of compressed endpoints without retaining FASTQs:
+An optional raw-read confirmation remains available. It streams all
+longitudinal runs without retaining FASTQs:
 
 ```sh
 bash scripts/queue_liang_cas13_counts.sh 2
