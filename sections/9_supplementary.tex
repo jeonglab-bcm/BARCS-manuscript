@@ -1,0 +1,69 @@
+% !TeX root = ../main.tex
+Supplementary material referenced from the main text.
+
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\figurename}{Supplementary Figure}
+\renewcommand{\tablename}{Supplementary Table}
+
+\begin{table}[ht]
+\centering
+\caption{Operational definition of the problem BARCS addresses.  Referenced
+from the Introduction.}
+\label{tab:problem}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{p{0.22\textwidth}p{0.68\textwidth}}
+\toprule
+Component & Definition\\
+\midrule
+Observed data &
+Guide counts $K_{gi}$, unfiltered full-library totals $N_i$, and a
+prespecified sample design matrix $X$\\
+Primary estimand &
+A guide-level coefficient or contrast
+$\mathbf{c}^\top\boldsymbol{\beta}_g$ conditional on the other columns of
+$X$\\
+Information unit &
+An independent biological screen unit represented by a sequenced library;
+additional reads refine that unit but do not create another one\\
+Primary output &
+Guide effect, standard error, $t$ statistic, residual degrees of freedom,
+$p$-value, FDR, and dispersion diagnostics\\
+Optional gene output &
+An inverse-variance shared-effect Wald statistic with empirical-null
+calibration; no Fisher or Stouffer step is required\\
+Not identified &
+Unobserved single-cell phenotypes, dependence among bins from one biological
+pool, mechanistic growth dynamics, or uncertainty that would have required
+missing biological replicates\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\input{sections/results/0_calibration}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/waterbear_facs_main.pdf}
+\caption{\textbf{Supporting ordered-bin IL2RA benchmark.}  (A) Directional
+recovery of 26 independently validated regulators.  (B) Total discoveries at
+each method's threshold (log scale).  (C) Empirical non-targeting-guide
+$p<0.05$ rate before and after BARCS control calibration; the dashed line is
+the nominal rate.}
+\label{fig:waterbear}
+\end{figure}
+
+\input{sections/results/supp_ht29-cnv}
+
+\paragraph{Additional multivariable and endpoint benchmarks.}
+The following analyses test backward compatibility, multivariable effect
+concordance, copy-number sensitivity, and preprocessing contracts.  They are
+reported separately because none is a direct test of the primary longitudinal
+generalization.
+
+\input{sections/results/6_gse70038}
+\input{sections/results/7_sanson-a375}
+\input{sections/results/8_fdr-audit}

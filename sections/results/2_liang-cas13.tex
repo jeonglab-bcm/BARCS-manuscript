@@ -1,0 +1,56 @@
+% !TeX root = ../../main.tex
+\subsection{Longitudinal Cas13 reanalysis separates ranking from calibration}
+\label{sec:liang}
+
+The Cas13 fitness screens of \citet{liang2026lncrna} provide a stringent test
+of whether the CB\textsuperscript{2} sampling model can support a genuinely
+longitudinal design.  We analysed all deposited measurements from days 0, 7,
+and 14 in five cell lines.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and
+limma--voom estimated the same continuous time slope.  Replicate was included
+when complete trajectories were available; K562 lacked one day-0 replicate
+and was fitted without the replicate block.
+
+The deposited values had already undergone median-of-ratios normalization,
+ComBat correction, and replicate-outlier processing.  We rounded them once to
+the nearest pseudo-count and supplied the same matrix to every method.
+Accordingly, this is a processed-count sensitivity analysis rather than a
+raw-count likelihood comparison.
+
+Using the intermediate day improved BARCS average precision from 0.776 to
+0.786 and recall at gene FDR 0.10 from 0.487 to 0.580 relative to the
+two-endpoint fit.  Against longitudinal MAGeCK-MLE, BARCS substantially
+improved null calibration: calibration error was 0.035 versus 0.103, with
+average precision 0.786 versus 0.833.
+The three general RNA-seq models had null $p<0.05$ rates of 0.139--0.153,
+compared with 0.076 for BARCS.
+
+The largest cell-line contrasts show where this difference matters.  In HAP1,
+6.2\% of BARCS null-control $p$-values fell below 0.05, compared with 12.8\%
+for MAGeCK-MLE and 11.7--13.3\% for the general RNA-seq models
+(Figure~\ref{fig:liang}).  In K562 the corresponding rates were 12.5\% for
+BARCS and 22.4--33.9\% for the alternatives; in MDA-MB-231 they were 7.5\%
+and 14.0--20.0\%.  Thus BARCS remained closest to the stated null rate in the
+cell lines where the other longitudinal procedures were most
+anti-conservative.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/liang_hap1_specificity_volcano.pdf}
+\caption{Longitudinal HAP1 inference using days 0, 7, and 14.  All five
+methods use the identical rounded pseudo-count matrix and estimate the same
+continuous time slope with a replicate block.  (A) Specificity among 1,570
+non-expressed lncRNA controls across nominal $p$-value thresholds; the dashed
+black line is the expected specificity $1-p$.  At $p=0.05$, BARCS yields a
+6.2\% null-call rate, compared with 11.7--13.3\% for the alternatives.
+(B--F) Time-slope effect against $-\log_{10}(p)$ for BARCS, MAGeCK-MLE,
+edgeR-QL, DESeq2, and limma--voom.  Red points are negatively directed genes
+called at gene FDR 0.10; the dashed horizontal line marks nominal $p=0.05$,
+and triangles identify values clipped at 60.}
+\label{fig:liang}
+\end{figure}
+
+Rounding changed each deposited value by less than 0.5, but the upstream
+transformations mean that none of the fitted likelihoods retains its literal
+raw-count interpretation.  Confirmation from raw reads therefore remains
+necessary.  The supplied streaming workflow performs the full longitudinal
+preparation for that validation.

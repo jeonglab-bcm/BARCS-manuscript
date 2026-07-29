@@ -1,0 +1,53 @@
+% !TeX root = ../../main.tex
+\subsubsection{simCRISPR interaction benchmark}
+
+CRISPulator assigns each guide a single effect and sorts cells on a
+phenotype, so it cannot generate the design BARCS is aimed at.  simCRISPR
+\citep{zhu2026simcrispr} simulates a factorial screen instead: knockout
+induction crossed with treatment, propagated over several days of cell
+growth, with PCR amplification and sequencing applied afterwards.  Every
+sgRNA therefore carries a knockout effect, a treatment effect, and an
+interaction between the two, and that interaction is a coefficient in a
+design matrix rather than a contrast of two arms.
+
+Each of three seeds generated 2,000 sgRNAs, of which 300 were non-targeting
+and 200 were safe-harbor controls, in three independent replicates of each of
+the four arms, so twelve libraries and eight residual degrees of freedom.
+Growth was logistic.  The alternative exponential model is unbounded: over
+five days a single guide reached a fifth of the library and library sizes
+spanned a 175-fold range, which does not represent a pooled screen.  Initial
+library columns were dropped, since they are not part of the factorial
+contrast.  Amplification used the package defaults and each library was
+sequenced to 500 reads per guide.  BARCS fitted
+$\logit(\mu_{gi})=\beta_0+\beta_1 k_i+\beta_2 t_i+\beta_3 k_i t_i$
+for knockout indicator $k_i$ and treatment indicator $t_i$, and tested
+$\beta_3$.
+
+Three denominators were compared.  The library denominator is the full column
+total, BARCS's default.  The two control denominators hold a chosen control
+class at a constant share, rescaled to the mean library size and rounded, so
+that they remain interpretable as library sizes.  The two control classes are
+not interchangeable: safe-harbor guides are cut and carry the DNA-damage
+response, non-targeting guides are neither.  Each control class was split in
+half, one half normalizing and calibrating and the other held out, so that no
+guide used to fit the null was also scored against it.  MAGeCK-MLE received
+the same design matrix with an explicit interaction column, the same
+calibration-half controls, and one sgRNA per gene, because the simulated truth
+is guide-level.
+
+CRISPhieRmix was not run on these data.  It borrows strength across the guides
+within a gene, whereas simCRISPR assigns every sgRNA an independent
+interaction, so grouping guides into synthetic genes would impose the structure
+that the model exploits.
+
+Every targeting guide receives a nonzero interaction, most far too small to
+resolve, so a magnitude was fixed before scoring: guides with
+$\lvert\mathrm{INT}\rvert\geq0.2$ are the positives and the held-out
+non-targeting guides, whose interaction is exactly zero, are the negatives.
+Targeting guides below that magnitude are scored for effect recovery but
+excluded from the detection metrics.  Effect recovery is the Spearman
+correlation between the estimated interaction coefficient and the simulated
+one across all targeting guides, which needs no threshold.  The held-out
+control call rate and the safe-harbor call rate are reported separately: the
+first measures false positives against a ground-truth zero, the second
+measures how often the cutting response alone is mistaken for an interaction.

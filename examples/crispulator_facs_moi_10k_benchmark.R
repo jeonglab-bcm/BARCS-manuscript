@@ -671,10 +671,10 @@ write.csv(
 
 # ---- F1 and calibration across nominal FDR thresholds ----------------------
 method_colours <- c(
-  `BARCS-original` = "#0072B2",
-  `BARCS-moderated` = "#D55E00",
-  `MAGeCK-MLE` = "#6A3D9A",
-  CRISPhieRmix = "#009E73"
+  `BARCS-original` = "#56B4E9",
+  `BARCS-moderated` = "#0072B2",
+  `MAGeCK-MLE` = "#D55E00",
+  CRISPhieRmix = "#7A3E9D"
 )
 method_pch <- c(16, 17, 15, 8)
 names(method_pch) <- names(method_colours)

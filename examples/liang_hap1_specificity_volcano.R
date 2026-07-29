@@ -1,19 +1,38 @@
 #!/usr/bin/env Rscript
 
-# Liang HAP1 processed-count example modeled on a specificity-threshold curve
-# plus side-by-side volcano plots. BARCS, official MAGeCK-MLE, edgeR-QL,
-# DESeq2, and limma-voom use the same rounded normalized/ComBat-corrected
-# pseudo-count matrix and the same replicate/day design.
+# Liang HAP1 longitudinal processed-count analysis.
+#
+# Every method shown here estimates the same time slope from days 0, 7, and
+# 14. The specificity curve and volcano plots therefore compare longitudinal
+# inference, not a day-14 versus day-0 endpoint contrast.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
-analysis_protocol <- "liang-hap1-specificity-volcano-v2"
+analysis_protocol <- "liang-hap1-longitudinal-specificity-volcano-v3"
 score_path <- file.path(
   "results", "liang_cas13", "all_gene_scores.csv.gz"
 )
 if (!file.exists(score_path)) {
   stop(
     "Run `examples/liang_cas13_benchmark.R` before this example.",
+    call. = FALSE
+  )
+}
+
+# Fail loudly if the prepared input no longer contains the intended
+# three-time-point HAP1 trajectory.
+input_audit_path <- file.path(
+  "data", "derived", "liang_cas13_input_audit.csv"
+)
+if (!file.exists(input_audit_path)) {
+  stop("Missing longitudinal Liang input audit.", call. = FALSE)
+}
+input_audit <- read.csv(input_audit_path)
+hap1_days <- sort(unique(input_audit$day[input_audit$cell_line == "HAP1"]))
+if (!identical(hap1_days, c(0L, 7L, 14L))) {
+  stop(
+    "HAP1 must contain days 0, 7, and 14; observed: ",
+    paste(hap1_days, collapse = ", "),
     call. = FALSE
   )
 }
@@ -150,7 +169,7 @@ plot(
   xaxt = "n",
   xlab = "Nominal p-value threshold",
   ylab = "Specificity among null lncRNAs",
-  main = "A  HAP1 null specificity",
+  main = "A  HAP1 longitudinal null specificity",
   bty = "l"
 )
 axis(
@@ -159,6 +178,13 @@ axis(
   labels = format(thresholds, trim = TRUE, scientific = FALSE),
   las = 2,
   cex.axis = 0.85
+)
+lines(
+  seq_along(thresholds),
+  1 - thresholds,
+  lwd = 1.5,
+  lty = 2,
+  col = "#444444"
 )
 for (method in methods) {
   panel <- specificity[specificity$method == method, ]
@@ -176,13 +202,29 @@ for (method in methods) {
     col = method_colours[[method]]
   )
 }
+text(
+  x = 4.05,
+  y = 0.945,
+  labels = "BARCS: 6.2% null calls",
+  pos = 3,
+  cex = 0.68,
+  col = method_colours[["BARCS"]]
+)
+text(
+  x = 4.05,
+  y = 0.865,
+  labels = "Others: 11.7-13.3%",
+  pos = 1,
+  cex = 0.68,
+  col = "#555555"
+)
 legend(
   "bottomleft",
-  legend = methods,
-  col = unname(method_colours[methods]),
-  pch = unname(method_pch[methods]),
-  lty = 1,
-  lwd = 2,
+  legend = c("Expected null", methods),
+  col = c("#444444", unname(method_colours[methods])),
+  pch = c(NA, unname(method_pch[methods])),
+  lty = c(2, rep(1, length(methods))),
+  lwd = c(1.5, rep(2, length(methods))),
   bty = "n",
   cex = 0.72
 )
@@ -212,7 +254,7 @@ for (method_index in seq_along(methods)) {
     col = point_colours,
     xlim = common_xlim,
     ylim = common_ylim,
-    xlab = "Gene effect",
+    xlab = "Longitudinal time-slope effect",
     ylab = if (show_y_axis) {
       expression(-log[10](italic(p))~"(cap 60)")
     } else {

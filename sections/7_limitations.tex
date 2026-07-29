@@ -1,0 +1,88 @@
+% !TeX root = ../main.tex
+\begin{enumerate}
+  \item \textbf{Independent samples.}  The $t_{m-q}$ reference distribution
+  assumes independent sequenced libraries.  Repeated measures, matched samples,
+  or multiple libraries from one biological unit require a subject-level
+  correlation model or a blocked permutation.  FACS bins from one donor are
+  a compositional partition, not four independent biological replicates; the
+  GSE242880 control calibration is a diagnostic sensitivity analysis, whereas
+  a purpose-built joint model such as Waterbear represents that structure
+  directly.  Likewise, a 0--100\% bulk pool overlaps its sorted tails.  The
+  CRISPulator analysis includes that requested design to measure its empirical
+  behavior, not to redefine bulk as an independent third bin.
+
+  \item \textbf{Enough sample-level degrees of freedom.}  Read depth cannot
+  replace biological replication.  With very few samples, guide-wise
+  $\widehat{\rho}$ is noisy and coefficient tests may be poorly calibrated.
+  The model-based covariance treats $\widehat{\rho}$ as a fixed plug-in value,
+  and the $t_{m-q}$ reference does not formally propagate its estimation
+  uncertainty.  The local-equivalence result likewise requires increasing
+  numbers of independent libraries; deeper sequencing at fixed replication is
+  not sufficient.  The optional \texttt{bb\_calibrate\_controls()} procedure
+  additionally requires all control guides to share the same residual degrees
+  of freedom, as they do when every guide uses the same complete design.  Guides
+  fitted with heterogeneous designs require stratified or redesigned
+  calibration.  The optional \texttt{bb\_gene\_consistency()} statistic can
+  recover concordant multi-guide signal when sample-level degrees of freedom
+  are inadequate, but its empirical-null $p$-values measure guide consistency.
+  They do not repair the missing biological replication and should not be
+  described as confirmatory sample-level inference.
+  Dispersion shrinkage across guides or permutation of the phenotype should be
+  evaluated before treating this prototype as a production method.
+
+  \pagebreak[2]
+  \item \textbf{Mean-model form.}  A single slope assumes a linear relationship
+  on the logit scale.  Residual plots should be checked.  A spline or a
+  prespecified nonlinear term is preferable when the dose response is curved.
+  This matters directly in viability time courses: incomplete knockout can
+  produce finite depletion saturation, which Chronos models mechanistically
+  but a single beta-binomial slope does not.
+
+  \pagebreak[3]
+  \item \textbf{Sparse and separated guides.}  Guides with all zero counts or
+  with counts confined to one end of the phenotype range can cause boundary
+  fits.  Low-count filtering should be chosen without reference to the tested
+  phenotype.  A penalized or likelihood-ratio procedure is a useful future
+  extension for severe separation.
+
+  \item \textbf{Compositional counts.}  Guide counts share a fixed library
+  total.  The marginal beta-binomial model handles depth and guide-specific
+  overdispersion but does not remove global composition shifts.  Stable
+  nontargeting controls and sensitivity analyses with alternative size factors
+  are advisable.  If guides are filtered for testing or benchmarking, the
+  \texttt{totals} argument must retain the unfiltered mapped-read totals.
+  Recomputing totals after row subsetting changes the likelihood and can
+  materially change calibration.
+
+  \item \textbf{Guide-to-gene inference.}  The BARCS regression itself is
+  guide-level and requires no Fisher or Stouffer combination.  Some replicated
+  benchmark analyses use a directional Stouffer summary only as a transparent,
+  explicitly labeled comparison adapter.  BARCS-GC instead estimates one
+  shared guide coefficient by inverse-variance weighting and calibrates its
+  Wald statistic against a robust gene-level empirical null for the
+  one-replicate diagnostic.  That fixed-effect construction assumes a common
+  gene effect, while its all-gene MAD assumes that fewer than half of genes are
+  active.  The direction-agreement output should be inspected for guide
+  heterogeneity.  We additionally evaluated BARCS-NORM, which treats the
+  fitted guide coefficients within a gene as exchangeable draws
+  $\widehat\beta_{gj}\sim N(\mu_g,\sigma_g^2)$ and tests the sample mean with
+  a $t_{m_g-1}$ reference because $\sigma_g$ is estimated.  This literal
+  normal model was calibrated but underpowered with three to six guides:
+  across the 50 supporting 400-gene CRISPulator runs its average precision
+  was 0.706 and its directional recall at FDR 0.10 was 0.159.  Replacing the
+  $t$ reference by a
+  plug-in normal tail would incorrectly treat the estimated $\sigma_g$ as
+  known.  A production hierarchical gene test should therefore borrow
+  variance information across genes and be benchmarked separately, ideally
+  with held-out controls or phenotype permutations that preserve cross-guide
+  dependence.
+
+  \item \textbf{Processed longitudinal inputs.}  The Liang deposited values
+  are normalized, batch-corrected pseudo-counts, so the fitted likelihood does
+  not retain a literal raw-count interpretation.  The three-time-point
+  analysis is longitudinal, but raw-read confirmation remains necessary
+  before using it as a distributional validation.
+  Likewise, post-fit CNV correction should be accepted only after a null-gene
+  diagnostic: it succeeds in A375 and over-corrects the longitudinal HT-29
+  screen.
+\end{enumerate}

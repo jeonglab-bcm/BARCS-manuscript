@@ -8,8 +8,9 @@
 #      Chronos preprocessing;
 #   3. fits the same numeric time/25 design with beta-binomial regression and
 #      the official MAGeCK-MLE executable;
-#   4. compares both with the deposited Chronos-joint, MAGeCK-average, and
-#      BAGEL2-average effects on the same gene/control universe; and
+#   4. compares both with the deposited Chronos-joint and the deposited
+#      day-25 MAGeCK and BAGEL2 endpoint effects on the same gene/control
+#      universe; and
 #   5. audits post-fit MAGeCK piecewise CNV correction using the HT-29
 #      (ACH-000552) DepMap Public 20Q2 profile.
 
@@ -45,19 +46,10 @@ if (!requireNamespace("rhdf5", quietly = TRUE)) {
   stop("The Bioconductor package `rhdf5` is required.", call. = FALSE)
 }
 
-# Use the package's RcppArmadillo kernels when the local compiled library is
-# present.  The base-R fallback remains valid but is slower.
-cpp_library <- file.path("CB2", "src", paste0("CB2", .Platform$dynlib.ext))
-if (file.exists(cpp_library) &&
-    requireNamespace("Rcpp", quietly = TRUE) &&
-    requireNamespace("RcppArmadillo", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(Rcpp))
-  suppressPackageStartupMessages(library(RcppArmadillo))
-  loaded_dlls <- names(getLoadedDLLs())
-  if (!"CB2" %in% loaded_dlls) {
-    dyn.load(cpp_library)
-  }
-  source(file.path("CB2", "R", "RcppExports.R"))
+# Use BARCS's own compiled RcppArmadillo kernels when the package is installed.
+# The base-R fallback in R/bbreg.R remains valid but is slower.
+if (requireNamespace("BARCS", quietly = TRUE)) {
+  suppressPackageStartupMessages(library(BARCS))
 }
 source(file.path("R", "bbreg.R"))
 
@@ -81,6 +73,13 @@ colnames(counts) <- c("pDNA", paste0("day", days))
 # The three columns per day are sequencing/technical replicates of the same
 # harvested population.  Summing prevents them from becoming false biological
 # degrees of freedom in the Student t reference distribution.
+
+# Library totals are captured BEFORE any guide filtering and never recomputed.
+# The beta-binomial denominator is sequencing information, so subsetting rows
+# and then re-summing would change the likelihood rather than just the tested
+# gene set.  This is the contract the Avana audit in the manuscript turns on.
+full_library_totals <- colSums(counts)
+
 keep <- counts[, "pDNA"] >= 30
 counts <- counts[keep, , drop = FALSE]
 guide <- raw$gRNA[keep]
@@ -114,7 +113,7 @@ if (!file.exists(bb_guide_path) ||
   start_time <- proc.time()
   bb_guide <- bb_screen(
     counts = counts,
-    totals = colSums(counts),
+    totals = full_library_totals,
     data = sample_data,
     formula = ~ time_25,
     term = "time_25",
@@ -278,16 +277,25 @@ chronos_joint <- read_hdf5_effect(
     matrix[, match(all_days_label, rows)]
   }
 )
-mageck_average <- read_hdf5_effect(
+# The deposited endpoint matrices carry one column per day.  We take the
+# day-25 column itself rather than summarising across days, so the comparator
+# is a single observed endpoint analysis rather than a derived average.  Row
+# labels are unordered in the file, so the day is matched by name.
+endpoint_day <- "25"
+mageck_endpoint <- read_hdf5_effect(
   "GeneFitnessEffect_MAGeCK_Tzelepis.hdf5",
   function(matrix, rows) {
-    apply(matrix, 1, median, na.rm = TRUE)
+    column <- match(endpoint_day, rows)
+    if (is.na(column)) stop("Day ", endpoint_day, " is absent from the MAGeCK matrix.")
+    matrix[, column]
   }
 )
-bagel_average <- read_hdf5_effect(
+bagel_endpoint <- read_hdf5_effect(
   "GeneFitnessEffect_BAGEL2_Tzelepis.hdf5",
   function(matrix, rows) {
-    apply(matrix, 1, median, na.rm = TRUE)
+    column <- match(endpoint_day, rows)
+    if (is.na(column)) stop("Day ", endpoint_day, " is absent from the BAGEL2 matrix.")
+    matrix[, column]
   }
 )
 
@@ -300,8 +308,8 @@ effects <- list(
     mageck_time$Gene, mageck_time[["time_25|beta"]]
   ),
   `Chronos joint` = chronos_joint,
-  `Published MAGeCK average` = mageck_average,
-  `Published BAGEL2 average` = bagel_average
+  `Published MAGeCK day 25` = mageck_endpoint,
+  `Published BAGEL2 day 25` = bagel_endpoint
 )
 cnv_effects <- list(
   `BARCS time` = effects[["BARCS time"]],
@@ -314,8 +322,8 @@ cnv_effects <- list(
     mageck_time_cnv[["time_25|beta"]]
   ),
   `Chronos joint` = chronos_joint,
-  `Published MAGeCK average` = mageck_average,
-  `Published BAGEL2 average` = bagel_average
+  `Published MAGeCK day 25` = mageck_endpoint,
+  `Published BAGEL2 day 25` = bagel_endpoint
 )
 
 read_reference <- function(filename) {
@@ -375,19 +383,26 @@ curve_and_metrics <- function(effect) {
 
   null <- effect[negative]
   true <- effect[positive]
-  null_mad_about_mean <- mean(abs(null - mean(null)))
-  nnmd <- (median(true) - mean(null)) / null_mad_about_mean
-  cutoff <- unname(quantile(effect, 0.15, na.rm = TRUE))
+  # Chronos defines NNMD as "the difference in the medians of positive controls
+  # and negative controls, normalized by the median absolute deviation of
+  # negative controls" (Dempster et al. 2021).  No scaling constant is stated,
+  # so the unscaled median absolute deviation is used; the 1.4826-scaled
+  # variant is reported alongside it as a sensitivity value.
+  null_mad <- median(abs(null - median(null)))
+  nnmd <- (median(true) - median(null)) / null_mad
+  nnmd_mad_scaled <- (median(true) - median(null)) / mad(null)
+  cutoff <- unname(quantile(effect, 0.10, na.rm = TRUE))
 
   list(
     metrics = data.frame(
       n_essential = sum(positive),
       n_unexpressed = sum(negative),
       NNMD = nnmd,
+      NNMD_mad_scaled = nnmd_mad_scaled,
       recall_at_90_precision = max(
         c(0, recall[precision >= 0.9])
       ),
-      unexpressed_false_positives_15pct = sum(null < cutoff),
+      unexpressed_false_positives_10pct = sum(null < cutoff),
       AUROC = auroc,
       PR_AUC = pr_auc,
       average_precision = average_precision
@@ -487,10 +502,10 @@ names(colors) <- names(effects)
 line_types <- c(1, 1, 1, 2, 2)
 names(line_types) <- names(effects)
 
-pdf(figure_path, width = 10, height = 8)
+pdf(figure_path, width = 11, height = 3.8, useDingbats = FALSE)
 old_par <- par(
-  mfrow = c(2, 2), mar = c(4.2, 4.4, 3.0, 1.0),
-  las = 1, xaxs = "i", yaxs = "i"
+  mfrow = c(1, 3), mar = c(4.2, 4.2, 2.7, 0.8),
+  las = 1, xaxs = "i", yaxs = "i", family = "sans"
 )
 
 plot(
@@ -506,8 +521,12 @@ for (method in names(evaluations)) {
   )
 }
 legend(
-  "bottomright", legend = names(effects), col = colors,
-  lty = line_types, lwd = 2, cex = 0.72, bty = "n"
+  "bottomright",
+  legend = c(
+    "BARCS, time", "MAGeCK, time", "Chronos, joint",
+    "MAGeCK, day 25", "BAGEL2, day 25"
+  ),
+  col = colors, lty = line_types, lwd = 2, cex = 0.62, bty = "n"
 )
 
 plot(
@@ -525,55 +544,23 @@ for (method in names(evaluations)) {
   )
 }
 
-barplot(
+bar_positions <- barplot(
   metrics$recall_at_90_precision,
-  names.arg = c("BARCS", "MAGeCK\ntime", "Chronos\njoint",
-                "MAGeCK\naverage", "BAGEL2\naverage"),
+  names.arg = c(
+    "BARCS\n(time)", "MAGeCK\n(time)", "Chronos\n(joint)",
+    "MAGeCK\n(day 25)", "BAGEL2\n(day 25)"
+  ),
   col = unname(colors[metrics$method]), border = NA,
   ylim = c(0, 1), ylab = "Recall at >= 90% precision",
-  main = "(C) High-precision recovery", las = 2, cex.names = 0.72
+  main = "(C) High-precision recovery", las = 1, cex.names = 0.68
 )
 abline(h = seq(0, 1, 0.2), col = "white", lwd = 0.7)
-
-cnv_plot_methods <- c(
-  "BARCS time", "BARCS time + CNV",
-  "Official MAGeCK time", "Official MAGeCK time + CNV",
-  "Chronos joint", "Published MAGeCK average",
-  "Published BAGEL2 average"
-)
-cnv_values <- abs(cnv_bias$spearman_unexpressed[
-  match(cnv_plot_methods, cnv_bias$method)
-])
-cnv_labels <- c(
-  "BARCS", "BARCS + CNV", "MAGeCK time", "MAGeCK time + CNV",
-  "Chronos joint", "MAGeCK average", "BAGEL2 average"
-)
-cnv_colors <- c(
-  colors[["BARCS time"]], colors[["BARCS time"]],
-  colors[["Official MAGeCK time"]], colors[["Official MAGeCK time"]],
-  colors[["Chronos joint"]], colors[["Published MAGeCK average"]],
-  colors[["Published BAGEL2 average"]]
-)
-cnv_pch <- c(16, 1, 16, 1, 16, 16, 16)
-plot(
-  0, 0, type = "n",
-  xlim = c(0, max(cnv_values) * 1.08),
-  ylim = c(0.5, length(cnv_values) + 0.5),
-  xlab = "|Spearman(effect, copy number)| (closer to 0 is better)",
-  ylab = "", yaxt = "n",
-  main = "(D) Residual CNV association"
-)
-axis(2, at = seq_along(cnv_values), labels = rev(cnv_labels),
-     las = 1, cex.axis = 0.68)
-abline(v = pretty(c(0, cnv_values)), col = "grey92", lwd = 0.8)
-segments(
-  x0 = 0, y0 = seq_along(cnv_values),
-  x1 = rev(cnv_values), y1 = seq_along(cnv_values),
-  col = rev(cnv_colors), lwd = 2
-)
-points(
-  rev(cnv_values), seq_along(cnv_values),
-  col = rev(cnv_colors), pch = rev(cnv_pch), cex = 1.15, lwd = 2
+text(
+  bar_positions,
+  metrics$recall_at_90_precision,
+  labels = sprintf("%.3f", metrics$recall_at_90_precision),
+  pos = 3,
+  cex = 0.68
 )
 
 par(old_par)

@@ -1,0 +1,38 @@
+% !TeX root = ../../main.tex
+\subsubsection{Liang Cas13 longitudinal fitness benchmark}
+
+We analyzed the transcriptome-scale RfxCas13d fitness screens of
+\citet{liang2026lncrna} in HAP1, HEK293FT, K562, MDA-MB-231, and THP1 cells.
+The library contains 56,322 guides targeting 5,496 lncRNAs, 3,156
+protein-coding genes, and 1,000 non-targeting controls.  Deposited Table S2
+contains guide measurements at days 0, 7, and 14.  The previous endpoint
+analysis selected only days 0 and 14; the present analysis uses all three time
+points.
+
+The deposited values are fractional after median-of-ratios normalization,
+ComBat correction, and replicate-outlier processing.  They are therefore not
+literal sequencing counts.  BARCS requires integer observations, so each value
+was rounded once to the nearest pseudo-count and the identical rounded matrix
+was supplied to every newly fitted method.  The mean absolute rounding change
+was approximately 0.25 and the maximum was less than 0.5 in every cell line.
+Consequently, this benchmark is a same-input sensitivity analysis rather than
+a likelihood-faithful raw-count comparison.
+
+BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom fitted a linear
+longitudinal effect with time scaled from 0 to 1 over 14 days.  A replicate
+indicator was included when both replicate trajectories contained all three
+time points.  K562 lacks one deposited day-0 replicate; all methods therefore
+used an unblocked time slope in that cell line rather than fitting an
+incomplete matched trajectory.  BARCS guide statistics were calibrated with
+the non-targeting controls and combined with the prespecified directional
+Stouffer summary.
+
+Known-essential protein-coding genes were positives.  Cell-line-specific nulls
+were targeted lncRNAs with TPM equal to zero in both available expression
+assays.  We reported average precision, essential-control recall at an
+empirical 5\% null false-positive rate, the absolute deviation of the null
+$p<0.05$ fraction from 0.05, and directional essential-control recall at gene
+FDR 0.10.  The repository also provides a restartable raw-read pipeline for
+BioProject PRJNA1344834 using the stated Cutadapt anchors
+\citep{martin2011cutadapt} and Bowtie \texttt{-v 1 -m 3 --best -q}
+\citep{langmead2009bowtie}.

@@ -5,7 +5,7 @@
 #
 # Large source workbooks remain under data/raw/ (git-ignored).  This script
 # writes a compact guide library, expression table, published RRA results, and
-# endpoint-run manifest that are consumed by examples/liang_cas13_benchmark.R.
+# longitudinal run manifest consumed by examples/liang_cas13_benchmark.R.
 
 options(stringsAsFactors = FALSE)
 
@@ -175,13 +175,15 @@ for (cell_line in cell_lines) {
 
 runinfo <- read.csv(runinfo_path, check.names = FALSE)
 manifest <- runinfo[
-  grepl("_(Day00|Day14)_R[12]$", runinfo$LibraryName),
+  grepl("_(Day00|Day07|Day14)_R[12]$", runinfo$LibraryName),
   c("Run", "LibraryName", "spots", "size_MB", "download_path")
 ]
 names(manifest) <- c(
   "run", "sample", "spots", "size_mb", "sra_download_path"
 )
-manifest$cell_line <- sub("_(Day00|Day14)_R[12]$", "", manifest$sample)
+manifest$cell_line <- sub(
+  "_(Day00|Day07|Day14)_R[12]$", "", manifest$sample
+)
 manifest$day <- as.integer(sub(
   ".*_Day([0-9]{2})_R[12]$", "\\1", manifest$sample
 ))
@@ -194,13 +196,16 @@ manifest$ena_fastq_url <- paste0(
 )
 if (any(!nzchar(manifest$ena_fastq_url)) ||
     any(is.na(manifest$ena_fastq_url))) {
-  stop("ENA did not report one FASTQ URL for every endpoint run.")
+  stop("ENA did not report one FASTQ URL for every longitudinal run.")
 }
 manifest <- manifest[
   order(manifest$cell_line, manifest$day, manifest$replicate),
 ]
-if (nrow(manifest) != 20L) {
-  stop("Expected 20 day-0/day-14 Cas13 amplicon runs; found ", nrow(manifest))
+if (nrow(manifest) != 30L) {
+  stop(
+    "Expected 30 day-0/day-7/day-14 Cas13 amplicon runs; found ",
+    nrow(manifest)
+  )
 }
 write.table(
   manifest,
@@ -210,6 +215,6 @@ write.table(
 
 message(
   "Prepared ", nrow(guide), " guides, ", nrow(published),
-  " published gene results, and ", nrow(manifest), " endpoint runs in ",
-  raw_dir, "."
+  " published gene results, and ", nrow(manifest),
+  " longitudinal runs in ", raw_dir, "."
 )

@@ -1,5 +1,5 @@
 "method_1","method_2","n_genes","spearman"
-"BARCS time","Official MAGeCK time",6854,0.925963025997616
-"BARCS time","Chronos joint",6854,0.814713072554349
-"BARCS time","Published MAGeCK average",6854,0.812345355935674
-"BARCS time","Published BAGEL2 average",6854,0.632953953455796
+"BARCS time","Official MAGeCK time",6854,0.925962787698963
+"BARCS time","Chronos joint",6854,0.81471082321483
+"BARCS time","Published MAGeCK day 25",6854,0.858991558626122
+"BARCS time","Published BAGEL2 day 25",6854,0.650055502064789

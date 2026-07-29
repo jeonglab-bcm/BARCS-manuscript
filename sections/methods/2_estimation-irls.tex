@@ -1,0 +1,43 @@
+% !TeX root = ../../main.tex
+\subsection{Estimation by feasible IRLS}
+
+Let $X$ be the $m\times q$ full-rank design matrix.  Given current values of
+$\boldsymbol{\beta}$ and $\rho$, define
+\begin{align}
+  \eta_i &= \mathbf{x}_i^\top\boldsymbol{\beta}, &
+  \mu_i &= \frac{\exp(\eta_i)}{1+\exp(\eta_i)},\\
+  z_i &= \eta_i+\frac{Y_i-\mu_i}{\mu_i(1-\mu_i)}, &
+  w_i &= \frac{N_i\mu_i(1-\mu_i)}
+  {1+(N_i-1)\rho}. \label{eq:irls}
+\end{align}
+The coefficient update is the weighted least-squares step
+\begin{equation}
+  \widehat{\boldsymbol{\beta}}_{\mathrm{new}}
+  =(X^\top W X)^{-1}X^\top W\mathbf{z},
+  \qquad W=\operatorname{diag}(w_1,\ldots,w_m).
+  \label{eq:betaupdate}
+\end{equation}
+This is weighted least squares on the logistic working response, not on the raw
+proportions.
+
+For a fixed fitted mean, $\rho$ is estimated from the Pearson equation
+\begin{equation}
+  \sum_{i=1}^{m}
+  \frac{(K_i-N_i\widehat{\mu}_i)^2}
+  {N_i\widehat{\mu}_i(1-\widehat{\mu}_i)
+  \{1+(N_i-1)\widehat{\rho}\}}
+  =m-q. \label{eq:rho}
+\end{equation}
+If the left side at $\rho=0$ is no larger than $m-q$, the estimate is truncated
+at zero rather than claiming negative overdispersion.  Equations
+\eqref{eq:irls}--\eqref{eq:rho} are alternated to convergence.
+
+The weight has an important limiting behavior:
+\begin{equation}
+  \lim_{N_i\rightarrow\infty} w_i
+  = \frac{\mu_i(1-\mu_i)}{\rho}
+  \quad\text{when }\rho>0.
+\end{equation}
+Therefore a deeply sequenced sample cannot acquire unlimited leverage.  Once
+sequencing uncertainty is small, biological heterogeneity sets the information
+ceiling.

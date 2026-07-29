@@ -1,0 +1,24 @@
+% !TeX root = ../../main.tex
+\subsection{Copy-number sensitivity in the longitudinal HT-29 screen}
+
+We extracted the HT-29 profile (ACH-000552) from DepMap Public 20Q2
+\citep{depmap20q2} and repeated the same copy-number audit used for A375.
+Before correction, effect--copy-number Spearman correlation among unexpressed
+genes is already small: $-0.072$ for BARCS, $-0.075$ for official
+continuous-time MAGeCK, $-0.048$ for deposited Chronos joint effects,
+$-0.057$ for the published day-25 MAGeCK effects, and $+0.029$ for the
+published day-25 BAGEL2 effects.  Applying MAGeCK 0.5.9.5's official piecewise
+normalizer makes the association larger in absolute value rather than smaller:
+$-0.145$ for BARCS and $-0.149$ for MAGeCK.  Thus the improvement observed in
+A375 does not generalize automatically.
+
+The piecewise correction estimates one global effect--CNV trend across genes
+in one cell line and applies it after model fitting.  When the nuisance
+association is weak and biological dependencies are not exchangeable across
+copy-number regions, the fitted trend can over-correct null genes.  Chronos
+joint is shown without CNV correction because the published procedure requires
+multiple cell lines to identify common essential genes and was not applied to
+this single-line experiment \citep{dempster2021chronos}.  The DepMap profile
+was measured separately from the original screen, so cell-line drift is an
+additional limitation.  These results support diagnosing copy-number
+correction rather than applying it by default.

@@ -11,6 +11,18 @@
 # The coefficient estimates are obtained by feasible IRLS.  rho is estimated
 # from the Pearson estimating equation, and coefficient tests use a Student
 # t reference distribution with residual degrees of freedom.
+#
+# Code map
+# --------
+# 1. Input and design validation
+# 2. Weighted least-squares and dispersion helpers
+# 3. Single-guide regression (`bbreg`) and contrasts
+# 4. Screen-wide fitting (`bb_screen`)
+# 5. Control calibration and dispersion moderation
+# 6. Gene-level summaries
+
+
+# ---- 1. Input and design validation ---------------------------------------
 
 .bb_stop <- function(message) {
   stop(message, call. = FALSE)
@@ -55,6 +67,9 @@
   }
   list(x = x, terms = terms(mf), contrasts = attr(x, "contrasts"))
 }
+
+
+# ---- 2. Weighted least-squares and dispersion helpers ---------------------
 
 .bb_inverse <- function(a) {
   chol2inv(chol(a))
@@ -125,6 +140,9 @@
   list(rho = rho, scale = 1, pearson = pearson(rho), pearson_null = q0,
        boundary = FALSE)
 }
+
+
+# ---- 3. Single-guide regression and contrasts -----------------------------
 
 #' Fit beta-binomial regression for one guide
 #'
@@ -339,6 +357,23 @@ bb_contrast <- function(object, contrast, null = 0) {
   )
 }
 
+
+# ---- 4. Screen-wide fitting ------------------------------------------------
+
+.bb_empty_screen_row <- function(mean_cpm) {
+  c(
+    estimate = NA_real_,
+    std_error = NA_real_,
+    t_value = NA_real_,
+    df = NA_real_,
+    p_value = NA_real_,
+    rho = NA_real_,
+    pearson_null = NA_real_,
+    mean_cpm = mean_cpm,
+    converged = 0
+  )
+}
+
 #' Apply beta-binomial regression guide by guide
 #'
 #' @param counts Guide-by-sample count matrix.
@@ -411,23 +446,16 @@ bb_screen <- function(counts, data, formula, term, totals = NULL,
   }
 
   one_guide <- function(i) {
+    mean_cpm <- mean(counts[i, ] / totals * 1e6)
     if (sum(counts[i, ]) < min_total_count) {
-      return(c(estimate = NA_real_, std_error = NA_real_,
-               t_value = NA_real_, df = NA_real_, p_value = NA_real_,
-               rho = NA_real_, pearson_null = NA_real_,
-               mean_cpm = mean(counts[i, ] / totals * 1e6),
-               converged = 0))
+      return(.bb_empty_screen_row(mean_cpm))
     }
     fit <- tryCatch(
       bbreg(counts[i, ], totals, formula, data, ...),
       error = function(e) NULL
     )
     if (is.null(fit)) {
-      return(c(estimate = NA_real_, std_error = NA_real_,
-               t_value = NA_real_, df = NA_real_, p_value = NA_real_,
-               rho = NA_real_, pearson_null = NA_real_,
-               mean_cpm = mean(counts[i, ] / totals * 1e6),
-               converged = 0))
+      return(.bb_empty_screen_row(mean_cpm))
     }
     tab <- fit$coefficient_table[term, ]
     c(
@@ -438,7 +466,7 @@ bb_screen <- function(counts, data, formula, term, totals = NULL,
       p_value = tab[["p_value"]],
       rho = fit$rho,
       pearson_null = fit$pearson_null,
-      mean_cpm = mean(counts[i, ] / totals * 1e6),
+      mean_cpm = mean_cpm,
       converged = as.numeric(fit$converged)
     )
   }
@@ -465,6 +493,9 @@ bb_screen <- function(counts, data, formula, term, totals = NULL,
   result$fdr <- p.adjust(result$p_value, method = "BH")
   result
 }
+
+
+# ---- 5. Calibration and dispersion moderation -----------------------------
 
 #' Calibrate guide-level t tests with negative-control guides
 #'
@@ -771,6 +802,9 @@ bb_moderate_dispersion <- function(result, trend = TRUE, one_way = FALSE,
   attr(moderated_result, "df_total") <- df_total
   moderated_result
 }
+
+
+# ---- 6. Optional gene-level summaries -------------------------------------
 
 #' Test a shared guide effect against an empirical gene-level null
 #'

@@ -1,0 +1,106 @@
+% !TeX root = ../../main.tex
+\subsubsection{CRISPulator FACS benchmark}
+
+We used CRISPulator 0.5.1's documented interfaces for library construction,
+transfection, FACS selection, and sequencing \citep{nagy2017crispulator}.
+The committed Julia environment pins the tagged source revision.  For each
+simulation seed, one CRISPRn guide library was constructed and reused across
+four independently seeded transfection, sorting, and sequencing replicates.
+The default CRISPulator phenotype mixture was retained: 75\% inactive, 5\%
+negative-control, 10\% phenotype-increasing, and 10\%
+phenotype-decreasing genes.  The headline screens contained 10,000 genes and
+five guides per gene, so 50,000 guides, which is the order of a genome-wide
+library rather than a pilot.  The default guide-quality mixture---90\%
+complete-knockout guides and 10\% low-activity guides---was retained.
+Transfection representation was 500 cells per guide, Gaussian phenotype noise
+was 2, sorting representation was 50 cells per guide, and sequencing depth was
+50 reads per guide per sample.  Multiplicity of infection was 0.20 for the
+main analysis and 0.30 for the supplementary analysis; 0.20 is the point at
+which the single-integration approximation these guide-level models share is
+most defensible, and 0.30 stresses it.  Both multiplicity of infection and the
+high-quality-guide fraction are exposed as simulation parameters, as is the
+number of genes and the number of independent screen replicates.
+The three genome-scale benchmark seeds were 20250724 through 20250726; the
+supporting 400-gene analyses below use 20250724 through 20250728.
+
+Two BARCS gene statistics are carried through the genome-scale benchmark.
+BARCS-ST is the historical calibrated signed-$z$ statistic.  BARCS-MOD reuses
+the identical guide fits after guide-dispersion moderation, so the two differ
+only in how the guide variance is estimated, not in the gene combiner.  The
+exchangeable-normal, random-effects, and moderated random-effects statistics
+are retained for the real-data comparisons but are not carried through the
+genome-scale simulation, where the question is whether moderation changes the
+calibration--power tradeoff rather than which of several pooling rules is
+best.  Official MAGeCK-MLE 0.5.9.5 is included, with its ordered marker
+affinely mapped onto zero--one so that the low samples of the reference
+replicate form the all-zero reference row the MAGeCK initializer requires.
+Because MAGeCK-MLE omits negative-control genes from its gene summary once
+their sgRNAs are declared, all methods in the genome-scale benchmark are
+scored on the genes every method returned a finite result for, 9,475--9,517
+of 10,000 per run.  The negative-control diagnostic is instead taken from
+each method's own output, and is therefore unavailable for MAGeCK-MLE.
+
+We additionally performed a one-factor-at-a-time sensitivity analysis around
+the baseline $(\mathrm{MOI},q,G,R)=(0.25,0.90,400,4)$, where $q$ is the
+high-quality-guide fraction, $G$ is the number of genes, and $R$ is the number
+of independent screen replicates.  The evaluated levels were
+$\mathrm{MOI}\in\{0.10,0.25,0.40\}$,
+$q\in\{0.60,0.75,0.90\}$, $G\in\{100,400,1000\}$, and
+$R\in\{1,3,4,6\}$.  After removing duplicate baseline settings, this yielded
+ten scenarios; each used the same five prespecified seeds, for 50 simulations.
+One parameter changed at a time, so its main sensitivity remained
+interpretable.  For each seed and scenario, we paired BARCS and MAGeCK-MLE
+results from the low--bulk--high design and reported differences as BARCS
+minus MAGeCK-MLE.  The executable benchmark also supports the complete
+$3\times3\times3\times4$ factorial (108 scenarios and 540 simulations across
+five seeds) when interaction effects are the target.
+
+The $R=1$ setting was prespecified as a diagnostic boundary rather than a
+confirmatory design.  Its three low--bulk--high samples and two regression
+coefficients leave only one residual degree of freedom.  The corresponding
+two-tail fit has two samples and two coefficients, leaves zero residual
+degrees of freedom, and was therefore not fitted.  All
+pairwise-design comparisons and the primary performance interpretation use
+$R\geq3$; the one-replicate result is shown separately to expose the
+consequence of insufficient replication.  BARCS-GC was evaluated only at
+$R=1$ using Equations~\eqref{eq:guideconsistency}--\eqref{eq:gcz}; it was not
+used to replace ordinary BARCS in supported replicated designs.
+
+CRISPulator's arbitrary percentile ranges were set to $(0,0.25)$ for low,
+$(0.75,1)$ for high, and $(0,1)$ for bulk.  Thus bulk deliberately overlaps
+the tails and is not a third component of a multinomial partition.  An input
+sample was generated as an independent sequencing draw from the same guide
+frequency vector as bulk.  Low and high received phenotype scores equal to
+the means of their corresponding standard-normal intervals,
+\[
+ d_{\mathrm{low}}=-1.271,\qquad
+ d_{\mathrm{high}}=1.271,
+\]
+while bulk received $d_{\mathrm{bulk}}=0$.  BARCS and MAGeCK-MLE fitted this
+score with replicate indicators \citep{li2015mageckvispr}.
+Tail-only fits removed bulk without changing the low and high counts.  BARCS
+guide tests were scaled with the simulated negative-control guides before
+directional Stouffer aggregation; MAGeCK-MLE used its native gene-level Wald
+result.  The comparators are CRISPR-specific gene callers rather than general
+count regressions, because that is the choice a screen analyst faces.
+CRISPhieRmix \citep{daley2018crisphiermix} was run on guide-level log$_2$
+fold changes from a DESeq2 Wald fit of the same design
+\citep{love2014deseq2}, which is the input its documentation specifies;
+DESeq2 therefore appears as a preprocessing step and is not itself scored.
+CRISPhieRmix was run with its bimodal alternative, because this screen
+contains both phenotype-increasing and phenotype-decreasing genes and the
+one-sided default would score only one direction.  Its gene effect is the
+mean guide log$_2$ fold change and its local false-discovery rate stands in
+for a $p$-value wherever a ranking is required, since the model reports
+neither a $p$-value nor a signed gene effect.  Reported runtimes cover the
+primary low--bulk--high model fit and exclude simulation, file input/output,
+and guide-to-gene aggregation.
+
+Genes from the increasing and decreasing classes were positives.  Ranking
+used the two-sided gene significance score.  AUROC and average precision
+measure active-gene discrimination.  Effect recovery is Spearman correlation
+between the inferred gene effect and CRISPulator's median theoretical guide
+phenotype among active genes.  Directional recall is the fraction of active
+genes with gene FDR below 0.10 and an effect sign matching the simulated
+class.  Realized FDP is the fraction of called genes that were inactive, and
+F1 uses active versus inactive status at the same FDR threshold.
