@@ -1,8 +1,8 @@
 % !TeX root = ../../main.tex
 \subsubsection{Continuous-dose calibration simulation}
 
-The nominal-error diagnostic in Table~\ref{tab:type1} is reproduced by
-\repofile{examples/simulation.R} with seed 20260723.  It contains 200 genes,
+The nominal-error diagnostic in Table~\ref{tab:type1} uses seed 20260723 and
+contains 200 genes,
 three independently simulated guides per gene, and 27 libraries formed by nine
 dose values crossed with three batches.  Of the genes, 160 are null and 40
 have dose coefficients $+0.9$ or $-0.9$.  Library totals are sampled uniformly
@@ -18,6 +18,5 @@ naive comparator is a binomial logistic regression, and official MAGeCK-MLE
 the same directional Stouffer gene summary, while MAGeCK-MLE retains its native
 gene result.  Type-I error is the unadjusted $p<0.05$ fraction among the 160
 null genes.  Empirical FDP is the null fraction among genes called at
-Benjamini--Hochberg FDR 0.05.  Compact metrics and boundary diagnostics are
-deposited in \repofile{results/simulation_summary.csv} and
-\repofile{results/simulation_diagnostics.csv}.
+Benjamini--Hochberg FDR 0.05.  The executable simulation, compact metrics, and
+dispersion-boundary diagnostics are included with the deposited analysis.
