@@ -2,9 +2,13 @@
 \subsection{False-discovery conclusions depend on the analysis contract}
 \label{sec:fdr-audit}
 
-We audited the deposited benchmark of CB\textsuperscript{2}, MAGeCK, JACKS,
-DrugZ, and Chronos \citep{dempster2025fdr,dempster2025fdrdata}.  We separated
-two analyses that answer different questions.  For Avana, we re-evaluated the
+The recent false-discovery manuscript by \citet{dempster2025fdr} raised the
+concern that CB\textsuperscript{2}, and beta-binomial CRISPR analysis more
+broadly, could be anti-conservative.  We revisited its deposited benchmark
+\citep{dempster2025fdrdata} to distinguish a property of the sampling model
+from a consequence of the analysis contract.  The benchmark compared
+CB\textsuperscript{2}, MAGeCK, JACKS, DrugZ, and Chronos.  We separated two
+analyses that answer different questions.  For Avana, we re-evaluated the
 published CB\textsuperscript{2} analysis \citep{jeong2019beta} after restoring
 the full-library denominator; BARCS was not fitted because this audit isolates
 the denominator used by CB\textsuperscript{2}.  For PSN1 and DeWeirdt, we
@@ -38,11 +42,13 @@ Avana null-only &
 0 calls at FDR 0.10 &
 --- &
 Largest full-total null $p<0.05$ rate: 0.145\\
+\addlinespace[2pt]
 PSN1 null split &
 0 gene calls &
 --- &
 0 gene calls; guide $p<0.05$: 0.0481 raw and 0.0465 scaled &
 Control scale: 1.017\\
+\addlinespace[2pt]
 DeWeirdt differential screens &
 0 calls; 0/28 known recovered &
 --- &
