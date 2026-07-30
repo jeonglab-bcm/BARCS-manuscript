@@ -25,13 +25,10 @@
 # lncRNAs with TPM == 0 in that cell line as biological null controls.
 
 options(stringsAsFactors = FALSE)
-source(file.path("R", "method_palette.R"))
 
 raw_dir <- file.path("data", "raw", "liang_cas13")
 result_dir <- file.path("results", "liang_cas13")
-figure_path <- file.path("figures", "liang_cas13_benchmark.pdf")
 dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(dirname(figure_path), recursive = TRUE, showWarnings = FALSE)
 
 required_inputs <- c(
   "guide_library.tsv", "lncrna_expression.tsv",
@@ -164,7 +161,9 @@ combine_guides <- function(result) {
       gene = gene_name,
       n_guides = length(index),
       effect = median(result$estimate[index]),
-      p_value = 2 * pnorm(-abs(sum(signed_z) / sqrt(length(signed_z))))
+      p_value = 2 * pnorm(
+        -abs(sum(signed_z) / sqrt(length(signed_z)))
+      )
     )
   }))
   combined$fdr <- p.adjust(combined$p_value, method = "BH")
@@ -684,63 +683,6 @@ write.csv(
   file.path("data", "derived", "liang_cas13_effect_rank_concordance.csv"),
   row.names = FALSE
 )
-
-method_order <- c(
-  "Liang RRA", "MAGeCK-RRA", "MAGeCK-MLE", "BARCS",
-  "edgeR-QL", "DESeq2", "limma-voom"
-)
-method_colour <- c(
-  `Liang RRA` = barcs_method_colours[["Liang RRA"]],
-  `MAGeCK-RRA` = barcs_method_colours[["MAGeCK-RRA"]],
-  `MAGeCK-MLE` = barcs_method_colours[["MAGeCK"]],
-  BARCS = barcs_method_colours[["BARCS"]],
-  `edgeR-QL` = barcs_method_colours[["edgeR"]],
-  DESeq2 = barcs_method_colours[["DESeq2"]],
-  `limma-voom` = barcs_method_colours[["limma-voom"]]
-)
-
-pdf(figure_path, width = 11, height = 8.5)
-layout(matrix(1:4, nrow = 2, byrow = TRUE))
-par(mar = c(7, 4, 3, 1))
-for (metric in c(
-  "average_precision", "recall_at_5pct_null_fpr",
-  "null_calibration_error", "essential_fdr_0_10_recall"
-)) {
-  values <- summary_metrics[[metric]][
-    match(method_order, summary_metrics$method)
-  ]
-  lower_better <- metric == "null_calibration_error"
-  best <- if (lower_better) which.min(values) else which.max(values)
-  bars <- barplot(
-    values,
-    names.arg = method_order,
-    col = unname(method_colour[method_order]),
-    border = ifelse(seq_along(values) == best, "black", NA),
-    lwd = ifelse(seq_along(values) == best, 3, 1),
-    las = 2,
-    ylim = c(0, max(values, 0.05, na.rm = TRUE) * 1.15),
-    ylab = switch(
-      metric,
-      average_precision = "Average precision",
-      recall_at_5pct_null_fpr = "Essential recall at 5% null FPR",
-      null_calibration_error = "|Null p < 0.05 fraction - 0.05|",
-      essential_fdr_0_10_recall = "Essential recall at FDR 0.10"
-    ),
-    main = switch(
-      metric,
-      average_precision = "A. Essential-gene ranking",
-      recall_at_5pct_null_fpr = "B. Equal null-FPR operating point",
-      null_calibration_error = "C. Nominal null calibration",
-      essential_fdr_0_10_recall = "D. Gene FDR threshold"
-    )
-  )
-  text(
-    bars, values,
-    labels = sprintf("%.3f", values),
-    pos = 3, cex = 0.8
-  )
-}
-dev.off()
 
 cat("\nLiang Cas13 head-to-head macro-average:\n")
 print(summary_metrics, row.names = FALSE)

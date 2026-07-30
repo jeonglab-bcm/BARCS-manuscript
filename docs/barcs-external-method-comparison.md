@@ -584,9 +584,9 @@ multinomial model.
 ## Liang Cas13 processed-count sensitivity
 
 The Liang comparison uses rounded versions of the deposited normalized,
-ComBat-corrected Day-0 and Day-14 values. All newly fitted methods receive
-that same matrix and replicate/day design. This controls the input comparison,
-but it is not a raw-count likelihood benchmark.
+ComBat-corrected Day-0, Day-7, and Day-14 values. All newly fitted methods
+receive that same matrix and replicate/day design. This controls the input
+comparison, but it is not a raw-count likelihood benchmark.
 
 At gene level, BARCS-original, edgeR-QL, DESeq2, and limma-voom use the same
 unweighted signed-\(z\) rule:
@@ -594,31 +594,28 @@ unweighted signed-\(z\) rule:
 $$
 Z_g=\frac{1}{\sqrt{m_g}}\sum_{j=1}^{m_g}
 \operatorname{sign}(\widehat\beta_{gj})
-\Phi^{-1}\!\left(1-\frac{p_{gj}}{2}\right).
+\Phi^{-1}\!\left(1-\frac{p_{gj}}{2}\right),
+\qquad
+p_g=2\Phi(-|Z_g|).
 $$
 
 Thus these four methods differ in their guide-level count model, not in the
-final gene combiner. MAGeCK-MLE uses its native joint gene model.
-BARCS-partial and BARCS-EB are different again: they pool guide effects by
-random-effects inverse-variance weighting and do not use Stouffer
-aggregation.
+final gene combiner. MAGeCK-MLE uses its native joint gene model and two-sided
+Wald probability. MAGeCK-RRA's `neg` result and Liang RRA retain their native
+depletion-tail probabilities.
 
 In HAP1, the extra guide-level models recover more of the 60 essential
 controls at FDR 0.10, while BARCS has the best nominal null specificity:
 
 | Method | Essential controls recovered | Null specificity at \(p<0.05\) |
 |---|---:|---:|
-| BARCS | 44/60 | **0.957** |
-| MAGeCK-MLE | 49/60 | 0.895 |
-| edgeR-QL | **52/60** | 0.931 |
-| DESeq2 | **52/60** | 0.941 |
-| limma-voom | **52/60** | 0.929 |
+| BARCS | 47/60 | **0.938** |
+| MAGeCK-MLE | **53/60** | 0.872 |
+| edgeR-QL | 52/60 | 0.883 |
+| DESeq2 | **53/60** | 0.867 |
+| limma-voom | 52/60 | 0.878 |
 
-The primary analysis retains every valid guide. A pre-outcome sensitivity
-selecting the five guides with greatest mean Day-0 abundance reduces BARCS
-macro-average precision from 0.776 to 0.638 and FDR-0.10 essential recall
-from 0.487 to 0.330. Selecting guides by their observed p-values would be
-circular and is not used.
+The primary analysis retains every valid guide.
 
 ## Reproducibility and provenance
 
@@ -654,7 +651,6 @@ Rscript examples/crispulator_facs_f1_threshold_curves_aggregate.R
 - `examples/crispulator_facs_f1_threshold_curves.R`
 - `examples/crispulator_facs_f1_threshold_curves_aggregate.R`
 - `data/derived/crispulator_facs_f1_by_fdr.csv`
-- `figures/crispulator_facs_f1_by_fdr.pdf`
 
 The moderation and its validation:
 
@@ -675,5 +671,5 @@ edgeR, limma, and DESeq2:
 - `data/derived/crispulator_facs_miss_marginal_value.csv`
 - `data/derived/crispulator_facs_miss_precision_bands.csv`
 - `data/derived/crispulator_facs_calibration_scale_sweep.csv`
-- `examples/liang_hap1_specificity_volcano.R`
-- `figures/liang_hap1_specificity_volcano.pdf`
+- `examples/manuscript_liang_figure.R`
+- `figures/liang_longitudinal_volcano_trajectories.pdf`
