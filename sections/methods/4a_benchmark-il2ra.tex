@@ -14,7 +14,10 @@ summary.  For held-out calibration, non-targeting guides were ordered by guide
 identifier and assigned cyclically to five folds.  Each fold was evaluated
 with the tail scale estimated from the other four folds.  The production gene
 analysis used all controls, whereas the reported non-targeting $p<0.05$ rate
-uses only held-out guide predictions.
+uses only held-out guide predictions.  As a structure check, the same
+cross-fitting calculation was repeated after a seeded permutation of guide
+identifiers; this changes only fold membership, not the fitted guide
+coefficients.
 
 Directional recovery was evaluated against 26 regulators validated by
 individual knockout and flow cytometry.  A recovered regulator had to pass the

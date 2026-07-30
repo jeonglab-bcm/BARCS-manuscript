@@ -1,6 +1,27 @@
 % !TeX root = ../../main.tex
 \subsection{Estimation by feasible IRLS}
 
+The beta-binomial regression can be written hierarchically as
+\begin{align}
+  K_i\mid P_i &\sim \operatorname{Binomial}(N_i,P_i),\\
+  P_i &\sim \operatorname{Beta}(\mu_i\kappa,(1-\mu_i)\kappa),
+  \qquad \rho=\frac{1}{\kappa+1}.
+\end{align}
+Here $\rho$ is the intraclass correlation, or overdispersion, among reads
+assigned to the same guide and library.  For the observed proportion
+$Y_i=K_i/N_i$,
+\begin{equation}
+  \operatorname{Var}(Y_i)
+  =\mu_i(1-\mu_i)
+   \left\{\frac{1-\rho}{N_i}+\rho\right\}.
+  \label{eq:proportion-variance}
+\end{equation}
+Equation~\eqref{eq:proportion-variance} separates sampling variation that
+decreases with sequencing depth from between-library heterogeneity that does
+not.  This extra-binomial variance formulation and its regression extension
+follow the line of work in \citet{williams1982extrabinomial,
+baggerly2003differential,baggerly2004overdispersed}.
+
 Let $X$ be the $m\times q$ full-rank design matrix.  Given current values of
 $\boldsymbol{\beta}$ and $\rho$, define
 \begin{align}
@@ -41,3 +62,14 @@ The weight has an important limiting behavior:
 Therefore a deeply sequenced sample cannot acquire unlimited leverage.  Once
 sequencing uncertainty is small, biological heterogeneity sets the information
 ceiling.
+
+For a continuous design variable $x_d$, $\exp(\beta_d)$ is the fitted odds
+ratio for guide abundance per one-unit increase in $x_d$, conditional on the
+other design columns.  Because pooled-screen guide proportions are usually
+small, $\beta_d$ also approximates the log abundance ratio per unit.  For a
+contrast, the same interpretation applies to the specified linear combination
+of coefficients.
+
+Screen-wide weighted cross-products are evaluated with RcppArmadillo
+\citep{eddelbuettel2014rcpparmadillo}; guide fitting remains separable and can
+be distributed across processor cores.

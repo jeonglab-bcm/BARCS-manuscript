@@ -106,13 +106,20 @@ negative_control <- raw$Gene == "Non-Targeting Control"
 # the reported 5% tail rate nearly tautological because tail_quantile() chooses
 # its scale from that order statistic.  Deterministic five-fold cross-fitting
 # assigns every control guide a p-value from a scale estimated without its fold.
-crossfit_control_pvalues <- function(result, control, nfold = 5L) {
+crossfit_control_pvalues <- function(result, control, nfold = 5L,
+                                     assignment = c("sorted", "permuted"),
+                                     seed = 20260730L) {
+  assignment <- match.arg(assignment)
   valid <- which(control & is.finite(result$t_value) & is.finite(result$df))
   if (length(valid) < 20L * nfold) {
     stop("Too few finite controls for five-fold calibration diagnostics.")
   }
 
   ordered <- valid[order(result$guide[valid])]
+  if (assignment == "permuted") {
+    set.seed(seed)
+    ordered <- sample(ordered, length(ordered), replace = FALSE)
+  }
   fold <- rep(NA_integer_, nrow(result))
   fold[ordered] <- rep(seq_len(nfold), length.out = length(ordered))
   heldout_p <- rep(NA_real_, nrow(result))
@@ -133,7 +140,12 @@ crossfit_control_pvalues <- function(result, control, nfold = 5L) {
   list(p_value = heldout_p, fold = fold, scale = scale)
 }
 
-crossfit <- crossfit_control_pvalues(guide_result, negative_control)
+crossfit <- crossfit_control_pvalues(
+  guide_result, negative_control, assignment = "sorted"
+)
+crossfit_permuted <- crossfit_control_pvalues(
+  guide_result, negative_control, assignment = "permuted"
+)
 calibrated <- bb_calibrate_controls(
   guide_result,
   negative_control,
@@ -200,12 +212,28 @@ write.csv(
   file.path(result_dir, "non_targeting_crossfit_pvalues.csv"),
   row.names = FALSE
 )
-write.csv(
+crossfit_scales <- rbind(
   data.frame(
+    assignment = "guide-identifier order",
     fold = seq_along(crossfit$scale),
     training_control_scale = crossfit$scale
   ),
+  data.frame(
+    assignment = "seeded permutation",
+    fold = seq_along(crossfit_permuted$scale),
+    training_control_scale = crossfit_permuted$scale
+  )
+)
+write.csv(
+  crossfit_scales,
   file.path(result_dir, "non_targeting_crossfit_scales.csv"),
+  row.names = FALSE
+)
+write.csv(
+  crossfit_scales,
+  file.path(
+    "data", "derived", "waterbear_facs_crossfit_scales.csv"
+  ),
   row.names = FALSE
 )
 for (method in names(method_results)) {
@@ -387,19 +415,33 @@ null_p <- guide_result$p_value[
 heldout_null_p <- crossfit$p_value[
   negative_control & is.finite(crossfit$p_value)
 ]
+permuted_heldout_null_p <- crossfit_permuted$p_value[
+  negative_control & is.finite(crossfit_permuted$p_value)
+]
 null_metrics <- data.frame(
   analysis_protocol = analysis_protocol,
-  guide_statistic = c("raw", "control_calibrated_5fold_heldout"),
-  n_non_targeting_guides = c(length(null_p), length(heldout_null_p)),
+  guide_statistic = c(
+    "raw", "control_calibrated_5fold_heldout",
+    "control_calibrated_5fold_permuted"
+  ),
+  n_non_targeting_guides = c(
+    length(null_p), length(heldout_null_p),
+    length(permuted_heldout_null_p)
+  ),
   fraction_p_below_0_05 = c(
     mean(null_p < 0.05),
-    mean(heldout_null_p < 0.05)
+    mean(heldout_null_p < 0.05),
+    mean(permuted_heldout_null_p < 0.05)
   ),
   fraction_p_below_0_10 = c(
     mean(null_p < 0.10),
-    mean(heldout_null_p < 0.10)
+    mean(heldout_null_p < 0.10),
+    mean(permuted_heldout_null_p < 0.10)
   ),
-  median_p_value = c(median(null_p), median(heldout_null_p))
+  median_p_value = c(
+    median(null_p), median(heldout_null_p),
+    median(permuted_heldout_null_p)
+  )
 )
 write.csv(
   null_metrics,

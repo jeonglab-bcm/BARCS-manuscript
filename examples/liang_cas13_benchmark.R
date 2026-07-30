@@ -129,9 +129,12 @@ if (requireNamespace("BARCS", quietly = TRUE)) {
 }
 source(file.path("R", "bbreg.R"))
 
-combine_guides <- function(result) {
-  keep_gene <- result$gene != "non-targeting"
-  indices <- split(which(keep_gene), result$gene[keep_gene])
+combine_guides <- function(result, retain_controls = TRUE) {
+  gene_label <- result$gene
+  is_control <- gene_label == "non-targeting"
+  gene_label[is_control] <- paste0("NT_", result$guide[is_control])
+  keep_gene <- retain_controls | !is_control
+  indices <- split(which(keep_gene), gene_label[keep_gene])
   combined <- do.call(rbind, lapply(names(indices), function(gene_name) {
     index <- indices[[gene_name]]
     valid <- is.finite(result$estimate[index]) &
@@ -160,6 +163,34 @@ combine_guides <- function(result) {
   }))
   combined$fdr <- p.adjust(combined$p_value, method = "BH")
   combined
+}
+
+calibrate_gene_controls <- function(result, alpha = 0.05,
+                                    min_controls = 20L,
+                                    min_scale = 1) {
+  is_control <- startsWith(result$gene, "NT_")
+  signed_z <- sign(result$effect) * qnorm(
+    pmax(result$p_value / 2, .Machine$double.xmin),
+    lower.tail = FALSE
+  )
+  valid_control <- is_control & is.finite(signed_z)
+  if (sum(valid_control) < min_controls) {
+    stop("Too few finite non-targeting pseudo-genes for control scaling.")
+  }
+  empirical_cutoff <- unname(quantile(
+    abs(signed_z[valid_control]),
+    probs = 1 - alpha,
+    type = 8
+  ))
+  scale <- max(
+    min_scale,
+    empirical_cutoff / qnorm(1 - alpha / 2)
+  )
+  result$raw_p_value <- result$p_value
+  result$p_value <- 2 * pnorm(-abs(signed_z / scale))
+  result$fdr <- p.adjust(result$p_value, method = "BH")
+  result$control_scale <- scale
+  result
 }
 
 make_guide_result <- function(cell_guide, estimate, p_value,
@@ -361,11 +392,7 @@ run_cell_line <- function(cell_line) {
   } else {
     barcs_guide <- read.csv(gzfile(barcs_guide_path))
   }
-  barcs_calibrated_guide <- bb_calibrate_controls(
-    barcs_guide,
-    cell_guide$target_group == "non-targeting"
-  )
-  barcs_gene <- combine_guides(barcs_calibrated_guide)
+  barcs_gene <- combine_guides(barcs_guide)
   write.csv(
     barcs_gene,
     file.path(result_dir, paste0(cell_stem, "_barcs_gene.csv")),
@@ -415,7 +442,9 @@ run_cell_line <- function(cell_line) {
     design, design_path,
     sep = "\t", quote = FALSE, row.names = FALSE
   )
-  mle_prefix <- file.path(result_dir, paste0(cell_stem, "_mageck_mle"))
+  mle_prefix <- file.path(
+    result_dir, paste0(cell_stem, "_common_calibration_mageck_mle")
+  )
   mle_path <- paste0(mle_prefix, ".gene_summary.txt")
   if (!file.exists(mle_path) || identical(Sys.getenv("RERUN_LIANG"), "1")) {
     status <- system2(
@@ -424,7 +453,6 @@ run_cell_line <- function(cell_line) {
         "mle", "-k", count_path, "-d", design_path,
         "-n", mle_prefix,
         "--norm-method", "none",
-        "--control-sgrna", control_path,
         "--permutation-round", "1",
         "--no-permutation-by-group",
         "--threads", "4"
@@ -445,6 +473,9 @@ run_cell_line <- function(cell_line) {
   )
 
   add_method <- function(x, method) {
+    x <- calibrate_gene_controls(x)
+    x <- x[!startsWith(x$gene, "NT_"), , drop = FALSE]
+    x$fdr <- p.adjust(x$p_value, method = "BH")
     if (!"n_guides" %in% names(x)) {
       x$n_guides <- NA_integer_
     }
@@ -455,20 +486,65 @@ run_cell_line <- function(cell_line) {
       -log10(pmax(x$p_value, .Machine$double.xmin))
     x[, c(
       "gene", "n_guides", "effect", "p_value", "fdr",
-      "method", "cell_line", "input_scale", "depletion_score"
+      "method", "cell_line", "input_scale", "depletion_score",
+      "control_scale"
     )]
   }
-  do.call(rbind, list(
+  longitudinal_scores <- do.call(rbind, list(
     add_method(barcs_gene, "BARCS"),
     add_method(mle_gene, "MAGeCK-MLE"),
     add_method(general_count[["edgeR-QL"]], "edgeR-QL"),
     add_method(general_count[["DESeq2"]], "DESeq2"),
     add_method(general_count[["limma-voom"]], "limma-voom")
   ))
+
+  endpoint_keep <- audit$day %in% c(0L, 14L)
+  endpoint_audit <- audit[endpoint_keep, , drop = FALSE]
+  endpoint_counts <- counts[
+    , match(endpoint_audit$sample, colnames(counts)), drop = FALSE
+  ]
+  endpoint_data <- data.frame(
+    time_14 = endpoint_audit$day / 14,
+    replicate = factor(endpoint_audit$processed_replicate)
+  )
+  endpoint_stem <- paste0(gsub("-", "_", cell_line), "_endpoints")
+  endpoint_path <- file.path(
+    result_dir, paste0(endpoint_stem, "_barcs_guide.csv.gz")
+  )
+  if (!file.exists(endpoint_path) ||
+      identical(Sys.getenv("RERUN_LIANG"), "1")) {
+    endpoint_guide <- bb_screen(
+      counts = endpoint_counts,
+      totals = colSums(endpoint_counts),
+      data = endpoint_data,
+      formula = ~ replicate + time_14,
+      term = "time_14",
+      guide = cell_guide$sgrna,
+      gene = cell_guide$gene,
+      min_total_count = 30,
+      ncores = min(4L, parallel::detectCores(logical = FALSE))
+    )
+    write.csv(endpoint_guide, gzfile(endpoint_path), row.names = FALSE)
+  } else {
+    endpoint_guide <- read.csv(gzfile(endpoint_path))
+  }
+  endpoint_gene <- combine_guides(endpoint_guide)
+  endpoint_scores <- add_method(endpoint_gene, "BARCS endpoints")
+
+  list(
+    longitudinal = longitudinal_scores,
+    ablation = rbind(
+      longitudinal_scores[longitudinal_scores$method == "BARCS", ],
+      endpoint_scores
+    )
+  )
 }
 
-scores <- do.call(rbind, lapply(cell_lines, run_cell_line))
+cell_results <- lapply(cell_lines, run_cell_line)
+scores <- do.call(rbind, lapply(cell_results, `[[`, "longitudinal"))
 rownames(scores) <- NULL
+ablation_scores <- do.call(rbind, lapply(cell_results, `[[`, "ablation"))
+rownames(ablation_scores) <- NULL
 
 gene_group <- unique(guide[, c("gene", "target_group")])
 group_priority <- match(
@@ -494,6 +570,24 @@ scores$truth <- ifelse(
   ifelse(
     scores$target_group == "long non-coding RNA" &
       is.finite(scores$tpm) & scores$tpm == 0,
+    0L,
+    NA_integer_
+  )
+)
+ablation_scores <- merge(
+  ablation_scores, gene_group, by = "gene", all.x = TRUE
+)
+ablation_scores <- merge(
+  ablation_scores,
+  expression,
+  by = c("cell_line", "gene"),
+  all.x = TRUE
+)
+ablation_scores$truth <- ifelse(
+  ablation_scores$target_group == "essential protein-coding gene", 1L,
+  ifelse(
+    ablation_scores$target_group == "long non-coding RNA" &
+      is.finite(ablation_scores$tpm) & ablation_scores$tpm == 0,
     0L,
     NA_integer_
   )
@@ -591,6 +685,67 @@ write.csv(
   file.path(result_dir, "benchmark_metrics_macro_average.csv"),
   row.names = FALSE
 )
+
+ablation_groups <- split(
+  ablation_scores[!is.na(ablation_scores$truth), ],
+  interaction(
+    ablation_scores$cell_line[!is.na(ablation_scores$truth)],
+    ablation_scores$method[!is.na(ablation_scores$truth)],
+    drop = TRUE
+  )
+)
+ablation_metrics <- do.call(rbind, lapply(ablation_groups, function(x) {
+  data.frame(
+    cell_line = x$cell_line[1L],
+    analysis = ifelse(
+      x$method[1L] == "BARCS",
+      "Days 0, 7, and 14",
+      "Days 0 and 14"
+    ),
+    average_precision = average_precision(x$truth, x$depletion_score),
+    recall_at_5pct_null_fpr = recall_at_null_fpr(
+      x$truth, x$depletion_score
+    ),
+    essential_fdr_0_10_recall = mean(
+      x$fdr[x$truth == 1L] < 0.10 &
+        x$effect[x$truth == 1L] < 0,
+      na.rm = TRUE
+    ),
+    null_p_lt_0_05 = mean(x$p_value[x$truth == 0L] < 0.05)
+  )
+}))
+rownames(ablation_metrics) <- NULL
+write.csv(
+  ablation_metrics,
+  file.path("data", "derived", "liang_cas13_timepoint_ablation.csv"),
+  row.names = FALSE
+)
+ablation_summary <- aggregate(
+  ablation_metrics[, c(
+    "average_precision", "recall_at_5pct_null_fpr",
+    "essential_fdr_0_10_recall", "null_p_lt_0_05"
+  )],
+  by = list(analysis = ablation_metrics$analysis),
+  FUN = mean,
+  na.rm = TRUE
+)
+write.csv(
+  ablation_summary,
+  file.path("data", "derived", "liang_cas13_timepoint_ablation_summary.csv"),
+  row.names = FALSE
+)
+
+control_scales <- unique(scores[, c(
+  "cell_line", "method", "control_scale"
+)])
+control_scales <- control_scales[order(
+  control_scales$cell_line, control_scales$method
+), ]
+write.csv(
+  control_scales,
+  file.path("data", "derived", "liang_cas13_control_scales.csv"),
+  row.names = FALSE
+)
 write.csv(
   summary_metrics,
   file.path("data", "derived", "liang_cas13_metrics_macro_average.csv"),
@@ -632,3 +787,5 @@ write.csv(
 
 cat("\nLiang Cas13 head-to-head macro-average:\n")
 print(summary_metrics, row.names = FALSE)
+cat("\nBARCS time-point ablation macro-average:\n")
+print(ablation_summary, row.names = FALSE)

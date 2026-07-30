@@ -1,0 +1,84 @@
+% !TeX root = ../../main.tex
+\subsubsection{Nominal-versus-realized null calibration}
+\label{sec:supp-calibration}
+
+We first report the previously specified continuous-dose simulation because it
+exposes a finite-sample failure that a methods paper should not hide.  At a
+nominal 0.05 threshold, unmoderated BARCS had gene-level type-I error 0.081
+and empirical FDP 0.130; moderation reduced FDP to 0.091 but did not repair
+the marginal type-I error (Table~\ref{tab:calibration-diagnostic}).  Official
+MAGeCK-MLE was slightly conservative in this realization.  These results show
+that neither the plug-in beta-binomial statistic nor its moderated form is
+uniformly calibrated without an external control diagnostic.
+
+\begin{table}[htbp]
+\centering
+\caption{Nominal-versus-realized error in the prespecified continuous-dose
+simulation.  Type-I error is the fraction of 160 null genes with $p<0.05$;
+empirical FDP is measured among calls at Benjamini--Hochberg FDR 0.05.  This
+single deterministic simulation is a diagnostic, not a uniform operating
+characteristic.}
+\label{tab:calibration-diagnostic}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Method & Null type I & Power & Calls & Empirical FDP\\
+\midrule
+Naive binomial $z$ & 0.844 & 1.000 & 174 & 0.770\\
+BARCS unmoderated $t$ & 0.081 & 1.000 & 46 & 0.130\\
+BARCS moderated $t$ & 0.088 & 1.000 & 44 & 0.091\\
+Official MAGeCK-MLE Wald & 0.038 & 0.975 & 41 & 0.049\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We then simulated all-null beta-binomial screens with $m\in\{4,6,8,12\}$
+balanced independent libraries, 100 genes, five guides per gene, and a fixed
+library total of one million.  Mean guide counts were 10, 100, or 1,000 and
+the generating intraclass correlation was 0, $5\times10^{-7}$, or
+$5\times10^{-6}$.  Each of the 36 parameter combinations used five
+prespecified seeds.  The tested group coefficient was zero for every guide.
+Guide probabilities were combined by the same directional Stouffer rule used
+in the benchmarks.  Table~\ref{tab:calibration-grid} reports the minimum and
+maximum realized 0.05 error over the nine abundance--dispersion combinations.
+The complete parameter-by-parameter results and seed-level values accompany
+the manuscript.
+
+\begin{table}[htbp]
+\centering
+\caption{Null calibration across sample size, abundance, and dispersion.
+Entries are ranges over nine abundance--dispersion combinations; each
+combination is the mean of five seeds.  The target rate is 0.05.}
+\label{tab:calibration-grid}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{rrcc}
+\toprule
+Libraries & Moderation & Guide $p<0.05$ & Gene $p<0.05$\\
+\midrule
+4  & No  & 0.000--0.017 & 0.000--0.026\\
+4  & Yes & 0.001--0.050 & 0.034--0.064\\
+6  & No  & 0.002--0.044 & 0.004--0.062\\
+6  & Yes & 0.036--0.055 & 0.040--0.060\\
+8  & No  & 0.007--0.052 & 0.010--0.062\\
+8  & Yes & 0.035--0.064 & 0.042--0.058\\
+12 & No  & 0.014--0.057 & 0.018--0.062\\
+12 & Yes & 0.042--0.054 & 0.036--0.060\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The unmoderated statistic was strongly conservative at $m=4$, especially near
+the binomial boundary; moderation brought most cells close to 0.05 but reached
+0.064 in the worst guide-level cell.  At $m=8$--12, both versions ranged from
+slightly conservative to modestly anti-conservative.  Thus moderation
+stabilizes the smallest designs but does not guarantee exact size in every
+abundance--dispersion cell.
+
+Finally, the observed fraction of converged guide fits with
+$\widehat\rho=0$ was 11/86,840 (0.013\%) in HT-29, 0/5,999 in IL2RA, and
+1,738/280,541 (0.620\%) across the four Liang cell lines.  Boundary truncation
+is therefore common in the deliberately near-binomial grid but rare in the
+three real-data fits.  That observation rules out the boundary as a general
+explanation for their calibration behavior; limited independent-library
+degrees of freedom and the plug-in treatment of dispersion remain relevant.

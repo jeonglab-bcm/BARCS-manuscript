@@ -1,7 +1,16 @@
 % !TeX root = ../main.tex
-We first define the specific extension beyond CB\textsuperscript{2}, then test
-that extension in longitudinal Cas13 and donor-adjusted IL2RA screens.
-Simulations isolate the contributions of dispersion moderation and denominator
-choice, and an external audit examines how preprocessing changes apparent
-false-discovery behavior.  Endpoint, serial-harvest, copy-number, and
-multi-condition follow-up analyses are reported in the Supplement.
+BARCS extends the CB\textsuperscript{2} sampling model, which conditions each
+guide count on the corresponding full-library total to separate sequencing
+variation from between-library heterogeneity \citep{jeong2019beta}.  BARCS
+retains this sampling principle while replacing the two-group mean comparison
+with a regression coefficient, allowing time, dose, donor, batch, and
+interaction effects to be estimated jointly rather than reduced to pairwise
+contrasts.  We evaluate this extension in longitudinal Cas13 and donor-adjusted
+IL2RA screens, use simulations to isolate the contributions of dispersion
+moderation and denominator choice, and examine the effect of preprocessing in
+an external false-discovery audit.  Endpoint, serial-harvest, copy-number, and
+multi-condition follow-up analyses are reported in the Supplement.  BARCS
+therefore broadens the questions that can be addressed with a beta-binomial
+screen model; it is not numerically equivalent to the legacy
+CB\textsuperscript{2} statistic, which uses different dispersion, weighting,
+and degrees-of-freedom calculations.

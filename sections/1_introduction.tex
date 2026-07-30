@@ -9,7 +9,8 @@ conditional on the remaining design variables.
 The count denominator is central to this problem.  RNA-sequencing methods
 generally model marginal counts with negative-binomial distributions and
 represent library size through normalization or an offset
-\citep{anders2010deseq,love2014deseq2,law2014voom,lun2016edger}.  In a pooled
+\citep{marioni2008rnaseq,anders2010deseq,love2014deseq2,law2014voom,
+lun2016edger}.  In a pooled
 screen, however, each guide count is observed together with the total number
 of mapped guide reads in that library.  Conditional on this total, guide
 abundance is a proportion.  The beta-binomial model represents that sampling
@@ -24,7 +25,7 @@ regression is available in \texttt{corncob} and statistical packages including
 \texttt{aod}, \texttt{VGAM}, and \texttt{gamlss}
 \citep{martin2020corncob,lesnoff2012aod,yee1996vgam,rigby2005gamlss}, but these
 tools do not provide a CRISPR-oriented workflow that preserves immutable
-full-library totals, fits guide-level design matrices at screen scale, and
+full-library totals, fits guide-level design matrices, and
 connects the result to established screen outputs.  Specialized methods such
 as Chronos and Waterbear model population dynamics or joint FACS-bin
 membership, respectively, but are tied to those experimental structures

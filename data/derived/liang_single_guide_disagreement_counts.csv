@@ -1,0 +1,3 @@
+"direction","selection_rule","proxy_null_guides"
+"BARCS non-significant; all three alternatives significant","BARCS p >= 0.20; each alternative p < 0.05",61
+"BARCS significant; all three alternatives non-significant","BARCS p < 0.05; each alternative p >= 0.05",1242
