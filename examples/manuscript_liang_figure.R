@@ -6,7 +6,7 @@
 # volcano plots for
 # BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom. Panels A-C show the
 # observed day 0, 7, and 14 guide-abundance trajectories for representative
-# false-positive calls.
+# disagreements within the prespecified proxy-null set.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
@@ -34,13 +34,13 @@ guide_method_files <- c(
   `limma-voom` = "limma_voom"
 )
 case_specification <- data.frame(
-  cell_line = c("HAP1", "THP1", "MDA-MB-231"),
+  cell_line = c("HAP1", "MDA-MB-231", "HEK293FT"),
   gene = c(
-    "Hum_XLOC_047119",
-    "Hum_XLOC_037359",
-    "Hum_XLOC_047245"
+    "Hum_XLOC_013346",
+    "Hum_XLOC_029247",
+    "Hum_XLOC_000540"
   ),
-  guide = c("gL_028460", "gL_044332", "gL_028545"),
+  guide = c("gL_036790", "gL_017527", "gL_000389"),
   stringsAsFactors = FALSE
 )
 
@@ -60,13 +60,17 @@ load_guide_results <- function(cell_line, method) {
     )
   )
   result <- read.csv(gzfile(path))
-  if (method == "BARCS") {
-    controls <- readLines(file.path(
-      result_dir,
-      paste0(cell_stem, "_longitudinal_non_targeting_guides.txt")
-    ))
-    result <- bb_calibrate_controls(result, result$guide %in% controls)
-  }
+  is_control <- result$gene == "non-targeting"
+  signed_z <- sign(result$estimate) * qnorm(
+    pmax(result$p_value / 2, .Machine$double.xmin),
+    lower.tail = FALSE
+  )
+  scale <- max(
+    1,
+    unname(quantile(abs(signed_z[is_control]), 0.95, type = 8)) /
+      qnorm(0.975)
+  )
+  result$p_value <- 2 * pnorm(-abs(signed_z / scale))
   result
 }
 
@@ -125,6 +129,92 @@ write.csv(
   case_results,
   file.path(
     "data", "derived", "liang_single_guide_null_examples.csv"
+  ),
+  row.names = FALSE
+)
+
+guide_disagreement <- do.call(rbind, lapply(
+  names(cell_stems),
+  function(cell_line) {
+    method_tables <- lapply(names(guide_method_files), function(method) {
+      x <- load_guide_results(cell_line, method)
+      names(x)[names(x) == "p_value"] <- paste0(
+        "p_", gsub("[^A-Za-z0-9]", "_", method)
+      )
+      x[, c(
+        "gene", "guide",
+        paste0("p_", gsub("[^A-Za-z0-9]", "_", method))
+      )]
+    })
+    x <- Reduce(
+      function(left, right) merge(left, right, by = c("gene", "guide")),
+      method_tables
+    )
+    truth <- unique(guide_truth[
+      guide_truth$cell_line == cell_line,
+      c("gene", "truth")
+    ])
+    x <- merge(x, truth, by = "gene", all.x = TRUE)
+    x$cell_line <- cell_line
+    x
+  }
+))
+competitor_p <- c("p_DESeq2", "p_edgeR_QL", "p_limma_voom")
+proxy_null <- guide_disagreement$truth == 0L
+forward <- proxy_null &
+  guide_disagreement$p_BARCS >= 0.20 &
+  apply(guide_disagreement[, competitor_p] < 0.05, 1L, all)
+reverse <- proxy_null &
+  guide_disagreement$p_BARCS < 0.05 &
+  apply(guide_disagreement[, competitor_p] >= 0.05, 1L, all)
+forward_candidates <- guide_disagreement[forward, , drop = FALSE]
+forward_candidates$largest_competitor_p <- apply(
+  forward_candidates[, competitor_p], 1L, max
+)
+best_within_cell_line <- do.call(rbind, lapply(
+  split(forward_candidates, forward_candidates$cell_line),
+  function(x) {
+    x[order(x$largest_competitor_p, x$guide), , drop = FALSE][1L, ]
+  }
+))
+best_within_cell_line$disagreement_ratio <-
+  best_within_cell_line$p_BARCS /
+  best_within_cell_line$largest_competitor_p
+display_cases <- head(
+  best_within_cell_line[
+    order(best_within_cell_line$disagreement_ratio, decreasing = TRUE),
+  ],
+  3L
+)
+specified_key <- paste(
+  case_specification$cell_line,
+  case_specification$gene,
+  case_specification$guide,
+  sep = "::"
+)
+selected_key <- paste(
+  display_cases$cell_line,
+  display_cases$gene,
+  display_cases$guide,
+  sep = "::"
+)
+if (!setequal(specified_key, selected_key)) {
+  stop("Displayed trajectories no longer match the documented selection rule.")
+}
+write.csv(
+  data.frame(
+    direction = c(
+      "BARCS non-significant; all three alternatives significant",
+      "BARCS significant; all three alternatives non-significant"
+    ),
+    selection_rule = c(
+      "BARCS p >= 0.20; each alternative p < 0.05",
+      "BARCS p < 0.05; each alternative p >= 0.05"
+    ),
+    proxy_null_guides = c(sum(forward, na.rm = TRUE), sum(reverse, na.rm = TRUE))
+  ),
+  file.path(
+    "data", "derived", "liang_single_guide_disagreement_counts.csv"
   ),
   row.names = FALSE
 )
@@ -236,21 +326,17 @@ layout(
 )
 
 # A signed logarithmic x transform expands the dense region around zero while
-# retaining effect direction. A second logarithm on the usual -log10(p) axis
-# keeps extreme values visible without allowing them to dominate the panels.
+# retaining effect direction. The conventional -log10(p) axis is clipped so
+# extreme values remain visible without defining the scale of every panel.
 effect_scale <- 0.25
 signed_log_effect <- function(value) {
   sign(value) * log10(1 + abs(value) / effect_scale)
 }
-double_log_p <- function(value) {
-  log10(1 - log10(pmax(value, .Machine$double.xmin)))
-}
+y_clip <- 60
 x_tick_effects <- c(-10, -5, -2, -1, -0.5, 0, 0.5, 1, 2)
 x_tick_positions <- signed_log_effect(x_tick_effects)
-y_tick_logp <- c(0, 1, 2, 5, 10, 20, 60, 300)
-y_tick_positions <- log10(1 + y_tick_logp)
 common_xlim <- range(signed_log_effect(volcano_scores$effect))
-common_ylim <- range(double_log_p(volcano_scores$p_value))
+common_ylim <- c(0, y_clip)
 
 for (method_index in seq_along(volcano_methods)) {
   method <- volcano_methods[method_index]
@@ -260,7 +346,9 @@ for (method_index in seq_along(volcano_methods)) {
     drop = FALSE
   ]
   x_value <- signed_log_effect(panel$effect)
-  y_value <- double_log_p(panel$p_value)
+  raw_y_value <- -log10(pmax(panel$p_value, .Machine$double.xmin))
+  y_value <- pmin(raw_y_value, y_clip)
+  clipped <- raw_y_value > y_clip
   depleted_call <- panel$fdr < 0.10 & panel$effect < 0
   show_y_axis <- method_index %in% c(1L, 4L)
 
@@ -278,10 +366,10 @@ for (method_index in seq_along(volcano_methods)) {
     xlim = common_xlim,
     ylim = common_ylim,
     xaxt = "n",
-    yaxt = "n",
-    xlab = "Longitudinal time-slope effect (signed log scale)",
+    yaxt = if (show_y_axis) "s" else "n",
+    xlab = "Longitudinal effect (signed-log scale)",
     ylab = if (show_y_axis) {
-      expression(log[10](1-log[10]("two-sided " * italic(p))))
+      expression(-log[10]("two-sided " * italic(p)))
     } else {
       ""
     },
@@ -300,19 +388,6 @@ for (method_index in seq_along(volcano_methods)) {
         x_tick_positions <= common_xlim[2L]
     ]
   )
-  if (show_y_axis) {
-    axis(
-      2,
-      at = y_tick_positions[
-        y_tick_positions >= common_ylim[1L] &
-          y_tick_positions <= common_ylim[2L]
-      ],
-      labels = y_tick_logp[
-        y_tick_positions >= common_ylim[1L] &
-          y_tick_positions <= common_ylim[2L]
-      ]
-    )
-  }
   for (cell_line in volcano_cell_lines) {
     cell_rows <- depleted_call & panel$cell_line == cell_line
     points(
@@ -325,8 +400,26 @@ for (method_index in seq_along(volcano_methods)) {
         alpha.f = 0.54
       )
     )
+    clipped_rows <- cell_rows & clipped
+    points(
+      x_value[clipped_rows],
+      y_value[clipped_rows],
+      pch = 17,
+      cex = 0.52,
+      col = adjustcolor(
+        cell_line_colours[[cell_line]],
+        alpha.f = 0.70
+      )
+    )
   }
-  abline(h = double_log_p(0.05), col = "#3B5BDB", lty = 2)
+  points(
+    x_value[clipped & !depleted_call],
+    y_value[clipped & !depleted_call],
+    pch = 17,
+    cex = 0.48,
+    col = adjustcolor("#777777", alpha.f = 0.55)
+  )
+  abline(h = -log10(0.05), col = "#3B5BDB", lty = 2)
   abline(v = 0, col = "#666666", lty = 3)
 }
 

@@ -1,0 +1,21 @@
+% !TeX root = ../../main.tex
+\subsubsection{GSE70038 multivariable screen}
+
+The 64,747-guide count matrix for GSE70038 was downloaded from GEO
+\citep{toledo2015pkmyt1}.  Following the Table~5 and Box~3 construction in the
+MAGeCKFlute protocol \citep{wang2019mageckflute}, the 16 libraries received an
+intercept for their shared initial condition and four indicators for the
+GSC0131, GSC0827, NSCCB660, and NSCU5 terminal samples.  BARCS used the
+unfiltered column sum as $N_i$ and fitted all four coefficients jointly.
+Official MAGeCK-MLE 0.5.9.5 received the same count matrix and design and used
+its median normalization \citep{li2014mageck}.
+
+BARCS guide probabilities were combined within each gene by a two-sided
+directional Stouffer statistic; the gene effect was the
+median guide coefficient.  The complementary analysis selected the 200 most
+negative finite-effect genes from each method for each coefficient, partitioned
+the equal-sized lists into shared and method-specific sets, and queried GO
+Biological Process 2023 and Reactome 2022 through Enrichr
+\citep{chen2013enrichr}.  As an external follow-up, one-sided Fisher tests
+measured enrichment of each exclusive set for the Hart reference-essential
+genes \citep{hart2017evaluation} against the genes testable by both methods.

@@ -12,45 +12,51 @@ never used for evaluation.
 
 \begin{table}[ht]
 \centering
-\caption{Interaction recovery in simCRISPR (three-seed mean).  Recall and F1
+\caption{Interaction recovery in simCRISPR (three-seed mean with standard
+deviation in parentheses).  Recall and F1
 use targeting guides with $|\mathrm{interaction}|\geq0.2$ as positives.  Null
 and safe-harbor rates are held-out call fractions at FDR 0.10.}
 \label{tab:simcrispr}
-\small
-\setlength{\tabcolsep}{5pt}
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{llrrrr}
 \toprule
 Method & Denominator & Dir.\ recall & F1 & Null rate & Safe-harbor\\
 \midrule
 BARCS-ST & Library &
-0.376 & 0.488 & 0.004 & 0.002\\
+0.376 (0.308) & 0.488 (0.389) & 0.004 (0.008) & 0.002 (0.003)\\
 BARCS-MOD & Library &
-0.375 & 0.481 & 0.000 & 0.000\\
+0.375 (0.323) & 0.481 (0.409) & 0.000 (0.000) & 0.000 (0.000)\\
 \midrule
 BARCS-ST & Non-targeting &
-0.769 & 0.870 & 0.024 & 0.070\\
+0.769 (0.094) & 0.870 (0.065) & 0.024 (0.020) & 0.070 (0.025)\\
 BARCS-MOD & Non-targeting &
-\textbf{0.838} & \textbf{0.917} & 0.040 & 0.080\\
+0.838 (0.025) & 0.917 (0.017) & 0.040 (0.040) & 0.080 (0.038)\\
 \midrule
 BARCS-ST & Safe-harbor &
-0.762 & 0.864 & 0.042 & 0.042\\
+0.762 (0.087) & 0.864 (0.061) & 0.042 (0.027) & 0.042 (0.008)\\
 BARCS-MOD & Safe-harbor &
-0.830 & 0.914 & 0.027 &
-\textbf{0.035}\\
+0.830 (0.019) & 0.914 (0.017) & 0.027 (0.023) &
+0.035 (0.005)\\
 \midrule
 MAGeCK-MLE & Non-targeting &
-0.003 & 0.006 & 0.000 & 0.000\\
+0.003 (0.001) & 0.006 (0.002) & 0.000 (0.000) & 0.000 (0.000)\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 The full-library denominator preserved effect ranking but shifted the
 true-zero guides because widespread depletion increased every surviving
-guide's library share.  BARCS-MOD consequently reached F1 0.481 with the
-library denominator, compared with 0.917 and 0.914 using non-targeting and
-safe-harbor denominators.  The held-out null rates remained below the nominal
-0.10 in all cases.  The result identifies denominator choice, rather than the
-interaction coefficient itself, as the source of the power loss.
+guide's library share.  Their median fitted interaction was 0.184
+(interquartile range 0.136--0.231), whereas the corresponding medians were
+0.004 and 0.030 for the non-targeting and safe-harbor denominators.  The
+control-scale factors were 1.99 and 2.24 for unmoderated and moderated
+full-library fits, compared with 1.00--1.07 for the control-denominator fits.
+BARCS-MOD consequently reached F1 0.481 with the library denominator, compared
+with 0.917 and 0.914 using non-targeting and safe-harbor denominators.  The
+held-out null rates remained below the nominal 0.10 in all cases.  The result
+identifies denominator choice, rather than the interaction coefficient itself,
+as the source of the power loss.
 
 \begin{figure}[htbp]
 \centering
@@ -70,3 +76,8 @@ Non-targeting controls are therefore efficient for detecting targeted
 interactions, whereas safe-harbor controls better absorb the shared cutting
 response.  MAGeCK-MLE is shown only as a reference: the simulated truth is
 guide-level, leaving no within-gene replication for its native gene model.
+Accordingly, this benchmark is a denominator and moderation ablation within
+BARCS, not evidence that the beta-binomial sampling model outperforms a valid
+interaction comparator.  A method-neutral comparison requires a simulation
+with several independently simulated guides per gene and a common gene-level
+interaction estimand.

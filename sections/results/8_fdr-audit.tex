@@ -4,10 +4,14 @@
 
 The recent false-discovery manuscript by \citet{dempster2025fdr} raised the
 concern that CB\textsuperscript{2}, and beta-binomial CRISPR analysis more
-broadly, could be anti-conservative.  We revisited its deposited benchmark
+broadly, could be anti-conservative.  Because the present author also
+developed CB\textsuperscript{2}, this reanalysis is disclosed as an audit of
+the author's prior method rather than an independent adjudication.  We
+revisited its deposited benchmark
 \citep{dempster2025fdrdata} to distinguish a property of the sampling model
 from a consequence of the analysis contract.  The benchmark compared
-CB\textsuperscript{2}, MAGeCK, JACKS, DrugZ, and Chronos.  We separated two
+CB\textsuperscript{2}, MAGeCK \citep{li2014mageck}, JACKS
+\citep{allen2019jacks}, DrugZ \citep{colic2019drugz}, and Chronos.  We separated two
 analyses that answer different questions.  For Avana, we re-evaluated the
 published CB\textsuperscript{2} analysis \citep{jeong2019beta} after restoring
 the full-library denominator; BARCS was not fitted because this audit isolates
@@ -71,4 +75,6 @@ They show that pre-fit guide subsetting and common normalization can alter the
 effective depth seen by a library-total-conditional model.  Comparator studies
 must preserve full-library totals, separate calibration guides from evaluation
 guides, and use blocked permutations or independent validation for
-differential screens.
+differential screens.  Zero Avana discoveries after restoring the full total
+do not demonstrate nominal calibration: the largest cell-line-specific
+$p<0.05$ rate remained 0.145.

@@ -10,9 +10,29 @@ high fractions.  All methods received the same counts and design.
 The comparison isolates one change within BARCS.  BARCS-ST uses the original
 guide-specific dispersion estimate, whereas BARCS-MOD moderates those
 estimates before applying the same gene summary.  Moderation increased average
-precision from 0.902 to 0.919 and F1 at gene FDR 0.10 from 0.811 to 0.847,
-while realized FDP remained nearly unchanged (0.065 and 0.066).  This supports
+precision from 0.903 to 0.919 and F1 at gene FDR 0.10 from 0.817 to 0.849,
+while realized FDP remained nearly unchanged (0.070 and 0.068).  This supports
 dispersion moderation within the common BARCS pipeline.
+
+\begin{table}[htbp]
+\centering
+\caption{Genome-scale CRISPulator comparison for the three-bin design
+(three-seed mean across simulated multiplicities of infection).  Each method
+is evaluated at its nominal gene-level threshold; the resulting operating
+points are therefore not matched on realized FDP.}
+\label{tab:crispulator-comparators}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Method & AUROC & Average precision & Realized FDP & F1\\
+\midrule
+BARCS-ST & 0.947 & 0.903 & 0.070 & 0.817\\
+BARCS-MOD & 0.955 & 0.919 & 0.068 & 0.849\\
+MAGeCK-MLE & 0.958 & 0.922 & 0.005 & 0.713\\
+CRISPhieRmix & 0.931 & 0.871 & 0.207 & 0.784\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[htbp]
 \centering
@@ -25,10 +45,13 @@ BARCS-MOD moderation effect.}
 \label{fig:crispulator}
 \end{figure}
 
-Figure~\ref{fig:crispulator} shows that the gain persisted across requested
-thresholds and at both simulated multiplicities of infection.  The
-genome-scale comparator set was restricted to MAGeCK-MLE and CRISPhieRmix; it
-therefore supports the moderation ablation, not a universal method ranking.
-In a broader 400-gene comparison, edgeR-QL, DESeq2, and limma--voom matched or
-exceeded BARCS ranking but had higher realized FDP.  Ranking and calibration
-thus favored different methods.
+The moderation gain persisted across requested thresholds and at both
+simulated multiplicities of infection (Figure~\ref{fig:crispulator}).
+MAGeCK-MLE slightly exceeded BARCS-MOD in AUROC and average precision while
+operating at a much lower realized FDP; CRISPhieRmix operated at a higher FDP
+(Table~\ref{tab:crispulator-comparators}).  Thus the nominal-threshold
+comparison does not define one universal winner.  In the broader 400-gene
+comparison, edgeR-QL, DESeq2, and limma--voom matched or exceeded BARCS
+ranking.  After matching methods on realized FDP, no method separated from
+the others above an FDP of 0.005.  Ranking and calibration therefore describe
+different operating characteristics.

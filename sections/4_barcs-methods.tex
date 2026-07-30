@@ -26,7 +26,10 @@ For HAP1, HEK293FT, MDA-MB-231, and THP1, days 0, 7, and 14 were fitted
 jointly with continuous time and a replicate indicator.  K562 was excluded
 because one day-0 replicate was absent.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
 and limma--voom received the identical rounded matrix and tested the same time
-slope.  Known essential genes were positives; unexpressed targeted lncRNAs
+slope.  The same non-targeting-control scaling rule was applied to all five
+methods after their native gene summaries.  A BARCS endpoint fit using only
+days 0 and 14 tested the value of the intermediate time point.  Known
+essential genes were positives; unexpressed targeted lncRNAs
 were proxy nulls.  Because the deposited values were already normalized and
 ComBat-corrected, this analysis was treated as a processed-count sensitivity
 study.
@@ -37,7 +40,9 @@ The IL2RA screen comprised four ordered FACS bins from each of three donors.
 BARCS fitted one ordered-bin score with donor indicators, and MAGeCK-MLE
 received the same design.  Of 593 non-targeting guides, four folds estimated
 the control scale and the omitted fold evaluated it; this was repeated across
-five deterministic folds.  Method discoveries were compared with 26 regulators
+five deterministic folds.  A seeded permutation of fold assignments checked
+that identifier ordering did not determine the result.  Method discoveries
+were compared with 26 regulators
 validated by individual knockout and flow cytometry.  Waterbear and MAUDE
 results were taken from their published analyses of the same experiment.
 

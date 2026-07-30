@@ -1,0 +1,22 @@
+% !TeX root = ../../main.tex
+\subsubsection{Sanson A375 endpoint and copy-number audit}
+
+The Brunello A375 screen contained plasmid and terminal biological libraries
+with guide-to-gene mappings and the reference-essential and nonessential sets
+distributed with CB\textsuperscript{2} \citep{sanson2018optimized,
+hart2017evaluation}.  BARCS fitted a plasmid-versus-terminal coefficient to
+each guide using the full mapped-guide totals.  Guide evidence was aggregated
+by a two-sided directional Stouffer statistic, with the median guide
+coefficient as the gene effect.  Official MAGeCK-MLE 0.5.9.5 received the same
+counts and two-column design and used median normalization
+\citep{li2014mageck}.
+
+AUROC, average precision, directional recall, and realized false-discovery
+proportion were evaluated on the common copy-number-complete reference set.
+Uncertainty in paired AUROC and average-precision differences was estimated by
+2,000 stratified bootstrap resamples of genes.  Copy-number sensitivity used
+the A375 profile from DepMap Public 19Q3 \citep{depmap19q3}.  The official
+MAGeCK piecewise post-fit correction was applied to both methods' gene-effect
+vectors; probabilities were not recomputed because the correction changes the
+effect ranking rather than refitting either likelihood
+\citep{meyers2017cnv}.
