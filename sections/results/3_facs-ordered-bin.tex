@@ -14,57 +14,58 @@ slope with donor indicators.  Official MAGeCK-MLE received the same design.
 This experiment also provides a direct model diagnostic.  Bins from one donor
 partition the same cell pool and are negatively dependent, whereas the
 guide-level BARCS fit treats their margins independently.  Among 593
-non-targeting guides, the uncalibrated $p<0.05$ frequency was 0.133.  We
-therefore scaled the guide statistics by the prespecified control procedure
-\texttt{bb\_calibrate\_controls()}, which reduced the empirical rate to 0.051
-without changing effect estimates or their ranking.
+non-targeting guides, the uncalibrated $p<0.05$ frequency was 0.133.  Because
+\texttt{bb\_calibrate\_controls()} estimates its scale from the control tail,
+evaluating those same guides after fitting would be circular.  We therefore
+used deterministic five-fold cross-fitting: each guide was evaluated with a
+scale estimated from the other four folds.  The held-out $p<0.05$ rate was
+0.049.  The production gene analysis used all controls to estimate one scale;
+calibration does not change effect estimates or their ranking.
 
 \begin{table}[htbp]
 \centering
-\caption{Ordered-bin IL2RA benchmark.  Recovery requires a discovery at each
-method's threshold and the experimentally validated direction.}
+\caption{Ordered-bin IL2RA sensitivity analysis.  Recovery requires a
+discovery at each method's threshold and the experimentally validated
+direction.  The BARCS NTC rate is five-fold held out; it is not measured on the
+controls used to estimate that fold's scale.  Validation yield is the number
+of validated regulators recovered divided by all discoveries; it is a
+descriptive efficiency ratio, not an odds ratio.}
 \label{tab:waterbear}
 \small
-\setlength{\tabcolsep}{6pt}
-\begin{tabular}{lrrr}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
 \toprule
-Method & Discoveries & Validated recovery & NTC $p<0.05$\\
+Method & Discoveries & Validated & Validation yield & NTC $p<0.05$\\
 \midrule
 \methodswatch{barcsblue} BARCS, four bins + controls &
-49 & 22/26 & 0.051\\
+49 & 22/26 & 22/49 (44.9\%) & 0.049\\
 \methodswatch{barcsblue} BARCS, four bins raw &
-127 & 23/26 & 0.133\\
+127 & 23/26 & 23/127 (18.1\%) & 0.133\\
 \methodswatch{barcsblue} BARCS, outer bins &
-34 & 18/26 & 0.064\\
+34 & 18/26 & 18/34 (52.9\%) & 0.064\\
 \methodswatch{mageckorange} MAGeCK-MLE, four bins &
-72 & 17/26 & ---\\
+72 & 17/26 & 17/72 (23.6\%) & ---\\
 \methodswatch{mageckorange} MAGeCK test, outer bins &
-30 & 18/26 & ---\\
-\methodswatch{waterbearpurple} Waterbear, four bins &
-79 & 24/26 & ---\\
-\methodswatch{maudered} MAUDE, four bins &
-406 & 25/26 & ---\\
+30 & 18/26 & 18/30 (60.0\%) & ---\\
+\methodswatch{waterbearpurple} Waterbear, four bins \citep{pimentel2024waterbear} &
+79 & 24/26 & 24/79 (30.4\%) & ---\\
+\methodswatch{maudered} MAUDE, four bins \citep{deboer2020maude} &
+406 & 25/26 & 25/406 (6.2\%) & ---\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Control-calibrated BARCS recovered 22 of 26 validated regulators with 49
 discoveries, compared with 17 of 26 and 72 discoveries for the matched
-MAGeCK-MLE fit (Table~\ref{tab:waterbear}).  The outer-bin ablation recovered
-18 regulators under both BARCS and \texttt{mageck test}.  The intermediate
-bins therefore contributed information that was lost by the binary
-comparison.  In the selected 33-gene experimental follow-up panel, calibrated
-BARCS had F1 0.863, Matthews correlation 0.398, and balanced accuracy 0.709;
-the corresponding MAGeCK-MLE values were 0.723, 0.070, and 0.541.  Because the
-panel was selected for follow-up from a previous screen, these metrics are
-supporting evidence rather than unbiased genome-wide accuracy estimates.
+MAGeCK-MLE fit (Table~\ref{tab:waterbear}).  This corresponds to validation
+yields of 44.9\% and 23.6\%, respectively.  The four-bin BARCS model also
+recovered four regulators missed by its outer-bin fit, showing what the
+ordered intermediate bins contributed beyond a binary comparison.
 
 The specialist models remain important comparators.  Waterbear recovered 24
-validated regulators by modeling joint bin probabilities, guide-to-gene
-structure, and uncertain cutoffs.  MAUDE recovered 25 but called 406 of 1,350
-genes; in a held-out-control analysis its empirical false-positive rate was
-0.095 at a nominal 0.05.  BARCS is therefore not the most faithful
-generative model for sorted bins.  Its contribution is a transparent,
-general-purpose coefficient analysis that retains the ordered phenotype and
-donor adjustment, with negative controls making the independence violation
-visible and correctable at the chosen operating point.
+validated regulators and MAUDE recovered 25, but with 79 and 406 discoveries.
+BARCS therefore offered the strongest recovery-per-discovery ratio among the
+four-bin models shown, while Waterbear remained the more faithful generative
+model for correlated sorted bins.  Negative controls diagnose the independence
+violation and calibrate one operating point; they do not make the bin margins
+independent.

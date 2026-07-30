@@ -389,8 +389,8 @@ rather than a finite-sample guarantee. At MOI 0.30, BARCS-moderated holds
 | MAGeCK-MLE | **0.306** | 0.306 | 0.306 | 0.306 | 0.403 | 0.622 | 0.718 |
 | CRISPhieRmix | 0.000 | 0.004 | 0.080 | 0.321 | 0.634 | 0.780 | 0.785 |
 
-Restricted to CRISPR-specific callers the ordering is stable: BARCS-moderated
-leads at every cutoff from 1e-5 to 0.10. The lone exception is 1e-6, where
+Within this restricted CRISPR-specific set, BARCS-moderated has the largest F1
+at every cutoff from 1e-5 to 0.10. The lone exception is 1e-6, where
 MAGeCK-MLE's 0.306 is a quantization artifact — its call count is identically
 358 from 1e-6 to 3e-3 — rather than a measurement. CRISPhieRmix is the mirror
 image, collapsing to 0.000 and 0.004 at the strict end because it has stopped
@@ -411,26 +411,22 @@ reason alone.
 | CRISPhieRmix | 0.372 | 0.415 | 0.488 | 0.553 | 0.640 | 0.725 | 0.775 |
 | **Spread** | 0.268 | 0.262 | 0.236 | 0.211 | 0.168 | 0.113 | 0.072 |
 
-**BARCS-moderated leads at every matched realized FDP**, from 0.640 against
-0.372–0.491 at a matched 0.001 to 0.847 against 0.775–0.819 at 0.10. Holding
-the error rate fixed is the point: at the same realized error rate, moderated
-BARCS recovers more genes than either CRISPR-specific comparator. The lead
-narrows as the budget grows, 0.268 of spread at 0.001 down to 0.072 at 0.10,
-which is what should happen when every method is allowed to be wrong more
-often.
+Within this restricted set, BARCS-moderated has the largest interpolated F1 at
+each matched realized FDP, from 0.640 against 0.372--0.491 at 0.001 to 0.847
+against 0.775--0.819 at 0.10. This is not a general method-ranking result:
+edgeR-QL, DESeq2, and limma-voom were omitted from the 10,000-gene run, and the
+400-gene comparison shows that they close the apparent gap.
 
 Two caveats. MAGeCK-MLE's two strictest entries rest on its quantized FDR and
 are indicative only, and it has no entry at matched 0.05 or 0.10 because it
 never becomes that liberal — absence there is conservatism, not failure.
-**BARCS-MOD over BARCS-ST is the cleanest comparison**, larger at every
+**BARCS-MOD over BARCS-ST is the supported comparison**, larger at every
 matched error rate, so moderation is a real gain within the BARCS family
 rather than a threshold artifact.
 
-Note that this reverses the earlier reading. When the general count models
-were in the comparison, F1 converged above a matched 0.005 and no method
-separated. Restricted to CRISPR-specific callers the separation is clear
-throughout — the count models were the methods that closed the gap, by
-operating at error rates BARCS never reaches.
+When the general count models are included, F1 converges above a matched 0.005
+and no method separates. The restricted curves are therefore retained only for
+the BARCS moderation ablation.
 
 #### MAGeCK-MLE is not resolvable at strict cutoffs
 
@@ -601,8 +597,8 @@ $$
 
 Thus these four methods differ in their guide-level count model, not in the
 final gene combiner. MAGeCK-MLE uses its native joint gene model and two-sided
-Wald probability. MAGeCK-RRA's `neg` result and Liang RRA retain their native
-depletion-tail probabilities.
+Wald probability. Endpoint RRA summaries are excluded because they do not
+estimate the continuous longitudinal coefficient used in this comparison.
 
 In HAP1, the extra guide-level models recover more of the 60 essential
 controls at FDR 0.10, while BARCS has the best nominal null specificity:

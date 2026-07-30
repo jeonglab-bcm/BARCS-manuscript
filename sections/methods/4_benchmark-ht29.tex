@@ -2,9 +2,8 @@
 \subsubsection{Longitudinal HT-29 benchmark}
 
 Guide counts for the HT-29 time course of \citet{tzelepis2016dropout} were
-obtained from Data S2 of that article, file
-\texttt{grna\_counts\_HT29C-clone3\_d7-25-HT1080.txt}, retrieved from the Europe
-PMC supplementary bundle for PMC5081405.  The three sequencing columns reported
+obtained from Data S2 of that article through the Europe PMC supplementary
+bundle for PMC5081405.  The three sequencing columns reported
 at each of days 7, 10, 13, 16, 19, 22, and 25 were summed to one column per
 harvest and combined with the pDNA measurement, and guides with fewer than 30
 pDNA reads were removed, leaving 86,882 guides targeting 17,995 genes.  Library
@@ -16,13 +15,16 @@ and official MAGeCK-MLE 0.5.9.5 were both fitted to this eight-column matrix
 under an identical design, in which pDNA is day 0 and the tested predictor is
 day divided by 25, so the two continuous-time fits differ only in the
 likelihood.  A minimum total count of 30 was applied within the BARCS fit.
+Because all late samples are serial harvests of one culture, these fits are
+used as descriptive trajectory scores; their residual-$t$ or Wald
+probabilities are not interpreted as independent-sample inference.
 
 Comparator effects were not recomputed.  The joint Chronos, per-endpoint
 MAGeCK, and per-endpoint BAGEL2 effect matrices were taken as deposited in
 Chronos Figshare article 14067047 \citep{chronosfigshare2021}, as were the
 reference essential and nonessential gene lists; the corresponding individual
-file identifiers are 26548532, 26548541, 30847513, 26548550, and 26548553.  As
-Those two matrices carry one column per day; the day-25 column is used
+file identifiers are 26548532, 26548541, 30847513, 26548550, and 26548553.
+The latter two matrices carry one column per day; the day-25 column is used
 directly, so the comparator is a single observed endpoint at the deepest time
 point rather than a summary across days.
 
@@ -36,8 +38,6 @@ MAGeCK 0.5.9.5's official piecewise \texttt{--cnv-norm} normalizer applied after
 model fitting.  Because that profile was measured independently of the screen,
 cell-line drift is a limitation of the copy-number analysis.
 
-The analysis is reproduced by \repofile{examples/chronos_tzelepis_benchmark.R},
-which calls the MAGeCK executable through \repofile{scripts/mageck_compat.py}
-and \repofile{scripts/mageck_cnv_correct.py} and writes the tables reported
-here.  Provenance for each downloaded input is recorded in
-\repofile{data/raw/chronos/README.md}.
+The deposited workflow records the source identifier and checksum of every
+downloaded input, executes the official MAGeCK model and copy-number
+normalizer, and reproduces the tables reported here.

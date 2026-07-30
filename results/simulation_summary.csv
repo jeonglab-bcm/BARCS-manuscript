@@ -1,4 +1,5 @@
 "method","null_type_I_at_0.05","power_at_0.05","discoveries_at_FDR_0.05","empirical_FDR","effect_RMSE","coverage_95"
 "naive binomial z",0.84375,1,174,0.770114942528736,0.158256054430274,0.185
 "beta-binomial t",0.08125,1,46,0.130434782608696,0.155906104379348,0.935
+"beta-binomial moderated t",0.0875,1,44,0.0909090909090909,0.155906104379348,0.935
 "official MAGeCK-MLE Wald",0.0375,0.975,41,0.048780487804878,0.139595453039876,0.97

@@ -1,49 +1,54 @@
 % !TeX root = ../main.tex
-BARCS extends the beta-binomial sampling principle established by
-CB\textsuperscript{2}.  Pooled-guide counts are represented as proportions
-conditional on observed library totals, and the mean is generalized from two
-groups to an arbitrary design matrix.  The resulting estimand is an ordinary
-coefficient: a time slope, dose response, adjusted treatment effect,
-interaction, or prespecified contrast.
+BARCS extends a CRISPR-specific beta-binomial sampling principle to arbitrary
+design matrices.  The contribution is not a new probability distribution; it
+is the ability to estimate time, covariate, and interaction coefficients while
+conditioning every guide on the full mapped-guide total.
 
-Goodness-of-fit comparisons in the original CB\textsuperscript{2} study
-favored the beta-binomial representation of pooled-guide counts
-\citep{jeong2019beta}.  The present results extend that advantage to
-regression designs.  BARCS maintained comparable essential-gene
-discrimination in HT-29 and substantially improved longitudinal null
-calibration in the Liang screens while using the known library denominator
-directly.
+The longitudinal Cas13 analysis demonstrates that extension directly.  BARCS
+used all three time points with a replicate block and returned fewer
+significant proxy-null trajectories than the alternative count methods.
+Those alternatives ranked known essential genes more strongly, so the main
+finding is a calibration--ranking tradeoff on a transformed matrix.  Raw reads
+are needed to determine how much of that difference comes from the sampling
+model rather than upstream normalization.
 
-The two longitudinal analyses are the principal evidence for generalization.
-HT-29 demonstrates that BARCS can analyze eight time points without reducing
-them to an endpoint contrast.  The Liang reanalysis uses days 0, 7, and 14
-jointly across five cell lines, rather than the previous day-0/day-14
-comparison.  Together they show that the method performs the analysis that
-CB\textsuperscript{2} cannot express.  The IL2RA experiment extends the same
-argument to an ordered phenotype with donor adjustment, where intermediate
-bins improved validated-regulator recovery over an outer-bin comparison.
+The IL2RA experiment provides the clearest real-data efficiency result.
+Donor-adjusted BARCS recovered 22 validated regulators in 49 discoveries,
+compared with 17 in 72 for the matched MAGeCK-MLE design.  The intermediate
+FACS bins contributed four regulators beyond the BARCS outer-bin analysis, and
+five-fold control cross-fitting reduced the held-out non-targeting rate to the
+nominal level.  Waterbear remains better aligned with the joint-bin data
+structure, but BARCS provides a simple coefficient analysis when ordered
+phenotypes and covariates must be handled together.
 
-The simulations refine the performance claim.  BARCS-MOD provided the best F1
-at matched realized false-discovery proportions across the evaluated
-operating points.  The factorial simulation further showed that replacing the
-full library with prespecified control guides increased interaction F1 from
-0.481 to 0.917.  The sampling model, normalization contract, dispersion
-estimator, and calibration procedure therefore form one analysis pipeline.
+The simulations identify two practical components of that analysis.
+Dispersion moderation improved precision and F1 without increasing realized
+FDP in the genome-scale FACS screen.  In the factorial screen, control-based
+denominators prevented global depletion from shifting true-zero interactions
+and nearly doubled F1 relative to the full-library denominator.  The latter
+result is not a universal recommendation to replace full-library totals:
+control denominators are appropriate when stable controls define the intended
+composition reference, and their choice must match whether cutting artifacts
+should be retained or absorbed.
 
-The external false-discovery audit reinforces the importance of that contract
-(Supplementary Table~\ref{tab:chronosaudit}).  Preserving immutable
-full-library totals reduced the Avana null-only result from 152 reported false
-discoveries to zero on the identical evaluation genes.  In the independent
-PSN1 null split, BARCS produced 4.81\% guide $p<0.05$ and no gene discoveries.
-These results show that the denominator must remain part of the
-beta-binomial sampling model after guide filtering.
+Finally, the external audit shows why the analysis contract must be explicit.
+Subsetting guides before fitting changed the beta-binomial denominator and
+converted 152 reported null calls to zero when full-library totals were
+preserved.  This does not resolve every calibration question, but it
+demonstrates that equal preprocessing is not necessarily equal statistical
+input for models that use sequencing depth differently.
 
-The appropriate method remains design dependent.  CB\textsuperscript{2} is a
-direct choice for one prespecified two-group contrast.  BARCS is appropriate
-when independent libraries lie on a quantitative or multivariable design.
-Waterbear is preferable when joint FACS-bin dependence is central, and
-Chronos is preferable when knockout timing and population dynamics are the
-scientific model.  Negative controls should be used for calibration when
-available, and post-fit copy-number correction should be accepted only after a
-null-gene diagnostic.  These are not exceptions to the main claim; they define
-its domain.
+The resulting story is consistent across datasets.  BARCS generalizes the
+beta-binomial screen model beyond two groups; longitudinal and ordered-bin
+examples show what the additional coefficients recover; and simulations and
+audits identify the dispersion, denominator, replication, and calibration
+conditions needed for reliable use.
+
+Two conditions delimit confirmatory use.  First, the coefficient reference
+distribution requires independent biological libraries.  FACS bins from one
+donor form a compositional partition, and the HT-29 harvests derive from one
+passaged culture; these settings require a joint-bin, blocked, or
+repeated-measures model.  Second, calibration must be evaluated independently
+of calibration fitting.  A control used to estimate the scale cannot also
+provide an unbiased assessment of that scale, so held-out controls,
+cross-fitting, or an independent experiment are required.

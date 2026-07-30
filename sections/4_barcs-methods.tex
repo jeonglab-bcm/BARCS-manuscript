@@ -1,11 +1,63 @@
 % !TeX root = ../main.tex
-% Methods subsections, in narrative order.
-\input{sections/methods/0_cb2-to-barcs}
-\input{sections/methods/1_model}
-\input{sections/methods/2_estimation-irls}
-\input{sections/methods/3_inference}
-\input{sections/methods/4_benchmark-ht29}
-\input{sections/methods/5_benchmark-crispulator}
-\input{sections/methods/6_benchmark-simcrispr}
-\input{sections/methods/7_benchmark-liang}
-\input{sections/methods/8_legacy-equivalence}
+\subsection{Model and inference}
+
+For guide $g$ in library $i$, BARCS models the count conditional on the
+unfiltered mapped-guide total:
+\begin{equation}
+K_{gi}\mid N_i\sim
+\operatorname{BetaBinomial}(N_i,\mu_{gi},\rho_g),
+\qquad
+\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g .
+\label{eq:barcs-model}
+\end{equation}
+The design vector can contain time, dose, donor, batch, treatment, and
+interaction terms.  Coefficients are estimated by beta-binomial weighted
+logistic regression.  A prespecified coefficient or contrast is divided by
+its model-based standard error and compared with a Student $t$ distribution
+using residual sample degrees of freedom.  All reported tests are two-sided,
+and guide- or gene-level probabilities are adjusted by Benjamini--Hochberg.
+Optional dispersion moderation and control scaling are fitted without changing
+the coefficient estimate.  Full estimation and aggregation details are given
+in the Supplement.
+
+\subsection{Longitudinal Cas13 analysis}
+
+For HAP1, HEK293FT, MDA-MB-231, and THP1, days 0, 7, and 14 were fitted
+jointly with continuous time and a replicate indicator.  K562 was excluded
+because one day-0 replicate was absent.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
+and limma--voom received the identical rounded matrix and tested the same time
+slope.  Known essential genes were positives; unexpressed targeted lncRNAs
+were proxy nulls.  Because the deposited values were already normalized and
+ComBat-corrected, this analysis was treated as a processed-count sensitivity
+study.
+
+\subsection{Ordered-bin IL2RA analysis}
+
+The IL2RA screen comprised four ordered FACS bins from each of three donors.
+BARCS fitted one ordered-bin score with donor indicators, and MAGeCK-MLE
+received the same design.  Of 593 non-targeting guides, four folds estimated
+the control scale and the omitted fold evaluated it; this was repeated across
+five deterministic folds.  Method discoveries were compared with 26 regulators
+validated by individual knockout and flow cytometry.  Waterbear and MAUDE
+results were taken from their published analyses of the same experiment.
+
+\subsection{Simulation benchmarks}
+
+CRISPulator generated three 10,000-gene FACS screens with five guides per gene
+and four independent replicates.  BARCS-ST and BARCS-MOD differed only by
+guide-dispersion moderation.  simCRISPR generated three factorial
+knockout-by-treatment screens with 2,000 sgRNAs and three replicates per arm.
+Its known interaction effects allowed direct comparison of full-library,
+non-targeting, and safe-harbor denominators.  Control guides used for
+normalization and calibration were held out from scoring.
+
+\subsection{External and supplementary analyses}
+
+The external false-discovery audit re-evaluated the deposited Avana
+CB\textsuperscript{2} probabilities using full-library totals and ran BARCS on
+the deposited PSN1 and DeWeirdt normalized tables.  Supplementary analyses
+include the serial-harvest HT-29 screen, a four-coefficient GSE70038 screen
+with method-specific pathway enrichment, and the Sanson A375 endpoint and
+copy-number audit.  The Supplement reports their complete preprocessing,
+design, and scoring definitions in the same order as the corresponding
+results.

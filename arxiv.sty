@@ -1,0 +1,52 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{arxiv}[2026/07/30 Clean arXiv preprint layout]
+
+\RequirePackage[
+  letterpaper,
+  top=0.9in,
+  bottom=1in,
+  left=0.8in,
+  right=0.8in,
+  headheight=14pt,
+  headsep=0.22in
+]{geometry}
+\RequirePackage{fancyhdr}
+
+\makeatletter
+\newcommand{\@shorttitle}{BARCS}
+\newcommand{\@shortauthor}{Jeong}
+\newcommand{\shorttitle}[1]{\renewcommand{\@shorttitle}{#1}}
+\newcommand{\shortauthor}[1]{\renewcommand{\@shortauthor}{#1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\textsc{\@shorttitle}}
+\fancyhead[R]{\footnotesize\@shortauthor}
+\fancyfoot[C]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\renewcommand{\maketitle}{%
+  \thispagestyle{fancy}%
+  \begin{center}
+    \vspace*{0.15in}
+    {\LARGE\bfseries \@title\par}
+    \vspace{0.28in}
+    {\large \@author\par}
+    \ifx\@date\@empty\else
+      \vspace{0.12in}
+      {\normalsize \@date\par}
+    \fi
+  \end{center}
+  \vspace{0.22in}
+}
+\makeatother
+
+\renewenvironment{abstract}
+  {\begin{center}\bfseries Abstract\end{center}\begin{quotation}\small}
+  {\end{quotation}\vspace{0.12in}}
+
+\setlength{\parindent}{1.25em}
+\setlength{\parskip}{0pt}
+\setlength{\textfloatsep}{14pt plus 3pt minus 3pt}
+\setlength{\floatsep}{12pt plus 3pt minus 3pt}

@@ -1,63 +1,34 @@
 % !TeX root = ../../main.tex
-\subsection{Genome-scale simulation separates ranking from calibrated
-discovery}
+\subsection{Dispersion moderation improves BARCS in genome-scale simulation}
 \label{sec:crispulator}
 
-We used CRISPulator to evaluate a genome-scale FACS design under known truth
+We used CRISPulator to evaluate a FACS design under known truth
 \citep{nagy2017crispulator}.  Three prespecified seeds each generated 10,000
 genes, five guides per gene, four independent replicates, and low, bulk, and
-high fractions.  Twenty percent of genes affected the phenotype and 5\% were
-explicit negative controls.  All methods received the same simulated counts
-and design.
+high fractions.  All methods received the same counts and design.
 
-Two BARCS statistics were evaluated.  BARCS-ST uses the original guide-wise
-dispersion estimates and a calibrated signed-$z$ gene summary.  BARCS-MOD
-moderates each guide's dispersion toward an abundance-dependent trend before
-the same gene summary.  The comparison methods were MAGeCK-MLE and
-CRISPhieRmix, two CRISPR-specific gene callers with different operating
-characteristics \citep{li2015mageckvispr,daley2018crisphiermix}.
-
-The methods ranked genes similarly but converted those rankings into
-discoveries differently.  MAGeCK-MLE had the
-highest average precision and effect correlation, although its average
-precision exceeded BARCS-MOD by only 0.002.  It used little of the permitted
-error budget (FDP 0.006) and consequently recovered fewer active genes.
-CRISPhieRmix attained nearly the same recall as BARCS-MOD but at FDP 0.197.
-BARCS-MOD occupied the intermediate and intended operating point: recall 0.774
-at FDP 0.066, yielding the highest F1.
-
-Dispersion moderation improved both ranking and decision performance without
-changing the point estimates.  Average precision increased from 0.902 to
-0.919 and F1 from 0.811 to 0.847, while realized FDP remained essentially
-unchanged.  The moderation prior was estimated from 50,000 guides, providing
-42.7--45.8 prior degrees of freedom in addition to seven residual degrees of
-freedom per guide.  This library-wide information stabilizes noisy
-guide-specific variance estimates without treating reads as biological
-replicates.
-
-Because a fixed nominal threshold can place methods at different realized
-error rates, we also interpolated F1 at matched FDP.  BARCS-MOD led at every
-shared operating point: its F1 was 0.640, 0.724, 0.764, 0.808, and 0.838 at
-realized FDP 0.001, 0.005, 0.01, 0.02, and 0.05, respectively.  The
-corresponding ranges across the other methods were 0.372--0.491,
-0.488--0.666, 0.553--0.739, 0.640--0.789, and 0.725--0.795.  MAGeCK-MLE did
-not reach FDP 0.05 on the scanned grid because it remained more conservative.
+The comparison isolates one change within BARCS.  BARCS-ST uses the original
+guide-specific dispersion estimate, whereas BARCS-MOD moderates those
+estimates before applying the same gene summary.  Moderation increased average
+precision from 0.902 to 0.919 and F1 at gene FDR 0.10 from 0.811 to 0.847,
+while realized FDP remained nearly unchanged (0.065 and 0.066).  This supports
+dispersion moderation within the common BARCS pipeline.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/crispulator_facs_moi_10k_f1_by_fdr.pdf}
-\caption{\textbf{Calibration and F1 across requested gene-FDR thresholds.}
-(A,B) MOI 0.20 and (C,D) MOI 0.30.  F1 is shown on the left and realized FDP
-on the right; the dashed diagonal denotes realized FDP equal to the requested
-threshold.  BARCS-MOD maintains high F1 while remaining below the diagonal
-over the informative range.}
+\caption{\textbf{CRISPulator threshold sensitivity.}  (A,B) MOI 0.20 and
+(C,D) MOI 0.30.  F1 is shown on the left and realized FDP on the right; the
+dashed diagonal denotes realized FDP equal to the requested threshold.  The
+shared simulation, gene summary, and thresholds isolate the BARCS-ST versus
+BARCS-MOD moderation effect.}
 \label{fig:crispulator}
 \end{figure}
 
-The result was reproduced at MOI 0.30: BARCS-MOD reached F1 0.841 at FDP
-0.070, CRISPhieRmix reached comparable recall at FDP 0.217, and MAGeCK-MLE
-again ranked marginally best while calling least.  These simulations therefore
-support the calibrated-discovery performance of BARCS.  They also show why
-the beta-binomial model alone is insufficient:
-the practical gain depends on stable dispersion estimation and a threshold
-whose realized error rate is measured.
+Figure~\ref{fig:crispulator} shows that the gain persisted across requested
+thresholds and at both simulated multiplicities of infection.  The
+genome-scale comparator set was restricted to MAGeCK-MLE and CRISPhieRmix; it
+therefore supports the moderation ablation, not a universal method ranking.
+In a broader 400-gene comparison, edgeR-QL, DESeq2, and limma--voom matched or
+exceeded BARCS ranking but had higher realized FDP.  Ranking and calibration
+thus favored different methods.

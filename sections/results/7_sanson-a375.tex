@@ -1,72 +1,54 @@
 % !TeX root = ../../main.tex
 \subsection{Endpoint benchmark and copy-number audit}
 
-To ask which method ranks biological dependencies better, we used the
-Brunello A375 negative-selection screen of \citet{sanson2018optimized}, bundled
-with CB\textsuperscript{2}.  This is an ordinary endpoint screen rather than a
-continuous-phenotype experiment, but it supplies an external target unavailable
-in GSE70038: reference essential genes should rank ahead of reference
-nonessential genes \citep{hart2017evaluation}.  The beta-binomial score combines guide
-evidence by directional Stouffer aggregation; the MAGeCK score uses the
-official MLE beta and Wald $p$-value.  Both are oriented so larger scores mean
-stronger depletion.
+We used the Brunello A375 negative-selection screen of
+\citet{sanson2018optimized}, bundled with CB\textsuperscript{2}, as a
+descriptive endpoint benchmark.  Reference essential genes are positives and
+reference nonessential genes are negatives \citep{hart2017evaluation}.  The
+common copy-number-complete set contains 1,506 essential and 869 nonessential
+genes, so its positive prevalence is 63.4\%.  F1 and recall in this enriched
+set must therefore be interpreted together with the realized false-discovery
+proportion.
 
-\subsubsection{Copy-number-aware analysis}
-
-Copy number is a gene-level property of A375, not a sample-level covariate:
-for a given guide it is constant across the plasmid and three terminal
-libraries.  Adding it directly to the four-row sample design would therefore
-be non-identifiable with the endpoint effect.  Instead, we downloaded the
-A375 gene-level profile (ACH-000219) from DepMap Public 19Q3
-\citep{depmap19q3,meyers2017cnv} and used MAGeCK 0.5.9.5's official
-\texttt{--cnv-norm} piecewise correction.  For an apples-to-apples comparison,
-the same MAGeCK piecewise normalizer was applied to the beta-binomial
-within-gene median effects.  It adjusts effect sizes after model fitting; it
-does not refit either count likelihood.  The common CNV-complete evaluation set
-contains 1,506 essential and 869 nonessential genes.
+Copy number is a gene-level property of A375 and is constant across the plasmid
+and terminal libraries, so it cannot be identified as a sample-level
+coefficient.  We instead applied MAGeCK 0.5.9.5's official post-fit piecewise
+correction to both methods' gene effects using the A375 profile from DepMap
+Public 19Q3 \citep{depmap19q3,meyers2017cnv}.  This changes effect rankings but
+does not refit either count likelihood.
 
 \begin{table}[ht]
 \centering
-\caption{CNV-aware Sanson A375 benchmark.  The final column is Spearman
-correlation between effect and copy number among reference nonessential genes;
-values nearer zero indicate less residual CNV-associated depletion.  F1 uses
-nominal FDR 0.05 and a negative effect.  Higher discrimination metrics and
-CNV correlation closest to zero are highlighted.}
+\caption{Sanson A375 endpoint sensitivity analysis.  Recall and gold-set FDP
+use nominal FDR 0.05 and a negative effect.  The last column is Spearman
+correlation between effect and copy number among reference nonessential genes.
+No maximum is highlighted because the ranking confidence intervals overlap and
+the gold-standard set is enriched for positives.}
 \label{tab:sanson}
 \small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrr}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrrrr}
 \toprule
-Method & AUROC & Avg. precision & F1 & CNV correlation\\
+Method & AUROC & Avg. precision & Recall & Gold-set FDP & CNV corr.\\
 \midrule
 \methodswatch{barcsblue} BARCS &
-  \textcolor{barcsblue}{\textbf{0.9598}} & 0.9786 &
-  \textcolor{barcsblue}{\textbf{0.8531}} & $-0.185$\\
+0.9598 & 0.9786 & 0.7231 & 0.0118 & $-0.185$\\
 \methodswatch{barcsblue} BARCS + CNV &
-  0.9533 & 0.9762 & \textcolor{barcsblue}{\textbf{0.8531}} & $-0.042$\\
+0.9533 & 0.9762 & 0.7231 & 0.0118 & $-0.042$\\
 \methodswatch{mageckorange} Official MAGeCK-MLE &
-  \textcolor{mageckorange}{\textbf{0.9598}} &
-  \textcolor{mageckorange}{\textbf{0.9795}} &
-  0.8277 & $-0.207$\\
+0.9598 & 0.9795 & 0.7098 & 0.0074 & $-0.207$\\
 \methodswatch{mageckorange} Official MAGeCK-MLE + CNV &
-  0.9501 & 0.9762 & 0.8277 &
-  \textcolor{mageckorange}{$\mathbf{-0.006}$}\\
+0.9501 & 0.9762 & 0.7098 & 0.0074 & $-0.006$\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-CNV correction substantially removes the intended nuisance association:
-$-0.185$ to $-0.042$ for beta-binomial effects and $-0.207$ to $-0.006$ for
-MAGeCK.  It does not improve essential-gene discrimination in this screen.
-AUROC decreases by 0.0066 and 0.0097, respectively, and the 0.05-FDR calls are
-unchanged.  This is not a contradiction: bias removal and gold-standard
-classification are different targets, and amplified genes can include both
-dependencies and nondependencies.
-
-After CNV correction, beta-binomial versus MAGeCK global ranking remains
-indistinguishable: the AUROC difference is 0.00316 (paired
-stratified-bootstrap 95\% CI $-0.00265$ to $0.00924$), and the average
-precision difference is effectively zero (95\% CI $-0.00349$ to $0.00295$).
-At nominal FDR 0.05, beta-binomial retains 4.18 percentage points more recall
-(95\% CI 2.66 to 5.71) and an F1 advantage of 0.0253 (95\% CI 0.0148 to
-0.0362).
+CNV correction reduces the intended nuisance association, from $-0.185$ to
+$-0.042$ for BARCS and from $-0.207$ to $-0.006$ for MAGeCK-MLE, but decreases
+AUROC for both methods.  After correction, the BARCS--MAGeCK AUROC difference
+is 0.00316 (paired stratified-bootstrap 95\% CI $-0.00265$ to $0.00924$), and
+the average-precision difference is effectively zero (95\% CI $-0.00349$ to
+$0.00295$).  At nominal FDR 0.05, BARCS has 1.33 percentage points more recall
+but also a larger realized FDP within the gold-standard set (0.0118 versus
+0.0074).  These data do not establish a ranking or calibration advantage for
+either count model.
