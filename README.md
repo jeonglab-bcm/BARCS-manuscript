@@ -129,9 +129,8 @@ commits the updated submodule pointer. See
   processed-count sensitivity analysis. BARCS and MAGeCK-MLE fit a
   longitudinal slope across days 0, 7, and 14, with edgeR-QL, DESeq2, and
   limma-voom fitted to the same design.
-- `examples/liang_hap1_specificity_volcano.R`: HAP1 null-control specificity
-  across p-value thresholds and matched BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
-  and limma-voom volcano plots using the processed pseudo-count inputs.
+- `examples/manuscript_liang_figure.R`: HAP1 guide-level volcano and
+  longitudinal count-trajectory figure for the Liang analysis.
 - `scripts/prepare_liang_cas13.R`,
   `scripts/count_liang_cas13_run.sh`, and
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
@@ -170,7 +169,7 @@ Rscript examples/crispulator_facs_f1_threshold_curves.R
 Rscript examples/waterbear_facs_benchmark.R
 Rscript examples/waterbear_facs_external_head_to_head.R
 Rscript examples/liang_cas13_benchmark.R
-Rscript examples/liang_hap1_specificity_volcano.R
+Rscript examples/manuscript_liang_figure.R
 Rscript -e 'devtools::test("CB2")'
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
@@ -193,7 +192,8 @@ non-expressed lncRNAs are null controls.
 All compared methods use the three deposited time points and estimate a
 continuous time slope. A replicate block is included for complete
 trajectories; K562 lacks one baseline replicate and therefore uses an
-unblocked slope.
+unblocked slope. The longitudinal regression comparisons use two-sided
+significance values and FDRs.
 
 Adding day 7 raises BARCS macro-average precision from 0.776 to 0.786 and
 FDR-0.10 essential-gene recall from 0.487 to 0.580. BARCS has lower null
@@ -205,10 +205,9 @@ relative to the matched negative-binomial regression without claiming
 an endpoint-only analysis.
 
 BARCS-original, edgeR-QL, DESeq2, and limma-voom all use unweighted signed-\(z\)
-aggregation after their respective guide-level fits. This holds the historical
-gene combiner fixed while comparing guide-level models. MAGeCK-MLE instead
-uses its native joint gene model; BARCS-partial and BARCS-EB use
-inverse-variance random-effects pooling and are not signed-\(z\) methods.
+aggregation of two-sided guide probabilities after their respective
+guide-level fits. This holds the gene combiner fixed while comparing
+guide-level models. MAGeCK-MLE instead uses its native joint gene model.
 
 The primary Liang result uses every valid guide. Mean BARCS--MAGeCK-MLE
 effect-rank correlation is 0.875 across cell lines. Versioned metrics,

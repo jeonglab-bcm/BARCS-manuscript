@@ -1,6 +1,0 @@
-"analysis_protocol","cell_line","input_scale","method","genes","discoveries_fdr_0_10","depleted_discoveries_fdr_0_10","essential_genes","essential_depleted_recovered_fdr_0_10","null_controls","null_p_below_0_05"
-"liang-hap1-longitudinal-specificity-volcano-v3","HAP1","rounded_normalized_ComBat_pseudocount","BARCS",8652,408,360,60,47,1570,0.0624203821656051
-"liang-hap1-longitudinal-specificity-volcano-v3","HAP1","rounded_normalized_ComBat_pseudocount","MAGeCK-MLE",8652,752,657,60,53,1570,0.128025477707006
-"liang-hap1-longitudinal-specificity-volcano-v3","HAP1","rounded_normalized_ComBat_pseudocount","edgeR-QL",8652,862,665,60,52,1570,0.117197452229299
-"liang-hap1-longitudinal-specificity-volcano-v3","HAP1","rounded_normalized_ComBat_pseudocount","DESeq2",8652,1036,759,60,53,1570,0.13312101910828
-"liang-hap1-longitudinal-specificity-volcano-v3","HAP1","rounded_normalized_ComBat_pseudocount","limma-voom",8652,866,648,60,52,1570,0.121656050955414

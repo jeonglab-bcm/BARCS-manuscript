@@ -25,7 +25,13 @@ time points.  K562 lacks one deposited day-0 replicate; all methods therefore
 used an unblocked time slope in that cell line rather than fitting an
 incomplete matched trajectory.  BARCS guide statistics were calibrated with
 the non-targeting controls and combined with the prespecified directional
-Stouffer summary.
+Stouffer summary.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom used
+two-sided guide or Wald probabilities.  For the four guide-level regression
+methods, coefficient direction was retained in the signed Stouffer score; the
+resulting gene probability was two-sided and was adjusted by the
+Benjamini--Hochberg procedure.  MAGeCK-RRA's negative-selection probability
+and the deposited Liang RRA probability were retained in their native
+depletion-tail form.
 
 Known-essential protein-coding genes were positives.  Cell-line-specific nulls
 were targeted lncRNAs with TPM equal to zero in both available expression
