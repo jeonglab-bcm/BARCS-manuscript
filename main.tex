@@ -1,17 +1,25 @@
 \documentclass[11pt]{article}
 
+\usepackage{arxiv}
 \input{preamble}
 
-\title{BARCS generalizes beta-binomial CRISPR-screen inference\\
-to longitudinal and covariate-adjusted designs}
-\author{Hyun-Hwan Jeong}
-\date{\today}
+\shorttitle{BARCS: beta-binomial regression for CRISPR screens}
+\shortauthor{Hyun-Hwan Jeong}
+\title{BARCS: beta-binomial regression for multivariable CRISPR screen designs}
+\author{Hyun-Hwan Jeong\\
+\normalsize Baylor College of Medicine\\
+\normalsize \texttt{hyun-hwan.jeong@bcm.edu}}
+\date{July 2026}
 
 \begin{document}
 
 \maketitle
 
 \input{sections/0_abstract}
+
+\noindent\textbf{Keywords:} CRISPR screen; beta-binomial regression;
+longitudinal design; count data; calibration
+\vspace{0.18in}
 
 \section{Introduction}
 \input{sections/1_introduction}
@@ -23,22 +31,14 @@ to longitudinal and covariate-adjusted designs}
 \section{Methods}
 \input{sections/4_barcs-methods}
 
-\section{Software and usage}
-\input{sections/5_software}
-
-\section{Discussion}
+\section{Discussion and conclusion}
 \input{sections/6_discussion}
-
-\section{Limitations}
-\input{sections/7_limitations}
-
-\section{Conclusion}
-\input{sections/8_conclusion}
 
 \bibliography{main}
 
 \clearpage
-\section*{Supplementary information}
+\appendix
+\section{Supplementary information}
 \input{sections/9_supplementary}
 
 \end{document}

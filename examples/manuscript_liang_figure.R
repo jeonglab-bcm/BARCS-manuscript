@@ -2,7 +2,8 @@
 
 # Manuscript Figure 1: longitudinal Liang method comparison.
 #
-# The upper rows show all five cell lines in method-specific volcano plots for
+# The upper rows show the four replicate-complete cell lines in method-specific
+# volcano plots for
 # BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom. Panels A-C show the
 # observed day 0, 7, and 14 guide-abundance trajectories for representative
 # false-positive calls.
@@ -23,7 +24,6 @@ if (!file.exists(score_path)) {
 cell_stems <- c(
   HAP1 = "HAP1",
   HEK293FT = "HEK293FT",
-  K562 = "K562",
   `MDA-MB-231` = "MDA_MB_231",
   THP1 = "THP1"
 )
@@ -181,9 +181,9 @@ write.csv(
   row.names = FALSE
 )
 
-# Extend the original method-specific gene-level volcano plots across all five
-# cell lines. Every method uses the same three-time-point longitudinal
-# estimand within each cell line.
+# Extend the original method-specific gene-level volcano plots across the four
+# replicate-complete cell lines. Every method uses the same three-time-point
+# longitudinal estimand with a replicate block within each cell line.
 volcano_methods <- c(
   "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
 )
@@ -210,14 +210,13 @@ if (!identical(
     sep = "::"
   )))
 )) {
-  stop("All 25 cell-line-by-method longitudinal results are required.")
+  stop("All 20 cell-line-by-method longitudinal results are required.")
 }
 
 barcs_colour <- barcs_method_colours[["BARCS"]]
 cell_line_colours <- c(
   HAP1 = "#0072B2",
   HEK293FT = "#009E73",
-  K562 = "#E69F00",
   `MDA-MB-231` = "#CC79A7",
   THP1 = "#D55E00"
 )
@@ -227,16 +226,32 @@ pdf(
     "figures", "liang_longitudinal_volcano_trajectories.pdf"
   ),
   width = 10.5,
-  height = 9.4,
+  height = 10.6,
+  pointsize = 15,
   useDingbats = FALSE
 )
 layout(
   matrix(seq_len(9), nrow = 3, byrow = TRUE),
-  heights = c(1, 1, 0.95)
+  heights = c(1, 1, 1.2)
 )
 
-common_xlim <- range(volcano_scores$effect)
-volcano_y_cap <- 60
+# A signed logarithmic x transform expands the dense region around zero while
+# retaining effect direction. A second logarithm on the usual -log10(p) axis
+# keeps extreme values visible without allowing them to dominate the panels.
+effect_scale <- 0.25
+signed_log_effect <- function(value) {
+  sign(value) * log10(1 + abs(value) / effect_scale)
+}
+double_log_p <- function(value) {
+  log10(1 - log10(pmax(value, .Machine$double.xmin)))
+}
+x_tick_effects <- c(-10, -5, -2, -1, -0.5, 0, 0.5, 1, 2)
+x_tick_positions <- signed_log_effect(x_tick_effects)
+y_tick_logp <- c(0, 1, 2, 5, 10, 20, 60, 300)
+y_tick_positions <- log10(1 + y_tick_logp)
+common_xlim <- range(signed_log_effect(volcano_scores$effect))
+common_ylim <- range(double_log_p(volcano_scores$p_value))
+
 for (method_index in seq_along(volcano_methods)) {
   method <- volcano_methods[method_index]
   panel <- volcano_scores[
@@ -244,70 +259,97 @@ for (method_index in seq_along(volcano_methods)) {
     ,
     drop = FALSE
   ]
-  y_value <- -log10(pmax(panel$p_value, .Machine$double.xmin))
-  y_clipped <- y_value > volcano_y_cap
+  x_value <- signed_log_effect(panel$effect)
+  y_value <- double_log_p(panel$p_value)
   depleted_call <- panel$fdr < 0.10 & panel$effect < 0
   show_y_axis <- method_index %in% c(1L, 4L)
 
-  par(mar = c(4.2, if (show_y_axis) 4.2 else 1.2, 2.7, 0.8))
+  par(
+    mar = c(4.5, if (show_y_axis) 4.6 else 1.2, 2.8, 0.8),
+    cex.axis = 0.92,
+    cex.lab = 0.98
+  )
   plot(
-    panel$effect,
-    pmin(y_value, volcano_y_cap),
-    pch = ifelse(y_clipped, 17, 16),
-    cex = 0.26,
+    x_value,
+    y_value,
+    pch = 16,
+    cex = 0.31,
     col = adjustcolor("#8C8C8C", alpha.f = 0.16),
     xlim = common_xlim,
-    ylim = c(0, volcano_y_cap),
-    xlab = "Longitudinal time-slope effect",
+    ylim = common_ylim,
+    xaxt = "n",
+    yaxt = "n",
+    xlab = "Longitudinal time-slope effect (signed log scale)",
     ylab = if (show_y_axis) {
-      expression(-log[10]("two-sided " * italic(p))~"(cap 60)")
+      expression(log[10](1-log[10]("two-sided " * italic(p))))
     } else {
       ""
     },
-    yaxt = if (show_y_axis) "s" else "n",
     main = method,
     bty = "l",
-    cex.main = 0.95
+    cex.main = 1.05
   )
+  axis(
+    1,
+    at = x_tick_positions[
+      x_tick_positions >= common_xlim[1L] &
+        x_tick_positions <= common_xlim[2L]
+    ],
+    labels = x_tick_effects[
+      x_tick_positions >= common_xlim[1L] &
+        x_tick_positions <= common_xlim[2L]
+    ]
+  )
+  if (show_y_axis) {
+    axis(
+      2,
+      at = y_tick_positions[
+        y_tick_positions >= common_ylim[1L] &
+          y_tick_positions <= common_ylim[2L]
+      ],
+      labels = y_tick_logp[
+        y_tick_positions >= common_ylim[1L] &
+          y_tick_positions <= common_ylim[2L]
+      ]
+    )
+  }
   for (cell_line in volcano_cell_lines) {
     cell_rows <- depleted_call & panel$cell_line == cell_line
     points(
-      panel$effect[cell_rows],
-      pmin(y_value[cell_rows], volcano_y_cap),
-      pch = ifelse(y_clipped[cell_rows], 17, 16),
-      cex = 0.30,
+      x_value[cell_rows],
+      y_value[cell_rows],
+      pch = 16,
+      cex = 0.38,
       col = adjustcolor(
         cell_line_colours[[cell_line]],
         alpha.f = 0.54
       )
     )
   }
-  abline(h = -log10(0.05), col = "#3B5BDB", lty = 2)
+  abline(h = double_log_p(0.05), col = "#3B5BDB", lty = 2)
   abline(v = 0, col = "#666666", lty = 3)
 }
 
 par(mar = c(1.0, 1.0, 2.7, 1.0))
 plot.new()
-title(main = "Five-cell-line comparison", cex.main = 0.95)
+title(main = "Four-cell-line comparison", cex.main = 1.05)
 legend(
   "center",
   legend = c(
     "All genes",
     volcano_cell_lines,
-    "Nominal two-sided p = 0.05",
-    "Clipped -log10(p)"
+    "Nominal two-sided p = 0.05"
   ),
-  pch = c(16, rep(16, length(volcano_cell_lines)), NA, 17),
-  lty = c(NA, rep(NA, length(volcano_cell_lines)), 2, NA),
+  pch = c(16, rep(16, length(volcano_cell_lines)), NA),
+  lty = c(NA, rep(NA, length(volcano_cell_lines)), 2),
   col = c(
     "#8C8C8C",
     unname(cell_line_colours[volcano_cell_lines]),
-    "#3B5BDB",
-    "#8C8C8C"
+    "#3B5BDB"
   ),
-  pt.cex = c(0.7, rep(0.7, length(volcano_cell_lines)), NA, 0.7),
+  pt.cex = c(1.1, rep(1.1, length(volcano_cell_lines)), NA),
   bty = "n",
-  cex = 0.68
+  cex = 1.2
 )
 
 trajectory_shapes <- c(`1` = 21, `2` = 24)
@@ -327,7 +369,12 @@ for (case_index in seq_len(nrow(case_specification))) {
       case_results$method == "BARCS"
   ]
 
-  par(mar = c(4.4, if (case_index == 1L) 4.4 else 2.2, 3.7, 0.8))
+  par(
+    mar = c(4.6, if (case_index == 1L) 4.8 else 2.2, 3.9, 0.8),
+    cex.axis = 0.94,
+    cex.lab = 1.0,
+    pty = "s"
+  )
   plot(
     NA,
     xlim = c(-0.8, 14.8),
@@ -344,7 +391,7 @@ for (case_index in seq_len(nrow(case_specification))) {
       cell_line, ": ", guide
     ),
     bty = "l",
-    cex.main = 0.98
+    cex.main = 1.05
   )
   axis(1, at = c(0, 7, 14))
   mtext(
@@ -354,7 +401,7 @@ for (case_index in seq_len(nrow(case_specification))) {
     ),
     side = 3,
     line = 0.15,
-    cex = 0.66,
+    cex = 0.76,
     col = "#444444"
   )
 
@@ -391,16 +438,16 @@ for (case_index in seq_len(nrow(case_specification))) {
       lty = unname(trajectory_lines),
       pt.bg = barcs_colour,
       col = "#555555",
-      pt.cex = 0.9,
+      pt.cex = 1.1,
       bty = "n",
-      cex = 0.74
+      cex = 1.2
     )
   }
 }
 dev.off()
 
 cat(
-  "Figure 1 includes five-cell-line method volcano plots and three ",
+  "Figure 1 includes four-cell-line method volcano plots and three ",
   "guide-count trajectories.\n",
   sep = ""
 )

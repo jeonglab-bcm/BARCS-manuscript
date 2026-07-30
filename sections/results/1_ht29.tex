@@ -1,50 +1,30 @@
 % !TeX root = ../../main.tex
-\subsection{Longitudinal HT-29 screening}
+\subsection{HT-29 serial harvests are descriptive, not replicated longitudinal
+inference}
 
-The first question is whether a continuous predictor observed at more than two
-values costs anything relative to methods built for that setting.  We use the
-HT-29 time course of
-\citet{tzelepis2016dropout}, the longitudinal dataset used to evaluate
-Chronos \citep{dempster2021chronos}.  It contains a pDNA measurement and HT-29
-guide counts at days 7, 10, 13, 16, 19, 22, and 25.
-The three sequencing columns at each late day were summed before analysis.
-This distinction is important for the requested $t$ inference: three assays of
-one harvested population increase read depth but are not three independent
-biological units and therefore must not add residual degrees of freedom.
-Following the Chronos preprocessing, guides with fewer than 30 pDNA reads were
-removed, leaving 86,882 guides targeting 17,995 genes.
+The HT-29 dataset of \citet{tzelepis2016dropout} contains one plasmid pool and
+guide counts from days 7, 10, 13, 16, 19, 22, and 25 of one passaged culture.
+The three sequencing columns at each late day were summed because they assay
+the same harvested population.  The seven harvests are likewise repeated
+measurements of one biological lineage, not seven independent biological
+units.  Referring a time coefficient to $t_6$ would therefore be
+pseudoreplication and would violate the independent-library assumption.
 
-The BARCS and official MAGeCK-MLE 0.5.9.5 fits received the same
-eight-column count matrix and the same numeric design, with an intercept and
-$d_i/25$.  This is a direct continuous-time comparison.  We also downloaded
-the all-seven-time-point Chronos joint result and the deposited per-endpoint
-MAGeCK and BAGEL2 results from the Chronos Figshare record
-\citep{chronosfigshare2021}.  Those matrices carry one column per day; we use
-the day-25 column itself rather than a summary across days, so the comparator
-is a single observed endpoint analysis at the deepest time point.
-
-For an external biological target, core essential genes are positives and
-HT-29 genes with DepMap 20Q2 expression below 0.5 are negatives, matching the
-deposited Chronos analysis.  All methods were
-restricted to the same 1,080 essential and 5,774 unexpressed genes.
-Null-normalized median difference (NNMD) follows the definition used for
-Chronos: the difference between the medians of the two control sets, divided by
-the median absolute deviation of the unexpressed effects
-\citep{dempster2021chronos}.  No scaling constant is applied, and more negative
-values indicate stronger separation.
-``False positives'' counts unexpressed genes in the lowest 10\% of all
-evaluated effects.
+We retain the fitted BARCS and official MAGeCK-MLE time coefficients only as
+descriptive trajectory scores.  They received the same eight-column matrix and
+numeric design.  We also report the deposited all-time-point Chronos score and
+day-25 MAGeCK and BAGEL2 scores
+\citep{dempster2021chronos,chronosfigshare2021,kim2021bagel2}.  Core essential
+genes are positives and HT-29 genes with DepMap 20Q2 expression below 0.5 are
+negatives, matching the deposited evaluation.
 
 \begin{table}[ht]
 \centering
-\caption{Longitudinal HT-29 control-gene benchmark, restricted to the three
-methods that fit the full time course.  Deposited single-endpoint results are
-reported in the copy-number audit below.  PR AUC is the area under the
-precision--recall curve; Recall$_{90}$ is the maximum recall at least 90\%
-precision.  Higher AUROC, PR AUC, and Recall$_{90}$ are better; more negative
-NNMD and fewer unexpressed false positives are better.  No column maximum is
-highlighted, because the differences among these three methods are within the
-margins discussed in the text.}
+\caption{Descriptive HT-29 control-gene ranking.  The BARCS and MAGeCK time
+rows treat serial harvests as a numeric trajectory for ranking only; their
+sample-level $p$-values are not interpreted.  Recall$_{90}$ is maximum recall
+at at least 90\% precision, and FP$_{10\%}$ counts unexpressed genes in the
+lowest 10\% of all evaluated effects.}
 \label{tab:chronos}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -54,37 +34,28 @@ Method & AUROC & PR AUC & NNMD & Recall$_{90}$ & FP$_{10\%}$\\
 \midrule
 \methodswatch{barcsblue} BARCS time & 0.9786 & 0.9494 & $-16.34$ & 0.9037 & 7\\
 \methodswatch{mageckorange} Official MAGeCK time & 0.9789 & 0.9534 & $-17.75$ &
-  0.8972 & 5\\
+0.8972 & 5\\
 \methodswatch{chronosgreen} Chronos joint & 0.9747 & 0.9356 & $-27.88$ &
-  0.8991 & 10\\
+0.8991 & 10\\
+\methodswatch{mageckorange} Deposited MAGeCK day 25 & 0.9792 & 0.9428 &
+$-14.83$ & 0.9120 & 10\\
+Deposited BAGEL2 day 25 & 0.9698 & 0.9388 & $-12.06$ & 0.8630 & 4\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:chronos} shows comparable essential-gene discrimination across
-the three longitudinal analyses.  BARCS attains high-precision recall 0.9037
-and seven unexpressed false positives in the 10\% tail, within the observed
-5--10 range, while estimating an ordinary continuous-time coefficient.
+The day-25 MAGeCK row has the highest AUROC and Recall$_{90}$ in the deposited
+comparison.  The full trajectory therefore provides no measured advantage over
+the endpoint on these two ranking metrics.  Official continuous-time MAGeCK
+has the highest PR AUC, Chronos has the most negative NNMD, and BAGEL2 has the
+fewest unexpressed genes in the 10\% tail.  These differences illustrate that
+the metrics reward different score properties; none supplies the missing
+biological replication.
 
-The deposited single-endpoint results carry a separate caution about analysis
-contracts.  Summarising the same deposited MAGeCK matrix by its median across
-the seven days rather than by its day-25 column moves its AUROC from 0.9792 to
-0.9742 and its recall at 90\% precision from 0.9120 to 0.8602, a swing larger
-than any difference among the three models above.  Because early harvests carry
-little depletion, an across-day median attenuates the signal the screen was run
-to measure.  How a multi-endpoint result is reduced to one number can therefore
-matter more than which count model produced it, and the day-25 column is used
-wherever those deposited effects appear below.
-
-Chronos's NNMD margin is the one difference in Table~\ref{tab:chronos} that is
-not slight, and it is consistent with its mechanistic treatment of knockout
-efficiency and saturation.  It should be read as a statement about the shape of
-its effect distribution rather than about discrimination: NNMD is the only
-metric reported here that is not invariant to monotone rescaling of gene scores
-\citep{dempster2021chronos}, and Chronos leads it while trailing both
-rank-based metrics.  The BARCS and official continuous-time
-MAGeCK effects have Spearman correlation 0.926; correlations with Chronos
-joint and the deposited day-25 MAGeCK effects are 0.815 and 0.859.  These are again effect
-agreement statistics, not comparable likelihoods: the methods estimate
-differently scaled quantities and do not expose a common predictive
-likelihood in the deposited outputs.
+How a deposited time course is summarized also matters.  Taking the median
+MAGeCK effect across all seven days instead of the day-25 column lowers AUROC
+from 0.9792 to 0.9742 and Recall$_{90}$ from 0.9120 to 0.8602.  Early harvests
+carry little depletion, so an across-day median attenuates the endpoint signal.
+This data-reduction effect is larger than the differences among the trajectory
+scores and further argues against treating this dataset as inferential evidence
+for one count model.

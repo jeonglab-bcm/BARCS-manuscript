@@ -15,7 +15,7 @@
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
-analysis_protocol <- "barcs-four-methods-v1"
+analysis_protocol <- "barcs-four-methods-v2-heldout-calibration"
 
 raw_dir <- file.path("data", "raw", "waterbear")
 result_dir <- file.path("results", "waterbear_facs", "three_methods")
@@ -100,6 +100,40 @@ guide_result <- bb_screen(
 )
 guide_seconds <- unname((proc.time() - fit_start)[["elapsed"]])
 negative_control <- raw$Gene == "Non-Targeting Control"
+
+# Estimate the production scale from all prespecified controls, but evaluate
+# calibration out of sample.  Reusing the same guides for both tasks would make
+# the reported 5% tail rate nearly tautological because tail_quantile() chooses
+# its scale from that order statistic.  Deterministic five-fold cross-fitting
+# assigns every control guide a p-value from a scale estimated without its fold.
+crossfit_control_pvalues <- function(result, control, nfold = 5L) {
+  valid <- which(control & is.finite(result$t_value) & is.finite(result$df))
+  if (length(valid) < 20L * nfold) {
+    stop("Too few finite controls for five-fold calibration diagnostics.")
+  }
+
+  ordered <- valid[order(result$guide[valid])]
+  fold <- rep(NA_integer_, nrow(result))
+  fold[ordered] <- rep(seq_len(nfold), length.out = length(ordered))
+  heldout_p <- rep(NA_real_, nrow(result))
+  scale <- numeric(nfold)
+
+  for (fold_index in seq_len(nfold)) {
+    training <- control & !is.na(fold) & fold != fold_index
+    fold_result <- bb_calibrate_controls(
+      result,
+      training,
+      alpha = 0.05
+    )
+    heldout <- control & !is.na(fold) & fold == fold_index
+    heldout_p[heldout] <- fold_result$p_value[heldout]
+    scale[fold_index] <- attr(fold_result, "control_scale")
+  }
+
+  list(p_value = heldout_p, fold = fold, scale = scale)
+}
+
+crossfit <- crossfit_control_pvalues(guide_result, negative_control)
 calibrated <- bb_calibrate_controls(
   guide_result,
   negative_control,
@@ -154,6 +188,24 @@ write.csv(
 write.csv(
   calibrated,
   gzfile(file.path(result_dir, "calibrated_guide_results.csv.gz")),
+  row.names = FALSE
+)
+write.csv(
+  data.frame(
+    guide = guide_result$guide[negative_control],
+    fold = crossfit$fold[negative_control],
+    raw_p_value = guide_result$p_value[negative_control],
+    heldout_p_value = crossfit$p_value[negative_control]
+  ),
+  file.path(result_dir, "non_targeting_crossfit_pvalues.csv"),
+  row.names = FALSE
+)
+write.csv(
+  data.frame(
+    fold = seq_along(crossfit$scale),
+    training_control_scale = crossfit$scale
+  ),
+  file.path(result_dir, "non_targeting_crossfit_scales.csv"),
   row.names = FALSE
 )
 for (method in names(method_results)) {
@@ -332,22 +384,22 @@ write.csv(
 null_p <- guide_result$p_value[
   negative_control & is.finite(guide_result$p_value)
 ]
-calibrated_null_p <- calibrated$p_value[
-  negative_control & is.finite(calibrated$p_value)
+heldout_null_p <- crossfit$p_value[
+  negative_control & is.finite(crossfit$p_value)
 ]
 null_metrics <- data.frame(
   analysis_protocol = analysis_protocol,
-  guide_statistic = c("raw", "control_calibrated"),
-  n_non_targeting_guides = c(length(null_p), length(calibrated_null_p)),
+  guide_statistic = c("raw", "control_calibrated_5fold_heldout"),
+  n_non_targeting_guides = c(length(null_p), length(heldout_null_p)),
   fraction_p_below_0_05 = c(
     mean(null_p < 0.05),
-    mean(calibrated_null_p < 0.05)
+    mean(heldout_null_p < 0.05)
   ),
   fraction_p_below_0_10 = c(
     mean(null_p < 0.10),
-    mean(calibrated_null_p < 0.10)
+    mean(heldout_null_p < 0.10)
   ),
-  median_p_value = c(median(null_p), median(calibrated_null_p))
+  median_p_value = c(median(null_p), median(heldout_null_p))
 )
 write.csv(
   null_metrics,

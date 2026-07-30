@@ -1,28 +1,29 @@
 % Loaded by main.tex
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{amsmath,amssymb,amsthm}
+\usepackage{newtxtext}
+\usepackage{amsmath,amsthm}
+\usepackage{newtxmath}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage{xcolor}
-\usepackage[margin=1in]{geometry}
 \usepackage[hidelinks]{hyperref}
 \usepackage{microtype}
 \usepackage[numbers,sort&compress]{natbib}
 \bibliographystyle{unsrtnat}
 \setlength{\emergencystretch}{2em}
+\hypersetup{
+  pdftitle={BARCS: beta-binomial regression for multivariable CRISPR screen designs},
+  pdfauthor={Hyun-Hwan Jeong},
+  pdfsubject={Statistical methods for multivariable CRISPR screens},
+  pdfkeywords={CRISPR screen, beta-binomial regression, longitudinal design, calibration}
+}
 
 \newcommand{\E}{\operatorname{E}}
 \newcommand{\Var}{\operatorname{Var}}
 \newcommand{\logit}{\operatorname{logit}}
 
-% Repository paths render verbatim and link to the file on GitHub.  Write the
-% path with real underscores: \repofile{examples/foo_bar.R}
-\newcommand{\repobase}{https://github.com/jeonglab-bcm/BARCS/blob/main}
-\newcommand{\repotree}{https://github.com/jeonglab-bcm/BARCS/tree/main}
-\newcommand{\repofile}[1]{\href{\repobase/#1}{\nolinkurl{#1}}}
-\newcommand{\repodir}[1]{\href{\repotree/#1}{\nolinkurl{#1/}}}
 \definecolor{barcsblue}{HTML}{0072B2}
 \definecolor{mageckorange}{HTML}{D55E00}
 \definecolor{chronosgreen}{HTML}{009E73}

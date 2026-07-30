@@ -1,0 +1,24 @@
+% !TeX root = ../../main.tex
+\subsection{Ordered-bin IL2RA benchmark}
+
+The GSE242880 count matrix contains four ordered FACS bins for each of three
+donors, 6,000 guides, and 593 non-targeting guides
+\citep{freimer2022il2ra,pimentel2024waterbear}.  Bin locations were set to the
+expected values of four equal-probability intervals under a standard normal
+distribution.  BARCS fitted this ordered score with donor indicators.
+MAGeCK-MLE received the same design matrix; the outer-bin MAGeCK test used only
+the low and high fractions.
+
+BARCS guide results were aggregated with the prespecified directional Stouffer
+summary.  For held-out calibration, non-targeting guides were ordered by guide
+identifier and assigned cyclically to five folds.  Each fold was evaluated
+with the tail scale estimated from the other four folds.  The production gene
+analysis used all controls, whereas the reported non-targeting $p<0.05$ rate
+uses only held-out guide predictions.
+
+Directional recovery was evaluated against 26 regulators validated by
+individual knockout and flow cytometry.  A recovered regulator had to pass the
+method's reported threshold and agree with the validated direction.  Validation
+yield was calculated as recovered regulators divided by all discoveries.
+Published Waterbear and MAUDE totals were used only for this recovery
+comparison; no unavailable non-targeting rate was imputed.

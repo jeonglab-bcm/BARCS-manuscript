@@ -12,29 +12,23 @@ response. Continuous phenotypes, donors, batches, interactions, and other
 sample variables are predictors. Coefficients and named contrasts use a
 Student t reference based on independent samples rather than reads.
 
-The mathematical relationship is deliberately narrow. A legacy representation
-lemma shows that a saturated two-cell generalized least-squares calculation
-reproduces original CB² after its weighted group proportions and variances have
-already been computed. This is an algebraic compatibility identity, not proof
-that default `bbreg()` strictly nests the original estimator. Under a correctly
-specified common-dispersion binary design, local alternatives, and increasing
-numbers of independent libraries, the logit-scale BARCS statistic is
-first-order equivalent to the raw-proportion statistic. Increasing read depth
-at fixed biological replication is not sufficient. See
-`examples/cb2_generalization_proof.R` for the machine-precision representation
-check and convergence illustration.
+The mathematical relationship is deliberately narrow. BARCS and CB² share a
+library-total-conditional beta-binomial variance principle, but their
+estimators, effect scales, dispersion assumptions, and reference degrees of
+freedom differ. An identity-link model can reconstruct already-computed CB²
+group summaries if its weights are defined from those summaries; that is a
+tautological software check, not a nesting theorem. BARCS makes no formal
+finite-sample or asymptotic equivalence claim.
 
 The current covariance is model based and treats the guide-wise
 dispersion estimate as a fixed plug-in value. Residual Student t degrees of
 freedom do not formally propagate dispersion-estimation uncertainty, so
-small-sample calibration remains a stated limitation. Control-tail calibration
-also requires controls to share the same residual degrees of freedom, as they
-do under one common complete design.
+small-sample calibration is not guaranteed. In the committed continuous-dose
+simulation, unmoderated BARCS has null type-I error 0.081 and empirical FDP
+0.130 at nominal 0.05. Control-tail calibration requires controls to share one
+design, and its performance must be evaluated on held-out or cross-fitted
+controls rather than the guides used to estimate the scale.
 
-For a version written without matrix algebra, start with
-[`docs/cb2-generalization-high-school-proof.md`](docs/cb2-generalization-high-school-proof.md).
-For a code-first version with six progressively richer examples, use
-[`docs/cb2-generalization-computational-walkthrough.md`](docs/cb2-generalization-computational-walkthrough.md).
 For compact input-table → function-call → output-table examples, use
 [`docs/barcs-input-output-examples.md`](docs/barcs-input-output-examples.md).
 For the seven-method CRISPulator comparison and the real-data Waterbear
@@ -101,13 +95,6 @@ commits the updated submodule pointer. See
   recall, precision, and realized-FDP curves at five nominal FDR thresholds.
 - `docs/barcs-gene-methods.md`: equations, numerical interpretation,
   calibration, and diagnostics for the four guide-to-gene statistics.
-- `examples/cb2_generalization_proof.R`: numerical verification of the legacy
-  GLS representation and a local-equivalence illustration for the logit
-  statistic.
-- `examples/cb2_generalization_walkthrough.R`: six code-first examples,
-  including hand-checkable numbers, 1,000 randomized identity checks, original
-  `fit_ab()` counts, the finite-sample logit difference, local convergence, and
-  a continuous-dose fit.
 - `examples/barcs_input_output_examples.R`: printable two-group,
   continuous-dose, and dose-plus-batch inputs with their exact model outputs.
 - `examples/gse70038_comparison.R`: head-to-head analysis of all 64,747 guides
@@ -115,22 +102,22 @@ commits the updated submodule pointer. See
 - `examples/sanson_benchmark.R`: independent essential-versus-nonessential-gene
   benchmark on the Sanson A375 Brunello screen bundled with CB2, with and
   without official MAGeCK piecewise CNV correction.
-- `examples/chronos_tzelepis_benchmark.R`: genuinely longitudinal HT-29
-  benchmark (pDNA plus days 7, 10, 13, 16, 19, 22, and 25) against an official
-  continuous-time MAGeCK-MLE fit and the deposited Chronos, MAGeCK, and BAGEL2
-  results.
+- `examples/chronos_tzelepis_benchmark.R`: descriptive HT-29 serial-harvest
+  ranking (pDNA plus days 7, 10, 13, 16, 19, 22, and 25) against an official
+  continuous-time MAGeCK-MLE fit and deposited Chronos, MAGeCK, and BAGEL2
+  results. The days are not independent biological replicates.
 - `examples/waterbear_facs_benchmark.R`: ordered four-bin GSE242880 IL2RA
   comparison of the same four BARCS gene statistics against the 26
   directionally validated genes and the selected 33-gene follow-up panel.
 - `examples/waterbear_facs_external_head_to_head.R`: comparison of the four
   BARCS methods with rerun MAGeCK-MLE/MAGeCK test and the published
   Waterbear/MAUDE recovery totals.
-- `examples/liang_cas13_benchmark.R`: five-cell-line Cas13 fitness
+- `examples/liang_cas13_benchmark.R`: four-cell-line Cas13 fitness
   processed-count sensitivity analysis. BARCS and MAGeCK-MLE fit a
   longitudinal slope across days 0, 7, and 14, with edgeR-QL, DESeq2, and
   limma-voom fitted to the same design.
-- `examples/manuscript_liang_figure.R`: HAP1 guide-level volcano and
-  longitudinal count-trajectory figure for the Liang analysis.
+- `examples/manuscript_liang_figure.R`: four-cell-line method volcano plots and
+  three longitudinal guide-count trajectories for the Liang analysis.
 - `scripts/prepare_liang_cas13.R`,
   `scripts/count_liang_cas13_run.sh`, and
   `scripts/queue_liang_cas13_counts.sh`: download the Liang supplementary
@@ -158,9 +145,8 @@ From the repository root:
 ```sh
 Rscript tests/run_tests.R
 Rscript examples/barcs_quickstart.R
-Rscript examples/cb2_generalization_proof.R
-Rscript examples/cb2_generalization_walkthrough.R
 Rscript examples/barcs_input_output_examples.R
+Rscript examples/simulation.R
 julia --project=julia -e 'using Pkg; Pkg.instantiate()'
 julia --project=julia julia/simulate_crispulator_facs.jl
 Rscript examples/crispulator_facs_repeated_benchmark.R
@@ -179,7 +165,7 @@ workflows to compare the four BARCS guide-to-gene methods. Other historical
 benchmark scripts remain in the repository but do not define or tune these
 four-method results.
 
-The primary Liang comparison deliberately uses the deposited normalized guide
+The Liang sensitivity analysis deliberately uses the deposited normalized guide
 values so that the processed-data analysis is fully reproducible. The values
 are fractional after median-ratio normalization, ComBat correction, and
 outlier processing. The script rounds them once to the nearest pseudo-count
@@ -190,27 +176,23 @@ Known-essential protein-coding genes are positives, and cell-line-specific
 non-expressed lncRNAs are null controls.
 
 All compared methods use the three deposited time points and estimate a
-continuous time slope. A replicate block is included for complete
-trajectories; K562 lacks one baseline replicate and therefore uses an
-unblocked slope. The longitudinal regression comparisons use two-sided
-significance values and FDRs.
+continuous time slope with a replicate block. K562 is excluded because one
+baseline replicate is absent. The longitudinal regression comparisons use
+two-sided significance values and FDRs.
 
-Adding day 7 raises BARCS macro-average precision from 0.776 to 0.786 and
-FDR-0.10 essential-gene recall from 0.487 to 0.580. BARCS has lower null
-calibration error than longitudinal MAGeCK-MLE (0.035 versus 0.103), although
-MAGeCK-MLE has higher average precision (0.833) and FDR-thresholded recall
-(0.690). This is the intended boundary of the claim: BARCS generalizes
-beta-binomial inference to longitudinal regression and improves calibration
-relative to the matched negative-binomial regression without claiming
-an endpoint-only analysis.
+The mean cell-line-specific absolute null error is 0.025 for BARCS and 0.057
+for MAGeCK-MLE, whereas MAGeCK-MLE and the general RNA-sequencing methods rank
+essential genes more strongly. Because the common matrix is normalized,
+ComBat-corrected, and rounded, this comparison does not validate either count
+likelihood.
 
 BARCS-original, edgeR-QL, DESeq2, and limma-voom all use unweighted signed-\(z\)
 aggregation of two-sided guide probabilities after their respective
 guide-level fits. This holds the gene combiner fixed while comparing
 guide-level models. MAGeCK-MLE instead uses its native joint gene model.
 
-The primary Liang result uses every valid guide. Mean BARCS--MAGeCK-MLE
-effect-rank correlation is 0.875 across cell lines. Versioned metrics,
+The Liang result uses every valid guide. Mean BARCS--MAGeCK-MLE
+effect-rank correlation is 0.871 across cell lines. Versioned metrics,
 concordance estimates, and the rounding audit are under `data/derived/`.
 
 An optional raw-read confirmation remains available. It streams all
@@ -405,8 +387,9 @@ scores for the selected 33-gene panel, so F1 and average precision are
 reported only for the six methods rerun from complete outputs.
 
 The shared raw guide fit is inflated among the 593 non-targeting guides:
-13.3% have nominal p-values below 0.05. Historical control calibration reduces
-that fraction to 5.1%. Partial and EB instead use gene-statistic calibration;
+13.3% have nominal p-values below 0.05. Five-fold cross-fitted control
+calibration gives a held-out rate of 4.9%. Partial and EB instead use
+gene-statistic calibration;
 because all non-targeting guides share one deposited gene label, their
 gene-level null falls back to the robust whole-screen center and scale.
 FACS bins remain correlated partitions, so none of these methods replaces a
@@ -416,20 +399,22 @@ the legacy `data/derived/waterbear_facs_three_method_*` filenames.
 The CB2 package benchmark processes roughly 2,100 guides/second serially and
 7,375 guides/second with four forked workers on the current machine (about
 1.36 seconds for 10,000 guides, or 8.8 seconds projected for 64,747 guides).
-The new full longitudinal fit processes 86,882 filtered guides in about 20
-seconds with four workers on the same machine.
+The descriptive HT-29 trajectory fit processes 86,882 filtered guides in about
+20 seconds with four workers on the same machine.
 
 ## Important scope note
 
-Use original CB² for a direct two-condition comparison. Use BARCS when each
+Use original CB² for a direct two-condition comparison. BARCS is a prototype
+for settings where each
 independently sequenced library has a quantitative or multivariable
 sample-level design. Use a specialist joint model such as Waterbear when
 several bins are correlated partitions of the same biological pool.
 
-Within BARCS, the current evidence supports BARCS-original when ranking and
-recall are primary, and BARCS-EB when conservative null calibration is
-primary. BARCS-NORM is the most literal unweighted normal model of guide beta
-values, but its per-gene variance estimate is underpowered with three to six
+Within BARCS, simulation ablations support further evaluation of moderated
+dispersion and control-guide denominators. They do not establish superiority
+over negative-binomial or general RNA-sequencing methods. BARCS-NORM is the
+most literal unweighted normal model of guide beta values, but its per-gene
+variance estimate is underpowered with three to six
 guides. BARCS-partial exposes guide heterogeneity and influence diagnostics
 but is not the best default in the present benchmarks. This choice must be
 made from the inferential goal or an external protocol, not selected

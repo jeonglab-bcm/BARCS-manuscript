@@ -4,16 +4,13 @@
 # screens (Cell Genomics, 2026; PRJNA1344834).
 #
 # Comparators:
-#   1. Liang RRA: deposited RobustRankAggreg v1.2.1 results;
-#   2. MAGeCK-RRA: official `mageck test` on deposited processed counts;
-#   3. MAGeCK-MLE: official `mageck mle` with replicate blocking and a numeric
-#      time effect across days 0, 7, and 14;
-#   4. BARCS: beta-binomial regression with the same longitudinal design;
-#   5. edgeR-QL, DESeq2, and limma-voom with that design.
+#   1. BARCS beta-binomial regression;
+#   2. official MAGeCK-MLE;
+#   3. edgeR-QL, DESeq2, and limma-voom.
 #
-# Liang RRA and MAGeCK-RRA are different algorithms.  The former ranks guide
-# fold changes using the CRAN RobustRankAggreg package; the latter is MAGeCK's
-# native guide-ranking/RRA workflow.  The deposited count values are
+# All five methods estimate the same continuous time slope across days 0, 7,
+# and 14. Endpoint RRA summaries are intentionally excluded because they do not
+# estimate that longitudinal coefficient. The deposited count values are
 # fractional after normalization, ComBat correction, and outlier processing.
 # BARCS correctly requires integer counts, so the normalized values are
 # explicitly rounded to the nearest pseudo-count and that same matrix is given
@@ -31,8 +28,7 @@ result_dir <- file.path("results", "liang_cas13")
 dir.create(result_dir, recursive = TRUE, showWarnings = FALSE)
 
 required_inputs <- c(
-  "guide_library.tsv", "lncrna_expression.tsv",
-  "published_liang_rra.tsv"
+  "guide_library.tsv", "lncrna_expression.tsv"
 )
 missing_inputs <- required_inputs[
   !file.exists(file.path(raw_dir, required_inputs))
@@ -52,11 +48,7 @@ expression <- read.delim(
   file.path(raw_dir, "lncrna_expression.tsv"),
   check.names = FALSE
 )
-published <- read.delim(
-  file.path(raw_dir, "published_liang_rra.tsv"),
-  check.names = FALSE
-)
-cell_lines <- c("HAP1", "HEK293FT", "K562", "MDA-MB-231", "THP1")
+cell_lines <- c("HAP1", "HEK293FT", "MDA-MB-231", "THP1")
 
 load_processed_counts <- function(cell_line) {
   processed_path <- file.path(
@@ -404,36 +396,6 @@ run_cell_line <- function(cell_line) {
     sep = "\t", quote = FALSE, row.names = FALSE
   )
 
-  rra_prefix <- file.path(result_dir, paste0(cell_stem, "_mageck_rra"))
-  rra_path <- paste0(rra_prefix, ".gene_summary.txt")
-  if (!file.exists(rra_path) || identical(Sys.getenv("RERUN_LIANG"), "1")) {
-    treatment <- paste(audit$sample[audit$day == 14L], collapse = ",")
-    control <- paste(audit$sample[audit$day == 0L], collapse = ",")
-    arguments <- c(
-      "test", "-k", count_path,
-      "-t", treatment, "-c", control,
-      "--norm-method", "none",
-      "--control-sgrna", control_path,
-      "--gene-lfc-method", "median",
-      "-n", rra_prefix
-    )
-    if (sum(audit$day == 0L) == sum(audit$day == 14L)) {
-      arguments <- c(arguments, "--paired")
-    }
-    status <- system2(mageck, arguments, env = mageck_environment)
-    if (status != 0 || !file.exists(rra_path)) {
-      stop("MAGeCK-RRA failed for ", cell_line)
-    }
-  }
-  rra_raw <- read.delim(rra_path, check.names = FALSE)
-  rra_gene <- data.frame(
-    gene = rra_raw$id,
-    n_guides = rra_raw$num,
-    effect = rra_raw[["neg|lfc"]],
-    p_value = rra_raw[["neg|p-value"]],
-    fdr = rra_raw[["neg|fdr"]]
-  )
-
   design_path <- file.path(result_dir, paste0(cell_stem, "_design.tsv"))
   if (has_complete_trajectories(sample_data)) {
     design <- data.frame(
@@ -482,14 +444,6 @@ run_cell_line <- function(cell_line) {
     fdr = mle_raw[["time_14|wald-fdr"]]
   )
 
-  liang <- published[published$cell_line == cell_line, ]
-  liang_gene <- data.frame(
-    gene = liang$gene,
-    effect = liang$day14_log2_fold_change,
-    p_value = liang$day14_p_value
-  )
-  liang_gene$fdr <- p.adjust(liang_gene$p_value, method = "BH")
-
   add_method <- function(x, method) {
     if (!"n_guides" %in% names(x)) {
       x$n_guides <- NA_integer_
@@ -497,24 +451,16 @@ run_cell_line <- function(cell_line) {
     x$method <- method
     x$cell_line <- cell_line
     x$input_scale <- "rounded_normalized_ComBat_pseudocount"
-    x$depletion_score <- if (method %in% c(
-      "Liang RRA", "MAGeCK-RRA"
-    )) {
+    x$depletion_score <- -sign(x$effect) *
       -log10(pmax(x$p_value, .Machine$double.xmin))
-    } else {
-      -sign(x$effect) *
-        -log10(pmax(x$p_value, .Machine$double.xmin))
-    }
     x[, c(
       "gene", "n_guides", "effect", "p_value", "fdr",
       "method", "cell_line", "input_scale", "depletion_score"
     )]
   }
   do.call(rbind, list(
-    add_method(liang_gene, "Liang RRA"),
-    add_method(rra_gene, "MAGeCK-RRA"),
-    add_method(mle_gene, "MAGeCK-MLE"),
     add_method(barcs_gene, "BARCS"),
+    add_method(mle_gene, "MAGeCK-MLE"),
     add_method(general_count[["edgeR-QL"]], "edgeR-QL"),
     add_method(general_count[["DESeq2"]], "DESeq2"),
     add_method(general_count[["limma-voom"]], "limma-voom")

@@ -7,6 +7,7 @@ excluded from Git history.
 The repository tracks compact summary tables used by the manuscript:
 
 - `simulation_summary.csv`
+- `simulation_diagnostics.csv`
 - `gse70038/method_concordance.csv`
 - `gse70038/published_gene_results.csv`
 - `chronos_tzelepis/benchmark_metrics.csv`
@@ -19,5 +20,12 @@ The repository tracks compact summary tables used by the manuscript:
 - `waterbear_facs/effect_rank_correlations.csv`
 - `waterbear_facs/non_targeting_calibration.csv`
 - `waterbear_facs/validation_panel_metrics.csv`
+
+The compact simulation diagnostics report the guide-level null rejection
+rate and the fraction of fitted dispersions at the lower boundary.  The
+manuscript's Waterbear null-calibration result is the deterministic five-fold
+held-out estimate written to
+`data/derived/waterbear_facs_three_method_null_calibration.csv`; fitting a
+scale and evaluating it on the same controls is not treated as validation.
 
 Run the scripts in `examples/` to regenerate the full result tree.
