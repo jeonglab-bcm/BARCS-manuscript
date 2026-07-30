@@ -29,14 +29,19 @@ Fitting a scale and evaluating it on the same controls is not treated as
 validation.
 
 The Liang benchmark applies one common signed-normal tail-scaling rule to all
-five methods after their native gene summaries.  Each non-targeting guide is a
-one-guide pseudo-gene, so every method is calibrated on the same 1,000 controls
-at the same aggregation level.  The accompanying time-point ablation compares
-BARCS fits using days 0, 7, and 14 with fits using days 0 and 14 only.
+five methods after their native gene summaries.  Non-targeting guides are
+assigned to the same deterministic pseudo-genes for every method, with
+pseudo-gene sizes sampled from the observed target-gene guide-count
+distribution.  The scale therefore includes the native guide-to-gene
+aggregation step.  The accompanying time-point ablation compares BARCS fits
+using days 0, 7, and 14 with fits using days 0 and 14 only.
 
 The null calibration grid varies the number of independent libraries, guide
-abundance, and generating intraclass correlation.  Seed-level and summarized
-guide- and gene-error rates are tracked under `data/derived/`, together with
-the observed lower-boundary fractions for HT-29, IL2RA, and Liang.
+abundance, overdispersion through the continuous-dose failure regime, and
+three versus five guides per gene.  A focused arm adds within-gene guide
+correlation, and a deterministic null-gene split measures post-aggregation
+held-out calibration.  Seed-level and summarized guide- and gene-error rates
+are tracked under `data/derived/`, together with the observed lower-boundary
+fractions for HT-29, IL2RA, and Liang.
 
 Run the scripts in `examples/` to regenerate the full result tree.

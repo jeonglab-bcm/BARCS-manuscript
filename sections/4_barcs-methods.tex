@@ -10,7 +10,8 @@ K_{gi}\mid N_i\sim
 \logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g .
 \label{eq:barcs-model}
 \end{equation}
-The design vector can contain time, dose, donor, batch, treatment, and
+The coefficient model in Equation~\eqref{eq:barcs-model} allows the design
+vector to contain time, dose, donor, batch, treatment, and
 interaction terms.  Coefficients are estimated by beta-binomial weighted
 logistic regression.  A prespecified coefficient or contrast is divided by
 its model-based standard error and compared with a Student $t$ distribution
@@ -26,8 +27,9 @@ For HAP1, HEK293FT, MDA-MB-231, and THP1, days 0, 7, and 14 were fitted
 jointly with continuous time and a replicate indicator.  K562 was excluded
 because one day-0 replicate was absent.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2,
 and limma--voom received the identical rounded matrix and tested the same time
-slope.  The same non-targeting-control scaling rule was applied to all five
-methods after their native gene summaries.  A BARCS endpoint fit using only
+slope.  Non-targeting guides were grouped into pseudo-genes matching the
+target-gene guide-count distribution, and the same post-aggregation control
+scaling rule was applied to all five methods.  A BARCS endpoint fit using only
 days 0 and 14 tested the value of the intermediate time point.  Known
 essential genes were positives; unexpressed targeted lncRNAs
 were proxy nulls.  Because the deposited values were already normalized and

@@ -131,8 +131,11 @@ source(file.path("R", "bbreg.R"))
 
 combine_guides <- function(result, retain_controls = TRUE) {
   gene_label <- result$gene
-  is_control <- gene_label == "non-targeting"
-  gene_label[is_control] <- paste0("NT_", result$guide[is_control])
+  ungrouped_control <- gene_label == "non-targeting"
+  gene_label[ungrouped_control] <- paste0(
+    "NT_single_", result$guide[ungrouped_control]
+  )
+  is_control <- startsWith(gene_label, "NT_")
   keep_gene <- retain_controls | !is_control
   indices <- split(which(keep_gene), gene_label[keep_gene])
   combined <- do.call(rbind, lapply(names(indices), function(gene_name) {
@@ -163,6 +166,48 @@ combine_guides <- function(result, retain_controls = TRUE) {
   }))
   combined$fdr <- p.adjust(combined$p_value, method = "BH")
   combined
+}
+
+assign_control_pseudogenes <- function(cell_guide, cell_line) {
+  is_control <- cell_guide$target_group == "non-targeting"
+  control_index <- which(is_control)[order(cell_guide$sgrna[is_control])]
+  target_sizes <- as.integer(table(cell_guide$gene[!is_control]))
+  target_sizes <- target_sizes[target_sizes > 0L]
+  if (!length(control_index) || !length(target_sizes)) {
+    stop("Could not construct aggregation-matched control pseudo-genes.")
+  }
+
+  set.seed(20260731L + match(cell_line, cell_lines))
+  sampled_sizes <- sample(
+    target_sizes,
+    size = length(control_index),
+    replace = TRUE
+  )
+  assignment <- rep(NA_character_, nrow(cell_guide))
+  records <- list()
+  position <- 1L
+  group_index <- 0L
+  while (position <= length(control_index)) {
+    group_index <- group_index + 1L
+    group_size <- min(
+      sampled_sizes[group_index],
+      length(control_index) - position + 1L
+    )
+    members <- control_index[position:(position + group_size - 1L)]
+    group_name <- sprintf("NT_%s_%04d", gsub("[^A-Za-z0-9]", "", cell_line),
+                          group_index)
+    assignment[members] <- group_name
+    records[[group_index]] <- data.frame(
+      cell_line = cell_line,
+      pseudo_gene = group_name,
+      n_guides = group_size
+    )
+    position <- position + group_size
+  }
+  list(
+    assignment = assignment,
+    records = do.call(rbind, records)
+  )
 }
 
 calibrate_gene_controls <- function(result, alpha = 0.05,
@@ -256,6 +301,15 @@ fit_general_count_methods <- function(counts, sample_data, cell_guide,
     } else {
       result <- read.csv(gzfile(path))
     }
+    result <- result[
+      match(cell_guide$sgrna, result$guide),
+      ,
+      drop = FALSE
+    ]
+    if (anyNA(result$guide)) {
+      stop("Cached guide results do not match the Liang guide library.")
+    }
+    result$gene <- cell_guide$gene
     result
   }
 
@@ -354,6 +408,10 @@ run_cell_line <- function(cell_line) {
   message("Analysing ", cell_line, " ...")
   input <- processed_inputs[[cell_line]]
   cell_guide <- guide[input$guide_index, ]
+  control_groups <- assign_control_pseudogenes(cell_guide, cell_line)
+  analysis_guide <- cell_guide
+  is_control <- analysis_guide$target_group == "non-targeting"
+  analysis_guide$gene[is_control] <- control_groups$assignment[is_control]
   audit <- input$audit
   audit <- audit[order(
     audit$day, audit$processed_replicate
@@ -383,8 +441,8 @@ run_cell_line <- function(cell_line) {
       data = sample_data,
       formula = formula,
       term = "time_14",
-      guide = cell_guide$sgrna,
-      gene = cell_guide$gene,
+      guide = analysis_guide$sgrna,
+      gene = analysis_guide$gene,
       min_total_count = 30,
       ncores = min(4L, parallel::detectCores(logical = FALSE))
     )
@@ -392,6 +450,12 @@ run_cell_line <- function(cell_line) {
   } else {
     barcs_guide <- read.csv(gzfile(barcs_guide_path))
   }
+  barcs_guide <- barcs_guide[
+    match(analysis_guide$sgrna, barcs_guide$guide),
+    ,
+    drop = FALSE
+  ]
+  barcs_guide$gene <- analysis_guide$gene
   barcs_gene <- combine_guides(barcs_guide)
   write.csv(
     barcs_gene,
@@ -399,22 +463,22 @@ run_cell_line <- function(cell_line) {
     row.names = FALSE
   )
   general_count <- fit_general_count_methods(
-    counts, sample_data, cell_guide, cell_stem
+    counts, sample_data, analysis_guide, cell_stem
   )
 
-  # Give each non-targeting guide its own pseudo-gene.  This prevents MAGeCK
-  # from treating 1,000 unrelated controls as one enormous biological target.
-  mageck_gene <- cell_guide$gene
-  is_control <- cell_guide$target_group == "non-targeting"
-  mageck_gene[is_control] <- paste0("NT_", cell_guide$sgrna[is_control])
+  # Use the same aggregation-matched non-targeting pseudo-genes for every
+  # method. This calibrates the native gene statistic, including the
+  # guide-to-gene aggregation step, rather than transferring a one-guide scale
+  # to multi-guide targets.
+  mageck_gene <- analysis_guide$gene
   control_path <- file.path(
     result_dir, paste0(cell_stem, "_non_targeting_guides.txt")
   )
-  writeLines(cell_guide$sgrna[is_control], control_path)
+  writeLines(analysis_guide$sgrna[is_control], control_path)
   count_path <- file.path(result_dir, paste0(cell_stem, "_counts.tsv"))
   write.table(
     data.frame(
-      sgRNA = cell_guide$sgrna,
+      sgRNA = analysis_guide$sgrna,
       Gene = mageck_gene,
       counts,
       check.names = FALSE
@@ -443,7 +507,7 @@ run_cell_line <- function(cell_line) {
     sep = "\t", quote = FALSE, row.names = FALSE
   )
   mle_prefix <- file.path(
-    result_dir, paste0(cell_stem, "_common_calibration_mageck_mle")
+    result_dir, paste0(cell_stem, "_aggregation_matched_mageck_mle")
   )
   mle_path <- paste0(mle_prefix, ".gene_summary.txt")
   if (!file.exists(mle_path) || identical(Sys.getenv("RERUN_LIANG"), "1")) {
@@ -519,8 +583,8 @@ run_cell_line <- function(cell_line) {
       data = endpoint_data,
       formula = ~ replicate + time_14,
       term = "time_14",
-      guide = cell_guide$sgrna,
-      gene = cell_guide$gene,
+      guide = analysis_guide$sgrna,
+      gene = analysis_guide$gene,
       min_total_count = 30,
       ncores = min(4L, parallel::detectCores(logical = FALSE))
     )
@@ -528,6 +592,12 @@ run_cell_line <- function(cell_line) {
   } else {
     endpoint_guide <- read.csv(gzfile(endpoint_path))
   }
+  endpoint_guide <- endpoint_guide[
+    match(analysis_guide$sgrna, endpoint_guide$guide),
+    ,
+    drop = FALSE
+  ]
+  endpoint_guide$gene <- analysis_guide$gene
   endpoint_gene <- combine_guides(endpoint_guide)
   endpoint_scores <- add_method(endpoint_gene, "BARCS endpoints")
 
@@ -536,7 +606,8 @@ run_cell_line <- function(cell_line) {
     ablation = rbind(
       longitudinal_scores[longitudinal_scores$method == "BARCS", ],
       endpoint_scores
-    )
+    ),
+    control_groups = control_groups$records
   )
 }
 
@@ -545,6 +616,17 @@ scores <- do.call(rbind, lapply(cell_results, `[[`, "longitudinal"))
 rownames(scores) <- NULL
 ablation_scores <- do.call(rbind, lapply(cell_results, `[[`, "ablation"))
 rownames(ablation_scores) <- NULL
+control_group_records <- do.call(
+  rbind,
+  lapply(cell_results, `[[`, "control_groups")
+)
+write.csv(
+  control_group_records,
+  file.path(
+    "data", "derived", "liang_cas13_control_pseudogene_sizes.csv"
+  ),
+  row.names = FALSE
+)
 
 gene_group <- unique(guide[, c("gene", "target_group")])
 group_priority <- match(
