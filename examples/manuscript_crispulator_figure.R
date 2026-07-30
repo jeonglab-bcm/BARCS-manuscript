@@ -72,12 +72,12 @@ layout(
   matrix(c(1, 2, 3, 4, 5, 5), nrow = 3, byrow = TRUE),
   heights = c(1, 1, 0.16)
 )
-par(mar = c(4.4, 4.2, 2.5, 0.8), family = "sans")
+par(mar = c(4.4, 4.2, 2.5, 0.8), family = "sans", pty = "s")
 draw_panel(0.20, "f1", "A  F1: MOI 0.20", c(0, 0.95))
 draw_panel(0.20, "realized_fdp", "B  Realized FDP: MOI 0.20", c(0, 0.30))
 draw_panel(0.30, "f1", "C  F1: MOI 0.30", c(0, 0.95))
 draw_panel(0.30, "realized_fdp", "D  Realized FDP: MOI 0.30", c(0, 0.30))
-par(mar = c(0, 0, 0, 0))
+par(mar = c(0, 0, 0, 0), pty = "m")
 plot.new()
 legend(
   "center",

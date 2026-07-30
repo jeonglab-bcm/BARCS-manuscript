@@ -83,7 +83,7 @@ boxplot(
 abline(v = 0, lty = 2, lwd = 1.6, col = "#333333")
 
 # ---- Panel B: what the bias costs ------------------------------------------
-par(mar = c(4.6, 4.6, 3.0, 1))
+par(mar = c(4.6, 4.6, 3.0, 1), pty = "s")
 x_at <- -log10(thresholds)
 x_text <- as.expression(lapply(thresholds, function(value) {
   exponent <- round(log10(value))
@@ -109,7 +109,7 @@ for (entry in series) {
         col = entry$colour)
 }
 
-par(mar = c(0, 0, 0, 0))
+par(mar = c(0, 0, 0, 0), pty = "m")
 plot.new()
 legend(
   "center",

@@ -226,13 +226,13 @@ pdf(
     "figures", "liang_longitudinal_volcano_trajectories.pdf"
   ),
   width = 10.5,
-  height = 9.4,
+  height = 10.6,
   pointsize = 15,
   useDingbats = FALSE
 )
 layout(
   matrix(seq_len(9), nrow = 3, byrow = TRUE),
-  heights = c(1, 1, 0.95)
+  heights = c(1, 1, 1.2)
 )
 
 # A signed logarithmic x transform expands the dense region around zero while
@@ -372,7 +372,8 @@ for (case_index in seq_len(nrow(case_specification))) {
   par(
     mar = c(4.6, if (case_index == 1L) 4.8 else 2.2, 3.9, 0.8),
     cex.axis = 0.94,
-    cex.lab = 1.0
+    cex.lab = 1.0,
+    pty = "s"
   )
   plot(
     NA,
