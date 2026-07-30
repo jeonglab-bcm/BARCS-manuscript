@@ -22,17 +22,19 @@ BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom fitted a linear
 longitudinal effect with time scaled from 0 to 1 over 14 days and a replicate
 indicator.  K562 was excluded because one deposited day-0 replicate is absent,
 rather than fitting an unmatched trajectory without the replicate block.
-For a like-for-like calibration comparison, every non-targeting guide was
-treated as a one-guide pseudo-gene.  After each method's native gene summary,
-the 95th percentile of the absolute signed-normal control statistic was mapped
-to the two-sided standard-normal 0.05 cutoff, with scales below one truncated
-at one.  The same rule and the same 1,000 controls were applied to BARCS,
-MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom.  Calibration did not alter
-effect estimates or ranks.  All methods used two-sided guide or Wald
-probabilities.  For the four guide-level regression methods, coefficient
-direction was retained in the signed Stouffer score; the resulting gene
-probability was two-sided and was adjusted by the Benjamini--Hochberg
-procedure.  Endpoint robust-rank-aggregation summaries
+For a like-for-like calibration comparison, non-targeting guides were assigned
+deterministically to pseudo-genes whose guide counts were sampled from the
+observed target-gene guide-count distribution in each cell line.  The same
+pseudo-gene assignments were supplied to all five methods.  After each
+method's native gene summary, the 95th percentile of the absolute
+signed-normal pseudo-gene statistic was mapped to the two-sided standard-normal
+0.05 cutoff, with scales below one truncated at one.  This estimates the scale
+after guide aggregation rather than transferring a one-guide scale to
+multi-guide genes.  Calibration did not alter effect estimates or ranks.  All
+methods used two-sided guide or Wald probabilities.  For the four guide-level
+regression methods, coefficient direction was retained in the signed Stouffer
+score; the resulting gene probability was two-sided and was adjusted by the
+Benjamini--Hochberg procedure.  Endpoint robust-rank-aggregation summaries
 \citep{kolde2012rra} were excluded because
 they do not estimate the three-time-point longitudinal coefficient.
 

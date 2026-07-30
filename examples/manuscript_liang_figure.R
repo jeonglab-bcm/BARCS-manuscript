@@ -60,7 +60,8 @@ load_guide_results <- function(cell_line, method) {
     )
   )
   result <- read.csv(gzfile(path))
-  is_control <- result$gene == "non-targeting"
+  is_control <- result$gene == "non-targeting" |
+    startsWith(result$gene, "NT_")
   signed_z <- sign(result$estimate) * qnorm(
     pmax(result$p_value / 2, .Machine$double.xmin),
     lower.tail = FALSE

@@ -3,21 +3,22 @@
 \label{sec:crispulator}
 
 We used CRISPulator to evaluate a FACS design under known truth
-\citep{nagy2017crispulator}.  Three prespecified seeds each generated 10,000
-genes, five guides per gene, four independent replicates, and low, bulk, and
-high fractions.  All methods received the same counts and design.
+\citep{nagy2017crispulator}.  At the primary multiplicity of infection
+(MOI) of 0.20, three prespecified seeds each generated 10,000 genes, five
+guides per gene, four independent replicates, and low, bulk, and high
+fractions.  All methods received the same counts and design.
 
 The comparison isolates one change within BARCS.  BARCS-ST uses the original
 guide-specific dispersion estimate, whereas BARCS-MOD moderates those
 estimates before applying the same gene summary.  Moderation increased average
-precision from 0.903 to 0.919 and F1 at gene FDR 0.10 from 0.817 to 0.849,
-while realized FDP remained nearly unchanged (0.070 and 0.068).  This supports
+precision from 0.902 to 0.919 and F1 at gene FDR 0.10 from 0.811 to 0.847,
+while realized FDP remained nearly unchanged (0.065 and 0.066).  This supports
 dispersion moderation within the common BARCS pipeline.
 
 \begin{table}[htbp]
 \centering
-\caption{Genome-scale CRISPulator comparison for the three-bin design
-(three-seed mean across simulated multiplicities of infection).  Each method
+\caption{Genome-scale CRISPulator comparison for the primary three-bin design
+at MOI 0.20 (three-seed mean).  Each method
 is evaluated at its nominal gene-level threshold; the resulting operating
 points are therefore not matched on realized FDP.}
 \label{tab:crispulator-comparators}
@@ -26,10 +27,10 @@ points are therefore not matched on realized FDP.}
 \toprule
 Method & AUROC & Average precision & Realized FDP & F1\\
 \midrule
-BARCS-ST & 0.947 & 0.903 & 0.070 & 0.817\\
-BARCS-MOD & 0.955 & 0.919 & 0.068 & 0.849\\
-MAGeCK-MLE & 0.958 & 0.922 & 0.005 & 0.713\\
-CRISPhieRmix & 0.931 & 0.871 & 0.207 & 0.784\\
+BARCS-ST & 0.947 & 0.902 & 0.065 & 0.811\\
+BARCS-MOD & 0.954 & 0.919 & 0.066 & 0.847\\
+MAGeCK-MLE & 0.957 & 0.921 & 0.006 & 0.718\\
+CRISPhieRmix & 0.929 & 0.867 & 0.197 & 0.785\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -45,8 +46,10 @@ BARCS-MOD moderation effect.}
 \label{fig:crispulator}
 \end{figure}
 
-The moderation gain persisted across requested thresholds and at both
-simulated multiplicities of infection (Figure~\ref{fig:crispulator}).
+The moderation gain persisted across requested thresholds at MOI 0.20 and in
+the secondary MOI-0.30 analysis (Figure~\ref{fig:crispulator}).  Fitting the
+50,000 guide-level regressions required 70.1--102.8 seconds per primary seed
+on the analysis system, providing a direct screen-scale runtime check.
 MAGeCK-MLE slightly exceeded BARCS-MOD in AUROC and average precision while
 operating at a much lower realized FDP; CRISPhieRmix operated at a higher FDP
 (Table~\ref{tab:crispulator-comparators}).  Thus the nominal-threshold

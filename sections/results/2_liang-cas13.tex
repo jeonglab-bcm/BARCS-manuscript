@@ -21,29 +21,30 @@ by the external audit therefore applies here.
 The design ablation directly tested whether the middle time point contributed
 information.  Relative to a BARCS fit using only days 0 and 14, the
 three-time-point fit increased macro-average precision from 0.832 to 0.838 and
-directional essential-gene recall at FDR 0.10 from 0.608 to 0.658.  Recall at
+directional essential-gene recall at FDR 0.10 from 0.538 to 0.600.  Recall at
 an empirical 5\% proxy-null false-positive rate increased from 0.858 to 0.867.
-The proxy-null $p<0.05$ rate also increased from 0.058 to 0.071.  Thus day 7
+The proxy-null $p<0.05$ rate changed from 0.038 to 0.039.  Thus day 7
 improved essential-gene recovery modestly, but did not improve every
 calibration measure.
 
 For the head-to-head calibration analysis, the same 1,000 non-targeting
-guides and the same tail-scaling rule were applied to all five methods after
-their native gene summaries.  Under this like-for-like rule, mean
-cell-line-specific absolute calibration error was 0.0310 for BARCS, 0.0296 for
-DESeq2, 0.0311 for edgeR-QL, 0.0310 for limma--voom, and 0.0571 for
-MAGeCK-MLE.  The apparent separation from the general count models therefore
-closed: control scaling is a method-agnostic calibration operation, not a
-beta-binomial advantage.  Alternative methods ranked the known essential
-genes more strongly.  Average precision was 0.838 for BARCS and
-0.874--0.877 for the four alternatives; directional recall at gene FDR 0.10
-was 0.658 versus 0.775--0.813.  At a matched empirical 5\% proxy-null rate,
-recall was 0.867 versus 0.879--0.888.
+guides were assigned identically to 156--159 pseudo-genes per cell line, with
+guide counts sampled from the target-gene distribution.  The same tail-scaling
+rule was then applied to each method's native pseudo-gene summary.  Mean
+cell-line-specific absolute calibration error was 0.0207 for BARCS, 0.0198 for
+DESeq2, 0.0181 for edgeR-QL, 0.0178 for limma--voom, and 0.0171 for
+MAGeCK-MLE.  Thus aggregation-aware calibration removed the earlier
+MAGeCK-MLE separation: control scaling is a method-agnostic operation, not a
+beta-binomial advantage.  Alternative methods ranked known essential genes
+more strongly.  Average precision was 0.838 for BARCS and 0.874--0.877 for
+the four alternatives; directional recall at gene FDR 0.10 was 0.600 versus
+0.738--0.767.  At a matched empirical 5\% proxy-null rate, recall was 0.867
+versus 0.879--0.888.
 
 \begin{table}[htbp]
 \centering
 \caption{Cell-line-specific Liang sensitivity results after applying the same
-non-targeting-control scaling rule to all methods.  AP is average precision;
+aggregation-matched non-targeting-control scaling rule to all methods.  AP is average precision;
 null rate is the fraction of targeted unexpressed lncRNAs with $p<0.05$; FDR
 recall is directional essential-gene recall at FDR 0.10.}
 \label{tab:liang-cell-lines}
@@ -54,35 +55,37 @@ recall is directional essential-gene recall at FDR 0.10.}
 Cell line & Method & AP & Null rate & FDR recall\\
 \midrule
 HAP1 & BARCS & 0.885 & 0.069 & 0.783\\
- & MAGeCK-MLE & 0.893 & 0.128 & 0.883\\
- & edgeR-QL & 0.905 & 0.067 & 0.867\\
- & DESeq2 & 0.906 & 0.062 & 0.867\\
- & limma--voom & 0.904 & 0.073 & 0.850\\
+ & MAGeCK-MLE & 0.893 & 0.061 & 0.817\\
+ & edgeR-QL & 0.905 & 0.062 & 0.867\\
+ & DESeq2 & 0.906 & 0.069 & 0.867\\
+ & limma--voom & 0.904 & 0.068 & 0.850\\
 \addlinespace[2pt]
 HEK293FT & BARCS & 0.666 & 0.030 & 0.267\\
- & MAGeCK-MLE & 0.753 & 0.065 & 0.500\\
- & edgeR-QL & 0.734 & 0.030 & 0.483\\
+ & MAGeCK-MLE & 0.753 & 0.015 & 0.300\\
+ & edgeR-QL & 0.734 & 0.028 & 0.467\\
  & DESeq2 & 0.728 & 0.025 & 0.450\\
- & limma--voom & 0.743 & 0.035 & 0.533\\
+ & limma--voom & 0.743 & 0.034 & 0.533\\
 \addlinespace[2pt]
-MDA-MB-231 & BARCS & 0.944 & 0.086 & 0.867\\
- & MAGeCK-MLE & 0.960 & 0.140 & 0.967\\
- & edgeR-QL & 0.959 & 0.104 & 0.917\\
- & DESeq2 & 0.957 & 0.095 & 0.900\\
- & limma--voom & 0.957 & 0.104 & 0.900\\
+MDA-MB-231 & BARCS & 0.944 & 0.029 & 0.717\\
+ & MAGeCK-MLE & 0.960 & 0.067 & 0.950\\
+ & edgeR-QL & 0.959 & 0.034 & 0.867\\
+ & DESeq2 & 0.957 & 0.037 & 0.867\\
+ & limma--voom & 0.957 & 0.036 & 0.867\\
 \addlinespace[2pt]
-THP1 & BARCS & 0.858 & 0.099 & 0.717\\
- & MAGeCK-MLE & 0.903 & 0.095 & 0.900\\
- & edgeR-QL & 0.900 & 0.084 & 0.850\\
- & DESeq2 & 0.905 & 0.087 & 0.883\\
- & limma--voom & 0.902 & 0.082 & 0.833\\
+THP1 & BARCS & 0.858 & 0.028 & 0.633\\
+ & MAGeCK-MLE & 0.903 & 0.055 & 0.883\\
+ & edgeR-QL & 0.900 & 0.029 & 0.783\\
+ & DESeq2 & 0.905 & 0.028 & 0.833\\
+ & limma--voom & 0.902 & 0.027 & 0.817\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The cell-line table localizes the macro-average.  BARCS was conservative but
-substantially less sensitive in HEK293FT, whereas the largest proxy-null rates
-occurred for MAGeCK-MLE in HAP1 and MDA-MB-231.  The proxy-null definition is
+The cell-line results in Table~\ref{tab:liang-cell-lines} localize the
+macro-average.  Calibration differences were small overall, while BARCS was
+substantially less sensitive in HEK293FT and MDA-MB-231.  Most proxy-null
+rates were below 0.05; HAP1 and the MAGeCK-MLE fits in MDA-MB-231 and THP1
+were exceptions.  The proxy-null definition is
 itself imperfect: TPM equal to zero can reflect limited expression sensitivity,
 and RfxCas13d collateral activity can produce genuine fitness effects from a
 nominally unexpressed target.  Such contamination rewards conservative
@@ -107,3 +110,7 @@ therefore illustrate the trajectory structure of one disagreement direction,
 not its prevalence.}
 \label{fig:liang}
 \end{figure}
+
+The gene-level method comparison and three prespecified guide-level
+disagreement trajectories are shown together in Figure~\ref{fig:liang}, linking
+the fitted longitudinal coefficient to the observed three-time-point patterns.

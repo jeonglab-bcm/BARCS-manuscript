@@ -5,20 +5,22 @@ model: time, donor, treatment, and interaction effects can be estimated while
 each guide remains conditional on its full mapped-guide total.  The Liang
 ablation provides direct, if modest, evidence for the longitudinal extension.
 Adding day 7 increased average precision from 0.832 to 0.838 and
-FDR-0.10 essential-gene recall from 0.608 to 0.658 relative to an endpoint
-fit.  The associated proxy-null rate also increased, so the additional time
-point improved sensitivity rather than every operating characteristic.
+FDR-0.10 essential-gene recall from 0.538 to 0.600 relative to an endpoint
+fit, while the associated proxy-null rate was essentially unchanged
+(0.038 versus 0.039).
 
 The like-for-like Liang reanalysis changes the calibration interpretation.
-Once all five methods received the same non-targeting-control scaling, BARCS,
-edgeR-QL, DESeq2, and limma--voom had nearly identical mean absolute
-calibration errors.  MAGeCK-MLE remained farther from nominal on the
-proxy-null set, but ranked essential genes most strongly.  Control scaling is
-therefore a general calibration device rather than evidence for one count
-likelihood.  Moreover, the matrix was normalized, ComBat-corrected, and
-rounded before fitting.  The result supports a practical coefficient analysis
-of that processed matrix, not a distributional claim that beta-binomial
-regression dominates negative-binomial regression.
+All five methods received the same non-targeting-control scaling after the
+controls were grouped to match the target-gene guide-count distribution.
+This makes the diagnostic aggregation-aware rather than transferring a
+one-guide scale to multi-guide gene statistics.  Mean absolute calibration
+errors were similar (0.0171--0.0207), with MAGeCK-MLE numerically closest to
+nominal and BARCS lower in ranking and FDR recall.  Control scaling remains a
+general calibration device rather than evidence for one count likelihood.
+Moreover, the matrix was normalized, ComBat-corrected, and rounded before
+fitting.  The result supports a practical coefficient analysis of that
+processed matrix, not a distributional claim that beta-binomial regression
+dominates negative-binomial regression.
 
 The IL2RA analysis gives a complementary sensitivity--precision tradeoff.
 The four-bin BARCS fit recovered 22 validated regulators, compared with 18 for
@@ -32,13 +34,17 @@ do not remove the dependence among FACS bins drawn from the same donor.
 The simulations identify where BARCS still needs caution.  Dispersion
 moderation improved genome-scale F1, while MAGeCK-MLE slightly exceeded
 BARCS-MOD in AUROC and average precision at a substantially lower realized
-FDP.  In the interaction simulation, control-based denominators removed a
-composition-induced shift and nearly doubled F1, but that experiment is a
-BARCS denominator ablation rather than a valid between-method comparison.
-The null grid further showed that unmoderated inference is conservative in
-the smallest near-binomial designs and can become modestly
-anti-conservative as sample size and dispersion increase.  Moderation
-stabilized most cells near 0.05 but did not guarantee exact size.
+FDP.  In the interaction simulation, a control denominator improved all three
+seeds, but one full-library run collapsed; among the other two runs, F1
+increased from approximately 0.71 to 0.91.  This is a heterogeneous
+within-BARCS denominator ablation, not a valid between-method comparison.
+The expanded null grid did not reproduce the continuous-dose failure by
+increasing dispersion alone under independent guides.  Instead, the focused
+correlated-guide arm isolated the gene combiner: guide-level error remained
+near or below nominal while Stouffer gene-level error reached 0.108--0.262.
+Aggregation-matched held-out scaling reduced but did not eliminate that
+inflation.  Guide dependence must therefore be represented in calibration and
+in future hierarchical gene-level inference.
 
 The external audit qualifies a recent concern without reversing it wholesale.
 The reported 152 CB\textsuperscript{2} Avana null discoveries did not survive
@@ -54,7 +60,8 @@ ranking.  BARCS supplies a general beta-binomial coefficient model for
 multivariable CRISPR screens, and the longitudinal and ordered-bin analyses
 show the sensitivity that additional design columns can recover.  Confirmatory
 use requires independent biological libraries, likelihood-compatible counts,
-and calibration evaluated on held-out, cross-fitted, or independent controls.
+and calibration evaluated on held-out, cross-fitted, or independent controls
+matched to the aggregation level of the reported statistic.
 Repeated harvests from one culture and bins partitioned from one donor require
 blocked, repeated-measures, or joint-compositional models beyond the current
 independent-library fit.  These conditions define where the method is useful

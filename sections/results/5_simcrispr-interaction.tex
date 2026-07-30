@@ -52,11 +52,15 @@ guide's library share.  Their median fitted interaction was 0.184
 0.004 and 0.030 for the non-targeting and safe-harbor denominators.  The
 control-scale factors were 1.99 and 2.24 for unmoderated and moderated
 full-library fits, compared with 1.00--1.07 for the control-denominator fits.
-BARCS-MOD consequently reached F1 0.481 with the library denominator, compared
-with 0.917 and 0.914 using non-targeting and safe-harbor denominators.  The
-held-out null rates remained below the nominal 0.10 in all cases.  The result
-identifies denominator choice, rather than the interaction coefficient itself,
-as the source of the power loss.
+The three-seed means in Table~\ref{tab:simcrispr} are not representative of a
+typical run because one library-denominator seed collapsed.  BARCS-ST F1 was
+0.039, 0.709, and 0.716 across the three seeds; BARCS-MOD F1 was 0.011, 0.680,
+and 0.754.  With the non-targeting denominator, the corresponding values were
+0.798, 0.924, and 0.889 for BARCS-ST and 0.899, 0.933, and 0.920 for BARCS-MOD.
+Thus the control denominator improved every seed, but the magnitude was
+heterogeneous: in the two noncollapsed runs, the contrast was approximately
+0.71 versus 0.91 rather than a near doubling.  The held-out null rates
+remained below the nominal 0.10 in all cases.
 
 \begin{figure}[htbp]
 \centering
@@ -69,7 +73,9 @@ more interaction power.}
 \label{fig:simcrispr}
 \end{figure}
 
-The two control denominators performed similarly overall but differed on
+Figure~\ref{fig:simcrispr} shows the composition-induced null shift and the
+corresponding threshold curves.  The two control denominators performed
+similarly overall but differed on
 cutting artifacts.  Safe-harbor guides were called at 0.080 after
 non-targeting normalization and 0.035 after safe-harbor normalization.
 Non-targeting controls are therefore efficient for detecting targeted
