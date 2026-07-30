@@ -16,33 +16,36 @@ FDR 0.10 discoveries from 152 to zero.
 
 \begin{table}[htbp]
 \centering
-\caption{CB\textsuperscript{2} and BARCS results in the external
-false-discovery audit.  The deposited benchmark and CB\textsuperscript{2}
-results follow \citet{dempster2025fdr} and its accompanying data release
-\citep{dempster2025fdrdata}; BARCS results are our reruns on the deposited
-normalized tables.  ``Known'' denotes the 28 curated DeWeirdt
-condition--gene combinations \citep{deweirdt2020isogenic}, not a complete
-truth set.}
+\caption{Reported, reanalyzed CB\textsuperscript{2}, and BARCS results in the
+external false-discovery audit.  Reported results and deposited inputs follow
+\citet{dempster2025fdr} and the accompanying data release
+\citep{dempster2025fdrdata}.  CB\textsuperscript{2} was reanalyzed only for
+Avana; BARCS was run for PSN1 and DeWeirdt.  ``Known'' denotes the 28 curated
+DeWeirdt condition--gene combinations \citep{deweirdt2020isogenic}, not a
+complete truth set.}
 \label{tab:chronosaudit}
-\small
-\setlength{\tabcolsep}{3.5pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.10}
-\begin{tabular}{p{0.18\textwidth}p{0.27\textwidth}p{0.27\textwidth}
-                p{0.18\textwidth}}
+\begin{tabular}{p{0.15\textwidth}p{0.17\textwidth}p{0.17\textwidth}
+                p{0.24\textwidth}p{0.16\textwidth}}
 \toprule
-Benchmark & CB\textsuperscript{2} analysis and result &
-BARCS analysis and result & Diagnostic\\
+Benchmark & Reported by \citet{dempster2025fdr} &
+CB\textsuperscript{2} reanalysis & BARCS & Diagnosis\\
 \midrule
 Avana null-only &
-Published subset fit: 152 calls at FDR 0.10; full-total audit: 0 calls &
-Not fitted; this analysis isolates the CB\textsuperscript{2} denominator &
+152 calls at FDR 0.10 &
+0 calls at FDR 0.10 &
+--- &
 Largest full-total null $p<0.05$ rate: 0.145\\
-PSN1 two-versus-two split &
-0 gene calls under the null pseudo-condition &
+PSN1 null split &
+0 gene calls &
+--- &
 0 gene calls; guide $p<0.05$: 0.0481 raw and 0.0465 scaled &
 Control scale: 1.017\\
 DeWeirdt differential screens &
-0 calls; 0/28 known interactions recovered &
+0 calls; 0/28 known recovered &
+--- &
 38 calls; 1/28 known interactions recovered &
 37/38 calls arose in one comparison\\
 \bottomrule
