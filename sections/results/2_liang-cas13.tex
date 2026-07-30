@@ -15,14 +15,15 @@ lower mean cell-line-specific proxy-null calibration error than MAGeCK-MLE
 known essential genes more strongly (average precision 0.874--0.877 versus
 0.838).  At a matched empirical 5\% proxy-null false-positive rate, BARCS
 recalled 0.863 of essential genes and the alternatives recalled 0.879--0.888.
-BARCS therefore reduced excess significance in this input without improving
-essential-gene ranking.
+BARCS therefore reduced excess significance without improving essential-gene
+ranking.
 
-Figure~\ref{fig:liang} localizes that difference.  Three guides assigned to the
-proxy-null set had BARCS $p$-values of 0.20--0.23 but were significant under
-DESeq2, edgeR-QL, and limma--voom.  Their two replicate trajectories do not
-show a consistent monotone depletion from day 0 through day 14.  These are
-concrete disagreement cases, not independent biological validation.
+Three guides assigned to the proxy-null set illustrate this discrepancy:
+their BARCS $p$-values were 0.20--0.23, whereas DESeq2, edgeR-QL, and
+limma--voom called them significant (Figure~\ref{fig:liang}).  Their two
+replicate trajectories do not show a consistent monotone depletion from day 0
+through day 14.  These are concrete disagreement cases, not independent
+biological validation.
 
 \begin{figure}[htbp]
 \centering
