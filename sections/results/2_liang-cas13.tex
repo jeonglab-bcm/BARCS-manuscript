@@ -41,56 +41,6 @@ the four alternatives; directional recall at gene FDR 0.10 was 0.600 versus
 0.738--0.767.  At a matched empirical 5\% proxy-null rate, recall was 0.867
 versus 0.879--0.888.
 
-\begin{table}[htbp]
-\centering
-\caption{Cell-line-specific Liang sensitivity results after applying the same
-aggregation-matched non-targeting-control scaling rule to all methods.  AP is average precision;
-null rate is the fraction of targeted unexpressed lncRNAs with $p<0.05$; FDR
-recall is directional essential-gene recall at FDR 0.10.}
-\label{tab:liang-cell-lines}
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrr}
-\toprule
-Cell line & Method & AP & Null rate & FDR recall\\
-\midrule
-HAP1 & BARCS & 0.885 & 0.069 & 0.783\\
- & MAGeCK-MLE & 0.893 & 0.061 & 0.817\\
- & edgeR-QL & 0.905 & 0.062 & 0.867\\
- & DESeq2 & 0.906 & 0.069 & 0.867\\
- & limma--voom & 0.904 & 0.068 & 0.850\\
-\addlinespace[2pt]
-HEK293FT & BARCS & 0.666 & 0.030 & 0.267\\
- & MAGeCK-MLE & 0.753 & 0.015 & 0.300\\
- & edgeR-QL & 0.734 & 0.028 & 0.467\\
- & DESeq2 & 0.728 & 0.025 & 0.450\\
- & limma--voom & 0.743 & 0.034 & 0.533\\
-\addlinespace[2pt]
-MDA-MB-231 & BARCS & 0.944 & 0.029 & 0.717\\
- & MAGeCK-MLE & 0.960 & 0.067 & 0.950\\
- & edgeR-QL & 0.959 & 0.034 & 0.867\\
- & DESeq2 & 0.957 & 0.037 & 0.867\\
- & limma--voom & 0.957 & 0.036 & 0.867\\
-\addlinespace[2pt]
-THP1 & BARCS & 0.858 & 0.028 & 0.633\\
- & MAGeCK-MLE & 0.903 & 0.055 & 0.883\\
- & edgeR-QL & 0.900 & 0.029 & 0.783\\
- & DESeq2 & 0.905 & 0.028 & 0.833\\
- & limma--voom & 0.902 & 0.027 & 0.817\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The cell-line results in Table~\ref{tab:liang-cell-lines} localize the
-macro-average.  Calibration differences were small overall, while BARCS was
-substantially less sensitive in HEK293FT and MDA-MB-231.  Most proxy-null
-rates were below 0.05; HAP1 and the MAGeCK-MLE fits in MDA-MB-231 and THP1
-were exceptions.  The proxy-null definition is
-itself imperfect: TPM equal to zero can reflect limited expression sensitivity,
-and RfxCas13d collateral activity can produce genuine fitness effects from a
-nominally unexpressed target.  Such contamination rewards conservative
-methods, so these rates are diagnostics rather than validated type-I errors.
-
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/liang_longitudinal_volcano_trajectories.pdf}
