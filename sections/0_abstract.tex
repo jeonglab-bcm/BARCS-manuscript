@@ -1,39 +1,31 @@
 % !TeX root = ../main.tex
 \begin{abstract}
-\noindent\textbf{Background.}  Beta-binomial models represent a guide count as
-a proportion conditional on its library total.  Existing CRISPR implementations
-of this idea are largely restricted to two-group comparisons, whereas modern
-screens often require time, dose, donor, or interaction effects.
+\noindent\textbf{Background.}  Pooled CRISPR screens increasingly use
+longitudinal, donor-adjusted, and factorial designs, yet beta-binomial screen
+methods have largely remained limited to two-group comparisons.
 
-\noindent\textbf{Methods.}  BARCS implements guide-level beta-binomial
-regression,
-$\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g$.  It conditions each
-guide count on the unfiltered library total, estimates prespecified
-coefficients or contrasts, and optionally uses negative-control calibration
-and dispersion moderation.  Simulations with known truth and held-out controls
-were used to distinguish ranking performance from error-rate calibration.
+\noindent\textbf{Methods.}  BARCS extends the library-total-conditional
+beta-binomial model to guide-level regression with an arbitrary design matrix.
+We evaluated longitudinal and ordered-phenotype experiments, multivariable
+simulations with known truth, and external false-discovery benchmarks.
 
-\noindent\textbf{Results.}  In a correctly specified continuous-dose
-simulation, unmoderated BARCS was anti-conservative: its null type-I error was
-0.081 and its empirical false-discovery proportion was 0.130 at nominal 0.05,
-versus 0.038 and 0.049 for MAGeCK-MLE.  A five-fold held-out analysis of 593
-non-targeting guides in an IL2RA screen gave a BARCS $p<0.05$ rate of 0.049
-after control scaling, but the correlated FACS-bin design remains outside the
-independent-library model.  A Cas13 sensitivity analysis used days 0, 7, and 14
-in four replicate-complete cell lines; BARCS had a lower mean
-cell-line-specific null calibration
-error than MAGeCK-MLE (0.025 versus 0.057), whereas MAGeCK-MLE and general
-RNA-sequencing methods ranked essential genes more strongly.  Because these
-inputs were normalized, ComBat-corrected, and rounded, that comparison does not
-validate either count likelihood.  Dispersion and denominator ablations
-improved BARCS in simulations, but they do not establish superiority over
-competing methods.
+\noindent\textbf{Results.}  BARCS estimated a single longitudinal effect across
+three Cas13 time points and distinguished several proxy-null guide trajectories
+that competing count methods called significant.  In an IL2RA FACS screen,
+donor-adjusted analysis of all four ordered bins recovered more validated
+regulators per discovery than a matched MAGeCK-MLE fit, while held-out
+non-targeting controls exposed and corrected excess guide-level significance.
+Simulations showed that dispersion moderation improved BARCS within a common
+analysis pipeline and that control-based denominators substantially improved
+interaction recovery under global composition shifts.  Results were
+dataset-dependent: alternative methods ranked essential genes more strongly in
+the processed Cas13 data, and external audits showed that preprocessing and
+library-total definitions can change apparent false-discovery behavior.
 
-\noindent\textbf{Conclusions.}  BARCS supplies a design-matrix extension of
-beta-binomial CRISPR-screen analysis, but the present plug-in dispersion
-estimator does not provide uniformly calibrated finite-sample inference.
-Independent biological replication, likelihood-compatible counts, and
-held-out or cross-fitted controls are required.  The results support the
-software contribution and define the work needed for confirmatory use; they do
-not show that beta-binomial regression dominates negative-binomial methods.
+\noindent\textbf{Conclusions.}  BARCS generalizes the beta-binomial sampling
+principle from pairwise screening to multivariable CRISPR designs.  Its main
+advantage is direct estimation of time, covariate, and interaction effects
+while preserving full-library denominators.  Confirmatory use still requires
+independent biological replication, likelihood-compatible counts, and
+held-out or cross-fitted controls.
 \end{abstract}

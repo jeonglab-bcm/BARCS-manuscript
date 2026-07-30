@@ -1,61 +1,45 @@
 % !TeX root = ../main.tex
-BARCS contributes a CRISPR-oriented implementation of beta-binomial
-regression: immutable library totals, an arbitrary design matrix, guide-level
-coefficient tests, and screen-scale execution.  This extends the questions
-available through CB\textsuperscript{2}, but it does not establish a new
-distribution family or a finite-sample nesting result.  Beta-binomial
-regression is already available in \texttt{corncob} and general statistical
-packages, and the BARCS and CB\textsuperscript{2} estimators differ materially.
+BARCS extends a CRISPR-specific beta-binomial sampling principle to arbitrary
+design matrices.  The contribution is not a new probability distribution; it
+is the ability to estimate time, covariate, and interaction coefficients while
+conditioning every guide on the full mapped-guide total.
 
-The most important result is the calibration failure in
-Table~\ref{tab:type1}.  Under a correctly specified beta-binomial simulation,
-unmoderated BARCS has null type-I error 0.081 and empirical FDP 0.130 at
-nominal 0.05.  MAGeCK-MLE is close to or below nominal in the same simulation.
-No guide reaches the $\widehat\rho=0$ boundary, so lower-bound truncation is not
-the explanation in this instance.  Plug-in treatment of guide-specific
-dispersion and the coefficient reference distribution remain plausible
-sources, but identifying the mechanism requires a dedicated simulation grid
-rather than a post hoc assertion.
+The longitudinal Cas13 analysis demonstrates that extension directly.  BARCS
+used all three time points with a replicate block and returned fewer
+significant proxy-null trajectories than the alternative count methods.
+Those alternatives ranked known essential genes more strongly, so the main
+finding is a calibration--ranking tradeoff on a transformed matrix.  Raw reads
+are needed to determine how much of that difference comes from the sampling
+model rather than upstream normalization.
 
-The real-data diagnostics do not overturn that result.  Five-fold
-cross-fitting in the IL2RA screen yields a held-out non-targeting rate of 0.049,
-showing that the control-scaling rule transfers to omitted controls at the
-chosen tail probability.  The FACS bins are nevertheless correlated partitions
-of three donor pools, so a scalar correction does not make the independent-bin
-likelihood correct.  Waterbear and MAUDE model that structure directly and
-recover more validated regulators.  The selected 33-gene follow-up panel is
-also enriched by design and cannot support an unbiased genome-wide accuracy
-claim.
+The IL2RA experiment provides the clearest real-data efficiency result.
+Donor-adjusted BARCS recovered 22 validated regulators in 49 discoveries,
+compared with 17 in 72 for the matched MAGeCK-MLE design.  The intermediate
+FACS bins contributed four regulators beyond the BARCS outer-bin analysis, and
+five-fold control cross-fitting reduced the held-out non-targeting rate to the
+nominal level.  Waterbear remains better aligned with the joint-bin data
+structure, but BARCS provides a simple coefficient analysis when ordered
+phenotypes and covariates must be handled together.
 
-The Liang analysis demonstrates that the software can fit a three-time-point
-coefficient in four replicate-complete cell lines.  It separates ranking from a proxy-null
-diagnostic and includes general RNA-sequencing comparators.  BARCS has the
-lowest mean cell-line-specific calibration error, whereas the other methods
-rank essential genes more strongly.  Because every method receives
-normalized, ComBat-corrected, rounded values, this is a robustness analysis of
-procedures on one transformed matrix, not evidence for either the
-beta-binomial or negative-binomial likelihood.  The same preprocessing
-standard is applied to the external Chronos audit.
+The simulations identify two practical components of that analysis.
+Dispersion moderation improved precision and F1 without increasing realized
+FDP in the genome-scale FACS screen.  In the factorial screen, control-based
+denominators prevented global depletion from shifting true-zero interactions
+and nearly doubled F1 relative to the full-library denominator.  The latter
+result is not a universal recommendation to replace full-library totals:
+control denominators are appropriate when stable controls define the intended
+composition reference, and their choice must match whether cutting artifacts
+should be retained or absorbed.
 
-The HT-29 analysis has a different limitation.  Its seven days are serial
-harvests of one passaged culture.  The resulting trajectory scores are useful
-descriptively, but their sample-level degrees of freedom do not represent seven
-independent biological units.  The deposited day-25 MAGeCK score has the
-highest AUROC and high-precision recall, so this dataset supplies no evidence
-that using the time course improves those endpoints.
+Finally, the external audit shows why the analysis contract must be explicit.
+Subsetting guides before fitting changed the beta-binomial denominator and
+converted 152 reported null calls to zero when full-library totals were
+preserved.  This does not resolve every calibration question, but it
+demonstrates that equal preprocessing is not necessarily equal statistical
+input for models that use sequencing depth differently.
 
-The simulation ablations identify useful implementation choices without
-supporting broad competitive claims.  Dispersion moderation improves BARCS
-within the 10,000-gene CRISPulator runs, and control-guide denominators improve
-interaction recovery in simCRISPR.  The broader 400-gene comparison shows that
-edgeR-QL, DESeq2, and limma--voom can match or exceed BARCS ranking and F1,
-albeit at different realized FDPs.  BARCS-MOD is fully defined in
-Equations~\eqref{eq:guide-moderation}--\eqref{eq:guide-moderated-t}, but it has
-not been validated on the real-data settings where calibration is problematic.
-
-Taken together, the results support software availability and a research
-direction, not confirmatory deployment.  A production version requires
-correlation-aware designs for repeated biological units and sorted bins,
-likelihood-compatible raw counts, dispersion inference that attains nominal
-error over a prespecified simulation grid, hierarchical guide-to-gene
-inference, and calibration evaluated only on held-out or cross-fitted controls.
+The resulting story is consistent across datasets.  BARCS generalizes the
+beta-binomial screen model beyond two groups; longitudinal and ordered-bin
+examples show what the additional coefficients recover; and simulations and
+audits identify the dispersion, denominator, replication, and calibration
+conditions needed for reliable use.

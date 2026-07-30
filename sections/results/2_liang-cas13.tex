@@ -4,34 +4,25 @@
 
 The Cas13 fitness screens of \citet{liang2026lncrna} contain measurements from
 days 0, 7, and 14.  K562 was excluded because one day-0 replicate was not
-deposited.  In the four retained cell lines, BARCS, MAGeCK-MLE, edgeR-QL,
-DESeq2, and limma--voom estimated the same continuous time slope with a
-replicate block and used two-sided significance tests.
+deposited.  In HAP1, HEK293FT, MDA-MB-231, and THP1, every method estimated the
+same day-0-to-day-14 slope with a replicate block and a two-sided test.  Thus
+the comparison preserves the longitudinal feature rather than collapsing the
+screen to an endpoint.
 
-The deposited values had already undergone median-of-ratios normalization,
-ComBat correction, and replicate-outlier processing.  We rounded them once to
-the nearest pseudo-count and supplied the same matrix to every method.
-Accordingly, this is a processed-count sensitivity analysis rather than a
-raw-count likelihood comparison.  In particular, it cannot be used as primary
-evidence that a beta-binomial likelihood is better calibrated than a
-negative-binomial likelihood.
+The principal finding is a calibration--ranking tradeoff.  BARCS produced a
+lower mean cell-line-specific proxy-null calibration error than MAGeCK-MLE
+(0.025 versus 0.057), but MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom ranked
+known essential genes more strongly (average precision 0.874--0.877 versus
+0.838).  At a matched empirical 5\% proxy-null false-positive rate, BARCS
+recalled 0.863 of essential genes and the alternatives recalled 0.879--0.888.
+BARCS therefore reduced excess significance in this input without improving
+essential-gene ranking.
 
-Across cell lines, the mean null $p<0.05$ rate was 0.064 for BARCS and 0.107
-for MAGeCK-MLE.  The corresponding mean cell-line-specific absolute
-calibration errors were 0.025 and 0.057; 0.025 is not the absolute deviation of
-the macro-averaged 0.064 rate.  MAGeCK-MLE ranked essential genes more strongly
-(average precision 0.877 versus 0.838), as did edgeR-QL, DESeq2, and
-limma--voom (0.874--0.876).
-
-At an empirical 5\% null false-positive rate, essential-gene recall was 0.863
-for BARCS and 0.879--0.888 for the alternative longitudinal regression
-methods.  Figure~\ref{fig:liang} shows the complete method-specific volcano
-plots across all four retained cell lines and three guide trajectories from HAP1, THP1,
-and MDA-MB-231.  These guides target lncRNAs assigned to the proxy-null set
-because their measured expression was zero.  BARCS returned $p=0.20$--$0.23$,
-whereas DESeq2, edgeR-QL, and limma--voom returned $p<0.05$.  The examples
-illustrate disagreement on the transformed matrix; they are not independent
-validation of the guides' biological null status.
+Figure~\ref{fig:liang} localizes that difference.  Three guides assigned to the
+proxy-null set had BARCS $p$-values of 0.20--0.23 but were significant under
+DESeq2, edgeR-QL, and limma--voom.  Their two replicate trajectories do not
+show a consistent monotone depletion from day 0 through day 14.  These are
+concrete disagreement cases, not independent biological validation.
 
 \begin{figure}[htbp]
 \centering
@@ -42,9 +33,10 @@ DESeq2, and limma--voom, pooling gene-level results from HAP1, HEK293FT,
 MDA-MB-231, and THP1.  K562 is excluded because one day-0 replicate is absent.
 Within each retained cell line, every method estimates the same
 continuous time slope from the identical processed-count matrix.  Colored
-points are negatively directed genes called at two-sided FDR 0.10, with color
-denoting cell line; the dashed horizontal line marks nominal two-sided
-$p=0.05$, and triangles identify $-\log_{10}(p)$ values clipped at 60.
+points are negatively directed genes called at two-sided FDR 0.10.  To make
+the dense central region legible, the horizontal axis is a signed logarithmic
+effect transform and the vertical axis is
+$\log_{10}\{1-\log_{10}(p)\}$; the dashed line marks two-sided $p=0.05$.
 (A--C) Processed guide counts divided by the corresponding library size, in
 counts per million, for three proxy-null examples.  Lines connect measurements
 from the same replicate across days.  BARCS leaves each guide non-significant,
@@ -55,9 +47,8 @@ gene-level.}
 \label{fig:liang}
 \end{figure}
 
-Rounding changed each deposited value by less than 0.5, but the upstream
-transformations mean that none of the fitted likelihoods retains its literal
-raw-count interpretation.  Confirmation from raw reads therefore remains
-necessary before drawing a distributional or confirmatory inference claim.
-The supplied streaming workflow performs the full longitudinal preparation for
-that validation.
+The deposited matrix had already been normalized, ComBat-corrected, and
+outlier-processed before it was rounded to pseudo-counts.  The result is
+therefore a same-input sensitivity analysis, not a likelihood comparison.
+Raw-read confirmation is required before attributing the observed differences
+to beta-binomial or negative-binomial sampling assumptions.

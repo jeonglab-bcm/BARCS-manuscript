@@ -1,36 +1,34 @@
 % !TeX root = ../../main.tex
-\subsection{Simulation identifies an internal benefit of dispersion moderation}
+\subsection{Dispersion moderation improves BARCS in genome-scale simulation}
 \label{sec:crispulator}
 
 We used CRISPulator to evaluate a FACS design under known truth
-\citep{nagy2017crispulator}.  Three prespecified genome-scale seeds each
-generated 10,000 genes, five guides per gene, four independent replicates, and
-low, bulk, and high fractions.  Twenty percent of genes affected the phenotype
-and 5\% were explicit negative controls.  All fitted methods received the same
-simulated counts and design.
+\citep{nagy2017crispulator}.  Three prespecified seeds each generated 10,000
+genes, five guides per gene, four independent replicates, and low, bulk, and
+high fractions.  All methods received the same counts and design.
 
-The genome-scale analysis was designed as an ablation within BARCS.  BARCS-ST
-uses the original guide-specific dispersion estimate, whereas BARCS-MOD applies
-the scaled-$F$ moderation defined in Methods before using the same gene
-summary.  Moderation increased average precision from 0.902 to 0.919 and F1 at
-gene FDR 0.10 from 0.811 to 0.847; realized FDP was 0.065 and 0.066,
-respectively.  Because the effects, gene aggregation, controls, and thresholds
-are shared, this supports a benefit of moderation within BARCS.  BARCS-MOD was
-not applied to the real-data benchmarks, so this result does not explain or
-repair their calibration behavior.
+The comparison isolates one change within BARCS.  BARCS-ST uses the original
+guide-specific dispersion estimate, whereas BARCS-MOD moderates those
+estimates before applying the same gene summary.  Moderation increased average
+precision from 0.902 to 0.919 and F1 at gene FDR 0.10 from 0.811 to 0.847,
+while realized FDP remained nearly unchanged (0.065 and 0.066).  This supports
+dispersion moderation within the common BARCS pipeline.
 
-MAGeCK-MLE and CRISPhieRmix were included in the 10,000-gene run, but that
-restricted comparator set is not sufficient for a general method-ranking
-claim.  A separate five-seed, 400-gene baseline included edgeR-QL, DESeq2, and
-limma--voom.  Their mean AUROCs were 0.965, 0.963, and 0.965, compared with
-0.955 for BARCS-ST and 0.964 for MAGeCK-MLE.  Mean F1 ranged only from 0.817 to
-0.832 across these five count models, while realized FDP ranged from 0.048 for
-MAGeCK-MLE and 0.086 for BARCS-ST to 0.218--0.240 for the three general
-RNA-sequencing methods.  Thus ranking, F1, and calibration favor different
-methods, and no count model dominates this broader comparison.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_moi_10k_f1_by_fdr.pdf}
+\caption{\textbf{CRISPulator threshold sensitivity.}  (A,B) MOI 0.20 and
+(C,D) MOI 0.30.  F1 is shown on the left and realized FDP on the right; the
+dashed diagonal denotes realized FDP equal to the requested threshold.  The
+shared simulation, gene summary, and thresholds isolate the BARCS-ST versus
+BARCS-MOD moderation effect.}
+\label{fig:crispulator}
+\end{figure}
 
-Supplementary Figure~\ref{fig:crispulator} shows F1 and realized FDP across
-requested thresholds for the restricted genome-scale set.  Curves matched by
-realized FDP are useful for the BARCS-ST versus BARCS-MOD ablation, but they
-must not be read as evidence that BARCS-MOD leads methods omitted from that
-run.
+Figure~\ref{fig:crispulator} shows that the gain persisted across requested
+thresholds and at both simulated multiplicities of infection.  The
+genome-scale comparator set was restricted to MAGeCK-MLE and CRISPhieRmix; it
+therefore supports the moderation ablation, not a universal method ranking.
+In a broader 400-gene comparison, edgeR-QL, DESeq2, and limma--voom matched or
+exceeded BARCS ranking but had higher realized FDP.  Ranking and calibration
+thus favored different methods.

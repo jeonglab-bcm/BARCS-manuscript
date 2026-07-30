@@ -1,85 +1,53 @@
 % !TeX root = ../main.tex
-Pooled CRISPR screens increasingly measure guide abundance across more than
-two experimental conditions.  Examples include time courses, dose series,
-ordered FACS fractions, donor-stratified experiments, and factorial designs.
-In these studies the scientific estimand is a trend, an adjusted association,
-or an interaction.  Reducing the experiment to a high-versus-low comparison
-discards intermediate observations and prevents direct adjustment for
-additional design variables.
+Pooled CRISPR screens increasingly measure guide abundance across time,
+ordered FACS fractions, donors, doses, or factorial treatment arms.  Their
+scientific targets are slopes, adjusted associations, and interactions.
+Reducing these experiments to repeated high-versus-low contrasts discards
+intermediate observations and prevents one effect from being estimated
+conditional on the remaining design variables.
 
-The sampling model is consequential in this setting.  RNA-sequencing methods
-typically model a transcript count with a negative-binomial distribution and
+The count denominator is central to this problem.  RNA-sequencing methods
+generally model marginal counts with negative-binomial distributions and
 represent library size through normalization or an offset
-\citep{anders2010deseq,love2014deseq2,law2014voom,lun2016edger}.  Several
-CRISPR-screen methods adopted this framework
-\citep{li2014mageck,li2015mageckvispr}.  A pooled-guide count also has a known
-denominator, however: the total number of mapped guide reads in that library.
-Conditional on this total, guide abundance is a proportion.  The
-beta-binomial model represents this structure directly and separates
-depth-dependent sampling variation from heterogeneity among biological
-libraries.  In the original CB\textsuperscript{2} study, goodness-of-fit
-comparisons favored the beta-binomial over negative-binomial alternatives for
-pooled CRISPR counts \citep{jeong2019beta}.
+\citep{anders2010deseq,love2014deseq2,law2014voom,lun2016edger}.  In a pooled
+screen, however, each guide count is observed together with the total number
+of mapped guide reads in that library.  Conditional on this total, guide
+abundance is a proportion.  The beta-binomial model represents that sampling
+structure directly and separates depth-dependent sequencing variation from
+heterogeneity among biological libraries.  The original
+CB\textsuperscript{2} study found better goodness of fit for beta-binomial than
+negative-binomial models in pooled CRISPR counts \citep{jeong2019beta}.
 
-Beta-binomial regression itself is not new.  The \texttt{corncob} framework
-models both the mean and overdispersion of counts conditional on library totals
-\citep{martin2020corncob}, and general implementations are available in
+CB\textsuperscript{2} applies this principle to two independent groups, whereas
+modern screen designs require a general coefficient model.  Beta-binomial
+regression is available in \texttt{corncob} and statistical packages including
 \texttt{aod}, \texttt{VGAM}, and \texttt{gamlss}
-\citep{lesnoff2012aod,yee1996vgam,rigby2005gamlss}.  BARCS is therefore not
-presented as the first beta-binomial regression method.  Its contribution is a
-CRISPR-screen implementation that preserves immutable guide-library totals,
-uses an R design matrix, returns guide-level coefficient tests at screen scale,
-and connects this workflow to CB\textsuperscript{2}.
-
-CB\textsuperscript{2} applies its sampling model to two independent groups.
-For guide $g$ observed in library $i$, let $K_{gi}$
-denote the guide count, $N_i$ the unfiltered mapped-guide total, and
-$\mathbf{x}_i^\top$ one row of a prespecified, full-rank sample design matrix.
-The regression problem is
-\begin{equation}
-  K_{gi}\mid N_i
-  \sim \operatorname{BetaBinomial}(N_i,\mu_{gi},\rho_g),
-  \qquad
-  \logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol{\beta}_g,
-  \qquad
-  H_0:\mathbf{c}^\top\boldsymbol{\beta}_g=0 .
-  \label{eq:intro-target}
-\end{equation}
-Here time, dose, donor, batch, or treatment is a sample-level predictor; the
-guide proportion remains the response.  Independent biological libraries,
-not individual reads, determine the residual degrees of freedom.
-
-Existing methods address parts of this problem.  Repeated two-group analyses
-cannot estimate one coefficient conditional on the remaining columns of the
-design matrix.  General RNA-sequencing tools support arbitrary designs but do
-not condition each guide on its observed library total.  At the other end of
-the spectrum, Chronos and Waterbear model population dynamics or joint FACS-bin
+\citep{martin2020corncob,lesnoff2012aod,yee1996vgam,rigby2005gamlss}, but these
+tools do not provide a CRISPR-oriented workflow that preserves immutable
+full-library totals, fits guide-level design matrices at screen scale, and
+connects the result to established screen outputs.  Specialized methods such
+as Chronos and Waterbear model population dynamics or joint FACS-bin
 membership, respectively, but are tied to those experimental structures
-\citep{dempster2021chronos,pimentel2024waterbear}.  A general-purpose,
-depth-aware coefficient test for pooled CRISPR designs remains missing.
+\citep{dempster2021chronos,pimentel2024waterbear}.
 
-We introduce BARCS (Beta-binomial Analysis and Regression for CRISPR Screens)
-to fill this gap.  BARCS retains the beta-binomial sampling principle of
-CB\textsuperscript{2}, replaces the two group means with an R model matrix, and
-tests a prespecified coefficient or contrast with sample-level inference.  The
-relationship to CB\textsuperscript{2} is structural: both methods condition
-guide counts on library totals and cap the information contributed by deeper
-sequencing.  Their estimators, effect scales, dispersion assumptions, and
-finite-sample reference distributions differ, so BARCS is not claimed to nest
-the implemented CB\textsuperscript{2} test.
+We developed BARCS (Beta-binomial Analysis and Regression for CRISPR Screens)
+to fill this design gap.  BARCS keeps the library-total-conditional
+beta-binomial sampling model and replaces two group means with a regression
+design matrix.  A single fit can estimate time, donor-adjusted abundance,
+treatment, or interaction effects.  Independent biological libraries, rather
+than individual reads, determine the residual degrees of freedom.  This
+generalizes the questions available through CB\textsuperscript{2}; it does not
+require the two implementations to share the same estimator or finite-sample
+test.
 
-The empirical evaluation begins with calibration under known truth.  It then
-uses the three-time-point Cas13 study of four replicate-complete cell lines from
-\citet{liang2026lncrna} as a processed-count sensitivity analysis and an
-ordered-bin IL2RA screen as a held-out-control diagnostic.  Genome-scale and
-factorial simulations examine dispersion moderation and denominator choice.
-The serially harvested HT-29 culture, endpoint screens, and copy-number
-analyses are retained as descriptive robustness checks rather than evidence for
-sample-level longitudinal inference.
-
-This design supports a deliberately limited claim.  BARCS makes a
-library-total-conditional beta-binomial mean model available to designs that
-CB\textsuperscript{2} cannot represent.  Whether its coefficient probabilities
-are calibrated is a separate empirical question.  The benchmarks therefore
-report failures as well as successes and do not treat the sampling-model choice
-as proof of superiority over negative-binomial regression.
+We evaluate the extension in the order in which it is used.  A
+three-time-point Cas13 screen tests longitudinal coefficients across four
+replicate-complete cell lines.  An IL2RA screen tests a donor-adjusted ordered
+phenotype against independently validated regulators and held-out
+non-targeting guides.  Genome-scale and factorial simulations then isolate
+dispersion moderation and denominator choice under known truth.  Finally, an
+external audit shows how pre-fit subsetting can change the effective library
+total and the apparent false-discovery result.  Together, these analyses test
+the central claim that beta-binomial CRISPR analysis can be extended from
+pairwise comparisons to interpretable multivariable coefficients while
+retaining the denominator that defines the sampling model.

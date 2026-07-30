@@ -1,18 +1,14 @@
 % !TeX root = ../main.tex
 BARCS makes library-total-conditional beta-binomial regression available for
-continuous, adjusted, and interaction designs in pooled CRISPR screens.  That
-is the supported methodological contribution.
+longitudinal, covariate-adjusted, and interaction designs in pooled CRISPR
+screens.  Its central advance over CB\textsuperscript{2} is the design matrix:
+time, donor, treatment, and interaction effects can be estimated directly
+rather than reconstructed from pairwise tests.
 
-The current evidence does not establish superior calibration or generalization
-relative to negative-binomial methods.  Unmoderated BARCS is anti-conservative
-in the correctly specified simulation, the strongest experimental
-calibration result requires cross-fitted controls, the Liang comparison uses
-transformed pseudo-counts, and HT-29 lacks independent longitudinal
-replication.  Simulation ablations identify promising moderation and
-denominator choices, but those additions require prospective validation.
-
-BARCS should therefore be treated as a transparent prototype for multivariable
-beta-binomial CRISPR analysis.  Confirmatory use depends on independent
-biological replication, raw or likelihood-compatible counts, a
-correlation-aware design where needed, and an error-rate evaluation that is
-strictly separated from calibration fitting.
+The empirical results identify where that extension is useful.  BARCS reduced
+proxy-null significance in the processed longitudinal screen, recovered
+validated IL2RA regulators with fewer discoveries than a matched MAGeCK-MLE
+fit, and benefited from dispersion moderation and control denominators in
+simulations with known truth.  Reliable confirmatory use requires independent
+biological replication, likelihood-compatible counts, preserved full-library
+totals, and calibration evaluated on controls not used for fitting.

@@ -1,133 +1,60 @@
 % !TeX root = ../../main.tex
-\subsection{External false-discovery benchmark: sensitivity to the analysis contract}
+\subsection{False-discovery conclusions depend on the analysis contract}
+\label{sec:fdr-audit}
 
-A recent Chronos hit-calling preprint compared CB\textsuperscript{2},
-MAGeCK, JACKS \citep{allen2019jacks}, DrugZ \citep{colic2019drugz}, and Chronos
-on single-condition dependency calling and
-differential viability \citep{dempster2025fdr}.  The deposited notebooks and
-intermediate files make this comparison unusually auditable
-\citep{dempster2025fdrdata}.  They expose two distinct observations that
-should not be conflated.  Original CB\textsuperscript{2} has a genuine
-small-sample power limitation in two-versus-two condition comparisons, but
-the strongest reported evidence of anti-conservative CB\textsuperscript{2}
-inference is sensitive to an incompatible preprocessing step.
+We audited a deposited Chronos benchmark that compared CB\textsuperscript{2},
+MAGeCK, JACKS, DrugZ, and Chronos \citep{dempster2025fdr,
+dempster2025fdrdata}.  The key issue was the beta-binomial denominator.  In
+the reported null-only Avana analysis, the count matrix was restricted to
+control genes before fitting, so its column sums no longer represented full
+sequencing depth.  Reusing the full-library CB\textsuperscript{2} probabilities
+for the same test genes changed the number of FDR 0.10 discoveries from 152 to
+zero.
 
-For guide $g$ and sample $j$, CB\textsuperscript{2} constructs the library
-total internally as
-\[
-N_j=\sum_{g\in\mathcal{G}}K_{gj}.
-\]
-The null-only Avana benchmark first restricted the count matrix to selected
-control genes and then ran CB\textsuperscript{2}.  Consequently, its
-beta-binomial denominator became
-\[
-N_j^{\mathrm{subset}}
-  =\sum_{g\in\mathcal{G}_{0}}K_{gj},
-\]
-rather than the full sequencing depth.  Filtering guides is legitimate for
-evaluation, but it must occur after fitting or be accompanied by immutable
-full-library totals.  This distinction matters because within-sample
-rescaling leaves guide proportions unchanged while changing the
-beta-binomial sampling variance through $N_j$.
-
-We audited this point using the deposited null-only and full-gene result
-tables.  The published subset-matrix analysis
-reports 152 test-negative discoveries at FDR 0.1.  Restricting the
-full-library CB\textsuperscript{2} $p$-values to exactly the same test genes
-and reapplying Benjamini--Hochberg gives zero discoveries in all five cell
-lines (Table~\ref{tab:chronosaudit}).  The nominal $p<0.05$ frequency still
-reaches 14.5\% and 11.7\% in two lines, so this correction does not establish
-perfect calibration.  It does show that the reported 152 discoveries are not
-evidence about CB\textsuperscript{2} fitted with its required full-library
-denominator.  A second concern is that the common preprocessing applies
-Chronos negative-control normalization and rounding before all fits.  That
-transformation is meaningful for Chronos, but it changes the effective
-sequencing depths of a method whose likelihood treats read totals as sampling
-information.  Equal preprocessing is therefore not automatically equivalent
-to equal model input.  The same limitation applies to the ComBat-corrected,
-renormalized, and rounded Liang matrix used in this manuscript.  Both analyses
-are labeled processed-count sensitivity checks, and neither is used to validate
-a count likelihood.
-
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
-\caption{Audit of the version-1 Chronos false-discovery benchmark.  The
-Avana row uses the same test genes under two library-total contracts.  The
-PSN1 and DeWeirdt rows are direct BARCS reruns on the
-deposited normalized count tables; ``known'' denotes the 28 literature-curated
-condition--gene combinations used by the preprint, not a complete truth set.}
+\caption{Data-driven audit of the external false-discovery benchmark.
+``Known'' refers to the 28 literature-curated condition--gene combinations,
+not a complete truth set.}
 \label{tab:chronosaudit}
 \small
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{p{0.31\textwidth}p{0.27\textwidth}p{0.31\textwidth}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.18\textwidth}p{0.17\textwidth}p{0.15\textwidth}
+                p{0.16\textwidth}p{0.20\textwidth}}
 \toprule
-Audit target & \methodswatch{cbtwocyan} Reported legacy result &
-\methodswatch{barcsblue} BARCS reanalysis\\
+Audit & Reference set & Reported result & Full-total reanalysis &
+Additional diagnostic\\
 \midrule
-Avana null-only, FDR $<0.1$ &
-152 false discoveries after pre-fit guide subsetting &
-0 after preserving full-library totals\\
-PSN1 two-versus-two null split &
-0 gene discoveries; conservative gene $p$-values &
-4.81\% guide $p<0.05$, 4.65\% after control scaling, and 0 gene discoveries\\
+Avana null-only &
+Null genes, five cell lines &
+152 calls at FDR 0.10 &
+0 calls at FDR 0.10 &
+Largest null $p<0.05$ rate: 0.145\\
+PSN1 two-versus-two split &
+Null pseudo-condition &
+0 gene calls &
+0 gene calls &
+Guide $p<0.05$: 0.0481 raw, 0.0465 scaled\\
 DeWeirdt differential screens &
-0 discoveries and 0/28 known interactions &
-38 discoveries and 1/28 known interactions\\
+28 curated interactions &
+0/28 known recovered &
+38 calls; 1/28 known recovered &
+37/38 calls arose in one comparison\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The differential-screen limitation is real.  Original
-CB\textsuperscript{2} estimates each condition separately and uses the
-Welch--Satterthwaite degrees of freedom
-\[
-\nu=
-\frac{(\widehat V_A+\widehat V_B)^2}
-{\widehat V_A^2/(n_A-1)+\widehat V_B^2/(n_B-1)}.
-\]
-With $n_A=n_B=2$, $1\leq\nu\leq2$.  Two independent variance estimates and a
-heavy-tailed reference distribution leave little power.  In contrast,
-BARCS estimates one guide-level dispersion across the full
-design.  On the PSN1 pseudo-condition split, its guide-level null is close to
-nominal and its negative-control scale is 1.017.  This is evidence that pooled
-regression repairs part of the finite-sample problem.
+The PSN1 result shows that pooling one guide dispersion across the design can
+avoid the extreme loss of power produced by separate two-replicate variance
+estimates while retaining a near-nominal guide null.  The DeWeirdt result shows
+the boundary of that improvement: BARCS recovered only MCL1 under A-1331852,
+and nearly all other calls came from one OVCAR8--olaparib comparison without
+recovering BRCA1 or BRCA2.  A global treatment-associated quality shift cannot
+be separated from treatment with only two replicates per arm.
 
-It does not solve the full Chronos task.  In an exploratory rerun of the ten
-DeWeirdt comparisons used for the curated-positive analysis
-\citep{deweirdt2020isogenic}, BARCS used the four terminal
-libraries, full count-table totals, a treatment coefficient, guide-level
-control scaling, Fisher gene aggregation, and BH correction.  It recovered
-MCL1 under A-1331852 in Meljuso, but only one of 28 curated interactions
-overall.  Thirty-seven of its 38 discoveries came from OVCAR8 under olaparib,
-without recovering BRCA1 or BRCA2.  This pattern is consistent with a global
-difference in screen sensitivity rather than a failure that one additional
-fixed covariate can remove: with two replicates per arm, a treatment-associated
-quality shift is nearly collinear with treatment itself.  Negative controls
-that are inactive in both arms also need not represent artifacts affecting
-strong common-essential knockouts.
-
-The version-1 notebook raises two further reproducibility issues.  First, its
-FDR-calibration helper accepts a requested evaluation gene set but does not
-use that argument; the calibration curve therefore includes training controls
-used by Chronos as well as held-out controls.  Second, calls intended to remove
-MAGeCK's \texttt{common} coefficient use a non-mutating
-\texttt{DataFrame.drop()} without assigning the returned object.  In the PSN1
-calibration, this leaves 34,124 MAGeCK entries versus 17,787 entries for
-CB\textsuperscript{2}, JACKS, DrugZ, and Chronos.  These implementation details
-do not invalidate the biological motivation for empirical-null hit calling,
-but they make the strongest method-ranking and calibration claims provisional.
-Similarly, treating thousands of correlated gene--screen indicators as
-independent observations in a $t$ test yields uncertainty that is narrower
-than a screen- or cell-line-clustered bootstrap would provide.
-
-The appropriate conclusion is therefore narrower than either
-``CB\textsuperscript{2} is miscalibrated'' or ``BARCS solves false
-discovery.''
-The regression extension repairs the mean-model and dispersion-pooling
-limitations, accepts CNV and other identifiable sample covariates, and gives a
-well-behaved null in the PSN1 check.  It does not by itself supply Chronos's
-growth dynamics, replicate-quality terms, or empirical differential null.
-A production differential-screen method still needs immutable library totals,
-raw-count or likelihood-compatible normalization, dispersion moderation,
-correlation-aware gene aggregation, held-out control calibration, and blocked
-replicate-label permutations.
+These results do not establish a winner against a complete ground truth.
+They show that pre-fit guide subsetting and common normalization can alter the
+effective depth seen by a library-total-conditional model.  Comparator studies
+must preserve full-library totals, separate calibration guides from evaluation
+guides, and use blocked permutations or independent validation for
+differential screens.
