@@ -19,8 +19,12 @@ non-targeting guides, the uncalibrated $p<0.05$ frequency was 0.133.  Because
 evaluating those same guides after fitting would be circular.  We therefore
 used deterministic five-fold cross-fitting: each guide was evaluated with a
 scale estimated from the other four folds.  The held-out $p<0.05$ rate was
-0.049.  The production gene analysis used all controls to estimate one scale;
-calibration does not change effect estimates or their ranking.
+29/593 (0.049).  Fold-specific scales ranged from 1.332 to 1.418.  A
+prespecified seeded permutation of the guide-to-fold assignment gave 31/593
+(0.052), with scales from 1.332 to 1.417, arguing against structure induced by
+guide-identifier ordering.  The production gene analysis used all controls to
+estimate one scale; calibration does not change effect estimates or their
+ranking.
 
 \begin{table}[htbp]
 \centering
@@ -59,8 +63,12 @@ Control-calibrated BARCS recovered 22 of 26 validated regulators with 49
 discoveries, compared with 17 of 26 and 72 discoveries for the matched
 MAGeCK-MLE fit (Table~\ref{tab:waterbear}).  This corresponds to validation
 yields of 44.9\% and 23.6\%, respectively.  The four-bin BARCS model also
-recovered four regulators missed by its outer-bin fit, showing what the
-ordered intermediate bins contributed beyond a binary comparison.
+recovered four regulators missed by its outer-bin fit, but required 15
+additional discoveries to do so.  Its marginal validation yield was therefore
+4/15 (26.7\%), and its overall yield was lower than the outer-bin fit
+(44.9\% versus 52.9\%).  The intermediate bins increased sensitivity to the
+validated set at the cost of precision per call; they did not uniformly
+improve efficiency.
 
 The specialist models remain important comparators.  Waterbear recovered 24
 validated regulators and MAUDE recovered 25, but with 79 and 406 discoveries.

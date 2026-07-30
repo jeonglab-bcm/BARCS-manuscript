@@ -1,55 +1,108 @@
 % !TeX root = ../../main.tex
-\subsection{Processed Cas13 data provide a longitudinal sensitivity analysis}
+\subsection{The intermediate Cas13 time point improves recovery, whereas
+control scaling is method-agnostic}
 \label{sec:liang}
 
-The Cas13 fitness screens of \citet{liang2026lncrna} contain measurements from
+The Cas13 fitness screens of \citet{liang2026lncrna} contain measurements at
 days 0, 7, and 14.  K562 was excluded because one day-0 replicate was not
-deposited.  In HAP1, HEK293FT, MDA-MB-231, and THP1, every method estimated the
-same day-0-to-day-14 slope with a replicate block and a two-sided test.  Thus
-the comparison preserves the longitudinal feature rather than collapsing the
-screen to an endpoint.
+deposited.  In HAP1, HEK293FT, MDA-MB-231, and THP1, BARCS, official
+MAGeCK-MLE \citep{li2014mageck}, edgeR-QL, DESeq2, and limma--voom estimated
+the same continuous time slope with a replicate block and two-sided tests.
 
-The principal finding is a calibration--ranking tradeoff.  BARCS produced a
-lower mean cell-line-specific proxy-null calibration error than MAGeCK-MLE
-(0.025 versus 0.057), but MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom ranked
-known essential genes more strongly (average precision 0.874--0.877 versus
-0.838).  At a matched empirical 5\% proxy-null false-positive rate, BARCS
-recalled 0.863 of essential genes and the alternatives recalled 0.879--0.888.
-BARCS therefore reduced excess significance without improving essential-gene
-ranking.
+The deposited values had already undergone median-of-ratios normalization,
+ComBat correction, and replicate-outlier processing.  We rounded them once to
+the nearest pseudo-count and supplied the identical matrix to every method.
+Accordingly, this is a processed-count sensitivity analysis, not a
+likelihood-faithful comparison of beta-binomial and negative-binomial
+sampling.  The same caution about processing-dependent effective depth raised
+by the external audit therefore applies here.
 
-Three guides assigned to the proxy-null set illustrate this discrepancy:
-their BARCS $p$-values were 0.20--0.23, whereas DESeq2, edgeR-QL, and
-limma--voom called them significant (Figure~\ref{fig:liang}).  Their two
-replicate trajectories do not show a consistent monotone depletion from day 0
-through day 14.  These are concrete disagreement cases, not independent
-biological validation.
+The design ablation directly tested whether the middle time point contributed
+information.  Relative to a BARCS fit using only days 0 and 14, the
+three-time-point fit increased macro-average precision from 0.832 to 0.838 and
+directional essential-gene recall at FDR 0.10 from 0.608 to 0.658.  Recall at
+an empirical 5\% proxy-null false-positive rate increased from 0.858 to 0.867.
+The proxy-null $p<0.05$ rate also increased from 0.058 to 0.071.  Thus day 7
+improved essential-gene recovery modestly, but did not improve every
+calibration measure.
+
+For the head-to-head calibration analysis, the same 1,000 non-targeting
+guides and the same tail-scaling rule were applied to all five methods after
+their native gene summaries.  Under this like-for-like rule, mean
+cell-line-specific absolute calibration error was 0.0310 for BARCS, 0.0296 for
+DESeq2, 0.0311 for edgeR-QL, 0.0310 for limma--voom, and 0.0571 for
+MAGeCK-MLE.  The apparent separation from the general count models therefore
+closed: control scaling is a method-agnostic calibration operation, not a
+beta-binomial advantage.  Alternative methods ranked the known essential
+genes more strongly.  Average precision was 0.838 for BARCS and
+0.874--0.877 for the four alternatives; directional recall at gene FDR 0.10
+was 0.658 versus 0.775--0.813.  At a matched empirical 5\% proxy-null rate,
+recall was 0.867 versus 0.879--0.888.
+
+\begin{table}[htbp]
+\centering
+\caption{Cell-line-specific Liang sensitivity results after applying the same
+non-targeting-control scaling rule to all methods.  AP is average precision;
+null rate is the fraction of targeted unexpressed lncRNAs with $p<0.05$; FDR
+recall is directional essential-gene recall at FDR 0.10.}
+\label{tab:liang-cell-lines}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrr}
+\toprule
+Cell line & Method & AP & Null rate & FDR recall\\
+\midrule
+HAP1 & BARCS & 0.885 & 0.069 & 0.783\\
+ & MAGeCK-MLE & 0.893 & 0.128 & 0.883\\
+ & edgeR-QL & 0.905 & 0.067 & 0.867\\
+ & DESeq2 & 0.906 & 0.062 & 0.867\\
+ & limma--voom & 0.904 & 0.073 & 0.850\\
+\addlinespace[2pt]
+HEK293FT & BARCS & 0.666 & 0.030 & 0.267\\
+ & MAGeCK-MLE & 0.753 & 0.065 & 0.500\\
+ & edgeR-QL & 0.734 & 0.030 & 0.483\\
+ & DESeq2 & 0.728 & 0.025 & 0.450\\
+ & limma--voom & 0.743 & 0.035 & 0.533\\
+\addlinespace[2pt]
+MDA-MB-231 & BARCS & 0.944 & 0.086 & 0.867\\
+ & MAGeCK-MLE & 0.960 & 0.140 & 0.967\\
+ & edgeR-QL & 0.959 & 0.104 & 0.917\\
+ & DESeq2 & 0.957 & 0.095 & 0.900\\
+ & limma--voom & 0.957 & 0.104 & 0.900\\
+\addlinespace[2pt]
+THP1 & BARCS & 0.858 & 0.099 & 0.717\\
+ & MAGeCK-MLE & 0.903 & 0.095 & 0.900\\
+ & edgeR-QL & 0.900 & 0.084 & 0.850\\
+ & DESeq2 & 0.905 & 0.087 & 0.883\\
+ & limma--voom & 0.902 & 0.082 & 0.833\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The cell-line table localizes the macro-average.  BARCS was conservative but
+substantially less sensitive in HEK293FT, whereas the largest proxy-null rates
+occurred for MAGeCK-MLE in HAP1 and MDA-MB-231.  The proxy-null definition is
+itself imperfect: TPM equal to zero can reflect limited expression sensitivity,
+and RfxCas13d collateral activity can produce genuine fitness effects from a
+nominally unexpressed target.  Such contamination rewards conservative
+methods, so these rates are diagnostics rather than validated type-I errors.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/liang_longitudinal_volcano_trajectories.pdf}
-\caption{Longitudinal Cas13 sensitivity analysis using days 0, 7, and 14.  The
-upper rows show method-specific volcano plots for BARCS, MAGeCK-MLE, edgeR-QL,
-DESeq2, and limma--voom, pooling gene-level results from HAP1, HEK293FT,
-MDA-MB-231, and THP1.  K562 is excluded because one day-0 replicate is absent.
-Within each retained cell line, every method estimates the same
-continuous time slope from the identical processed-count matrix.  Colored
-points are negatively directed genes called at two-sided FDR 0.10.  To make
-the dense central region legible, the horizontal axis is a signed logarithmic
-effect transform and the vertical axis is
-$\log_{10}\{1-\log_{10}(p)\}$; the dashed line marks two-sided $p=0.05$.
-(A--C) Processed guide counts divided by the corresponding library size, in
-counts per million, for three proxy-null examples.  Lines connect measurements
-from the same replicate across days.  BARCS leaves each guide non-significant,
-whereas DESeq2, edgeR-QL, and limma--voom each call it significant under the
-proxy-null benchmark.  MAGeCK-MLE is included in the gene-level volcano
-comparison but not in panels A--C because its reported statistic is
-gene-level.}
+\caption{\textbf{Longitudinal Cas13 sensitivity analysis using days 0, 7, and
+14.}  The upper panels show gene-level results for BARCS, MAGeCK-MLE,
+edgeR-QL, DESeq2, and limma--voom across the four replicate-complete cell
+lines.  The horizontal line marks two-sided $p=0.05$; $-\log_{10}(p)$ is
+clipped at 60 and clipped points are triangles.  Colored points are
+negative-effect genes called at FDR 0.10.  (A--C) Processed guide abundance in
+counts per million for three proxy-null disagreements.  Among proxy-null
+guides, 61 satisfied BARCS $p\geq0.20$ with all three guide-level alternatives
+$p<0.05$.  Within each cell line, the candidate minimizing the largest
+alternative $p$ was identified; the three with the largest ratio of BARCS
+$p$ to that maximum are displayed.  Conversely, 1,242 proxy-null guides had
+BARCS $p<0.05$ while all three alternatives had $p\geq0.05$.  The panels
+therefore illustrate the trajectory structure of one disagreement direction,
+not its prevalence.}
 \label{fig:liang}
 \end{figure}
-
-The deposited matrix had already been normalized, ComBat-corrected, and
-outlier-processed before it was rounded to pseudo-counts.  The result is
-therefore a same-input sensitivity analysis, not a likelihood comparison.
-Raw-read confirmation is required before attributing the observed differences
-to beta-binomial or negative-binomial sampling assumptions.
