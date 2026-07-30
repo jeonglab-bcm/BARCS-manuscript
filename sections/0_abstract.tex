@@ -1,31 +1,25 @@
 % !TeX root = ../main.tex
 \begin{abstract}
-\noindent\textbf{Background.}  Pooled CRISPR screens increasingly use
-longitudinal, donor-adjusted, and factorial designs, yet beta-binomial screen
-methods have largely remained limited to two-group comparisons.
-
-\noindent\textbf{Methods.}  BARCS extends the library-total-conditional
-beta-binomial model to guide-level regression with an arbitrary design matrix.
-We evaluated longitudinal and ordered-phenotype experiments, multivariable
-simulations with known truth, and external false-discovery benchmarks.
-
-\noindent\textbf{Results.}  BARCS estimated a single longitudinal effect across
-three Cas13 time points and distinguished several proxy-null guide trajectories
-that competing count methods called significant.  In an IL2RA FACS screen,
-donor-adjusted analysis of all four ordered bins recovered more validated
-regulators per discovery than a matched MAGeCK-MLE fit, while held-out
-non-targeting controls exposed and corrected excess guide-level significance.
-Simulations showed that dispersion moderation improved BARCS within a common
-analysis pipeline and that control-based denominators substantially improved
-interaction recovery under global composition shifts.  Results were
-dataset-dependent: alternative methods ranked essential genes more strongly in
-the processed Cas13 data, and external audits showed that preprocessing and
-library-total definitions can change apparent false-discovery behavior.
-
-\noindent\textbf{Conclusions.}  BARCS generalizes the beta-binomial sampling
-principle from pairwise screening to multivariable CRISPR designs.  Its main
-advantage is direct estimation of time, covariate, and interaction effects
-while preserving full-library denominators.  Confirmatory use still requires
-independent biological replication, likelihood-compatible counts, and
-held-out or cross-fitted controls.
+Pooled CRISPR screens increasingly use longitudinal, donor-adjusted, and
+factorial designs, whereas beta-binomial screen methods have largely remained
+limited to two-group comparisons.  BARCS extends the
+library-total-conditional beta-binomial model to guide-level regression with
+an arbitrary design matrix, enabling direct estimation of time, covariate, and
+interaction effects.  We evaluated BARCS in longitudinal and
+ordered-phenotype experiments, multivariable simulations with known truth, and
+external false-discovery audits.  In a three-time-point Cas13 analysis, BARCS
+distinguished proxy-null guide trajectories that competing count methods
+called significant, although alternative methods ranked essential genes more
+strongly on the processed matrix.  In an IL2RA FACS screen, donor-adjusted
+analysis of all four ordered bins recovered more validated regulators per
+discovery than matched MAGeCK-MLE, and held-out non-targeting controls
+corrected excess guide-level significance.  Simulations showed gains from
+dispersion moderation and control-based denominators under composition
+shifts.  In the external audit, 152 CB\textsuperscript{2} null calls fell to
+zero when full-library probabilities were used; BARCS retained a near-nominal
+guide-level null in PSN1 but recovered only one of 28 curated DeWeirdt
+interactions.  BARCS therefore generalizes beta-binomial regression from
+pairwise to multivariable CRISPR designs while preserving full-library
+denominators; confirmatory use requires independent biological replication
+and held-out or cross-fitted controls.
 \end{abstract}

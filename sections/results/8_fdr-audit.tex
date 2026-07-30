@@ -2,43 +2,48 @@
 \subsection{False-discovery conclusions depend on the analysis contract}
 \label{sec:fdr-audit}
 
-We audited a deposited Chronos benchmark that compared CB\textsuperscript{2},
-MAGeCK, JACKS, DrugZ, and Chronos \citep{dempster2025fdr,
-dempster2025fdrdata}.  The key issue was the beta-binomial denominator.  In
-the reported null-only Avana analysis, the count matrix was restricted to
-control genes before fitting, so its column sums no longer represented full
-sequencing depth.  Reusing the full-library CB\textsuperscript{2} probabilities
-for the same test genes changed the number of FDR 0.10 discoveries from 152 to
-zero.
+We audited the deposited benchmark of CB\textsuperscript{2}, MAGeCK, JACKS,
+DrugZ, and Chronos \citep{dempster2025fdr,dempster2025fdrdata}.  We separated
+two analyses that answer different questions.  For Avana, we re-evaluated the
+published CB\textsuperscript{2} analysis \citep{jeong2019beta} after restoring
+the full-library denominator; BARCS was not fitted because this audit isolates
+the denominator used by CB\textsuperscript{2}.  For PSN1 and DeWeirdt, we
+retained the deposited CB\textsuperscript{2} results and ran BARCS on the
+deposited normalized tables.  In the reported Avana analysis, restriction to
+null genes before fitting changed the column totals.  Reusing the full-library
+CB\textsuperscript{2} probabilities for the same genes reduced the number of
+FDR 0.10 discoveries from 152 to zero.
 
 \begin{table}[htbp]
 \centering
-\caption{Data-driven audit of the external false-discovery benchmark.
-``Known'' refers to the 28 literature-curated condition--gene combinations,
-not a complete truth set.}
+\caption{CB\textsuperscript{2} and BARCS results in the external
+false-discovery audit.  The deposited benchmark and CB\textsuperscript{2}
+results follow \citet{dempster2025fdr} and its accompanying data release
+\citep{dempster2025fdrdata}; BARCS results are our reruns on the deposited
+normalized tables.  ``Known'' denotes the 28 curated DeWeirdt
+condition--gene combinations \citep{deweirdt2020isogenic}, not a complete
+truth set.}
 \label{tab:chronosaudit}
 \small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{0.18\textwidth}p{0.17\textwidth}p{0.15\textwidth}
-                p{0.16\textwidth}p{0.20\textwidth}}
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabular}{p{0.18\textwidth}p{0.27\textwidth}p{0.27\textwidth}
+                p{0.18\textwidth}}
 \toprule
-Audit & Reference set & Reported result & Full-total reanalysis &
-Additional diagnostic\\
+Benchmark & CB\textsuperscript{2} analysis and result &
+BARCS analysis and result & Diagnostic\\
 \midrule
 Avana null-only &
-Null genes, five cell lines &
-152 calls at FDR 0.10 &
-0 calls at FDR 0.10 &
-Largest null $p<0.05$ rate: 0.145\\
+Published subset fit: 152 calls at FDR 0.10; full-total audit: 0 calls &
+Not fitted; this analysis isolates the CB\textsuperscript{2} denominator &
+Largest full-total null $p<0.05$ rate: 0.145\\
 PSN1 two-versus-two split &
-Null pseudo-condition &
-0 gene calls &
-0 gene calls &
-Guide $p<0.05$: 0.0481 raw, 0.0465 scaled\\
+0 gene calls under the null pseudo-condition &
+0 gene calls; guide $p<0.05$: 0.0481 raw and 0.0465 scaled &
+Control scale: 1.017\\
 DeWeirdt differential screens &
-28 curated interactions &
-0/28 known recovered &
-38 calls; 1/28 known recovered &
+0 calls; 0/28 known interactions recovered &
+38 calls; 1/28 known interactions recovered &
 37/38 calls arose in one comparison\\
 \bottomrule
 \end{tabular}
@@ -46,9 +51,9 @@ DeWeirdt differential screens &
 
 The PSN1 result shows that pooling one guide dispersion across the design can
 avoid the extreme loss of power produced by separate two-replicate variance
-estimates while retaining a near-nominal guide null.  The DeWeirdt result shows
-the boundary of that improvement: BARCS recovered only MCL1 under A-1331852,
-and nearly all other calls came from one OVCAR8--olaparib comparison without
+estimates while retaining a near-nominal guide null.  In the DeWeirdt screens
+\citep{deweirdt2020isogenic}, however, BARCS recovered only MCL1 under
+A-1331852; 37 of its 38 calls came from the OVCAR8--olaparib comparison without
 recovering BRCA1 or BRCA2.  A global treatment-associated quality shift cannot
 be separated from treatment with only two replicates per arm.
 
