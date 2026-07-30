@@ -187,3 +187,28 @@ way — and A2, which is not a criticism so much as an instruction to give the
 paper's best new finding the prominence it earned. Neither requires new
 computation. With those two changes and the three cosmetic items in A3, I would
 recommend acceptance.
+
+---
+
+## Resolution
+
+`hj/manuscript-minor-revision` was merged to `main` as `df5affc` (PR #10).
+A1--A3 were then applied on the review branch, text-only, using numbers already
+deposited in the repository. No analysis was rerun (this environment has no R),
+and no deposited table changed.
+
+| Item | Change |
+|---|---|
+| A1 | `sections/0_abstract.tex` — the calibration sentence now states the aggregation-matched result (all five methods at 0.017--0.021, ordering reversed, BARCS numerically last). `sections/results/2_liang-cas13.tex` — "removed the earlier MAGeCK-MLE separation" → "reversed the earlier ordering \ldots and left BARCS numerically last of the five." |
+| A2 | `sections/methods/3_inference.tex` — the generic $\sqrt{m_g}$ caveat now carries the measured values from Table~\ref{tab:calibration-grid} (guide $\leq0.048$; gene 0.108--0.144 at three guides, 0.224--0.262 at five; 0.056--0.112 after split-control scaling). `sections/results/2_liang-cas13.tex` — one paragraph added where gene-level rates are first reported, stating that every gene-level rate in the paper inherits this limit and may be anti-conservative by roughly a factor of two for five-guide genes. |
+| A3 | IL2RA section retitled "An ordered-bin design trades validation yield per discovery for sensitivity." The four-bin superlative now carries the outer-bin comparison (44.9\% versus 52.9\% BARCS and 60.0\% MAGeCK test). |
+
+**Still open.** The symmetric disagreement count is not computed. It needs
+`examples/manuscript_liang_figure.R` rerun against
+`results/liang_cas13/*_guide.csv.gz`, which are not deposited. As an interim
+measure the Figure 1 caption now states explicitly that the 61 and 1,242 counts
+use different BARCS thresholds and bound the two directions rather than
+comparing them on a matched criterion. Computing the matched-threshold count and
+depositing it as a third row of
+`data/derived/liang_single_guide_disagreement_counts.csv` remains the better
+fix and is a single script run for the authors.

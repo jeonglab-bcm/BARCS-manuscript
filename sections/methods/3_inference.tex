@@ -126,7 +126,14 @@ This aggregation is deliberately transparent, but it is not a native
 hierarchical gene model.  Equations~\eqref{eq:signedz}--\eqref{eq:genestouffer}
 give equal weight to valid guides and use the independence reference
 $\sqrt{m_g}$; shared sequence artifacts or other correlation can therefore
-make the gene statistic anti-conservative.  A production extension should
+make the gene statistic anti-conservative.  That cost is measured rather than
+assumed.  In the all-null grid of Table~\ref{tab:calibration-grid}, imposing a
+within-gene guide correlation of 0.4 left guide-level type-I error at or below
+0.048 while raising Stouffer gene-level error to 0.108--0.144 for three-guide
+genes and 0.224--0.262 for five-guide genes; aggregation-matched split-control
+scaling reduced the excess to 0.056--0.112 but did not remove it.  Every
+gene-level rate reported in this paper uses this combiner and should be read
+with that residual inflation in mind.  A production extension should
 estimate guide reliability and within-gene dependence or use a hierarchical
 effect model.  In the biological head-to-head benchmarks, this
 Stouffer--median procedure is used only for BARCS (and for the deliberately

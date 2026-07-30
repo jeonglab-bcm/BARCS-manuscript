@@ -33,13 +33,25 @@ guide counts sampled from the target-gene distribution.  The same tail-scaling
 rule was then applied to each method's native pseudo-gene summary.  Mean
 cell-line-specific absolute calibration error was 0.0207 for BARCS, 0.0198 for
 DESeq2, 0.0181 for edgeR-QL, 0.0178 for limma--voom, and 0.0171 for
-MAGeCK-MLE.  Thus aggregation-aware calibration removed the earlier
-MAGeCK-MLE separation: control scaling is a method-agnostic operation, not a
+MAGeCK-MLE.  Thus aggregation-aware calibration reversed the earlier ordering,
+in which MAGeCK-MLE alone appeared separated, and left BARCS numerically last
+of the five: control scaling is a method-agnostic operation, not a
 beta-binomial advantage.  Alternative methods ranked known essential genes
 more strongly.  Average precision was 0.838 for BARCS and 0.874--0.877 for
 the four alternatives; directional recall at gene FDR 0.10 was 0.600 versus
 0.738--0.767.  At a matched empirical 5\% proxy-null rate, recall was 0.867
 versus 0.879--0.888.
+
+Every BARCS gene-level rate reported here and in the sections that follow
+combines guide probabilities with the directional Stouffer rule under an
+independence reference, so it inherits the aggregation limit quantified in
+Section~\ref{sec:supp-calibration}.  In the all-null grid, a within-gene guide
+correlation of 0.4 left guide-level type-I error at or below 0.048 but raised
+gene-level error to 0.108--0.262, and aggregation-matched control scaling
+reduced it only to 0.056--0.112.  Gene-level false-discovery rates in this
+paper should therefore be read as potentially anti-conservative by roughly a
+factor of two for five-guide genes even after control scaling; the reported
+proxy-null rates measure this residual directly for each screen.
 
 \begin{table}[htbp]
 \centering
@@ -105,7 +117,10 @@ guides, 61 satisfied BARCS $p\geq0.20$ with all three guide-level alternatives
 $p<0.05$.  Within each cell line, the candidate minimizing the largest
 alternative $p$ was identified; the three with the largest ratio of BARCS
 $p$ to that maximum are displayed.  Conversely, 1,242 proxy-null guides had
-BARCS $p<0.05$ while all three alternatives had $p\geq0.05$.  The panels
+BARCS $p<0.05$ while all three alternatives had $p\geq0.05$.  The two counts
+use different BARCS thresholds---$p\geq0.20$ was required so that the displayed
+panels are unambiguous non-detections---so they bound the two disagreement
+directions rather than comparing them on a matched criterion.  The panels
 therefore illustrate the trajectory structure of one disagreement direction,
 not its prevalence.}
 \label{fig:liang}
