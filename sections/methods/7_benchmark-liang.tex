@@ -40,7 +40,11 @@ they do not estimate the three-time-point longitudinal coefficient.
 
 Known-essential protein-coding genes were positives.  Cell-line-specific nulls
 were targeted lncRNAs with TPM equal to zero in both available expression
-assays.  We reported average precision, essential-control recall at an
+assays.  This proxy-null definition is itself imperfect: TPM equal to zero can
+reflect limited expression sensitivity, and RfxCas13d collateral activity can
+produce genuine fitness effects from a nominally unexpressed target.  Such
+contamination rewards conservative methods, so the reported null rates are
+diagnostics rather than validated type-I errors.  We reported average precision, essential-control recall at an
 empirical 5\% null false-positive rate, the absolute deviation of the null
 $p<0.05$ fraction from 0.05, and directional essential-control recall at gene
 FDR 0.10.  A restartable raw-read pipeline is also provided for
