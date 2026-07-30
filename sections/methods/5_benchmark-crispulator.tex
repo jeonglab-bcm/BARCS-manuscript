@@ -23,7 +23,7 @@ number of genes and the number of independent screen replicates.
 The three genome-scale benchmark seeds were 20250724 through 20250726; the
 supporting 400-gene analyses below use 20250724 through 20250728.
 
-Two BARCS gene statistics are carried through the genome-scale benchmark.
+Two BARCS gene statistics are carried through the genome-scale ablation.
 BARCS-ST is the historical calibrated signed-$z$ statistic.  BARCS-MOD reuses
 the identical guide fits after guide-dispersion moderation, so the two differ
 only in how the guide variance is estimated, not in the gene combiner.  The
@@ -31,8 +31,10 @@ exchangeable-normal, random-effects, and moderated random-effects statistics
 are retained for the real-data comparisons but are not carried through the
 genome-scale simulation, where the question is whether moderation changes the
 calibration--power tradeoff rather than which of several pooling rules is
-best.  Official MAGeCK-MLE 0.5.9.5 is included, with its ordered marker
-affinely mapped onto zero--one so that the low samples of the reference
+best.  Official MAGeCK-MLE 0.5.9.5 and CRISPhieRmix are included in that run,
+but this restricted set is not treated as an exhaustive comparator panel.
+MAGeCK-MLE's ordered marker is affinely mapped onto zero--one so that the low
+samples of the reference
 replicate form the all-zero reference row the MAGeCK initializer requires.
 Because MAGeCK-MLE omits negative-control genes from its gene summary once
 their sgRNAs are declared, all methods in the genome-scale benchmark are
@@ -81,12 +83,14 @@ score with replicate indicators \citep{li2015mageckvispr}.
 Tail-only fits removed bulk without changing the low and high counts.  BARCS
 guide tests were scaled with the simulated negative-control guides before
 directional Stouffer aggregation; MAGeCK-MLE used its native gene-level Wald
-result.  The comparators are CRISPR-specific gene callers rather than general
-count regressions, because that is the choice a screen analyst faces.
+result.  The separate 400-gene, five-seed baseline includes edgeR-QL, DESeq2,
+and limma--voom in addition to BARCS and MAGeCK-MLE.  It is used to prevent the
+restricted genome-scale set from supporting a general method-ranking claim.
 CRISPhieRmix \citep{daley2018crisphiermix} was run on guide-level log$_2$
 fold changes from a DESeq2 Wald fit of the same design
 \citep{love2014deseq2}, which is the input its documentation specifies;
-DESeq2 therefore appears as a preprocessing step and is not itself scored.
+DESeq2 therefore appears as a preprocessing step in the 10,000-gene run, while
+its native result is scored in the separate 400-gene comparison.
 CRISPhieRmix was run with its bimodal alternative, because this screen
 contains both phenotype-increasing and phenotype-decreasing genes and the
 one-sided default would score only one direction.  Its gene effect is the

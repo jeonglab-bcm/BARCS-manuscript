@@ -1,0 +1,23 @@
+% !TeX root = ../../main.tex
+\subsubsection{Continuous-dose calibration simulation}
+
+The nominal-error diagnostic in Table~\ref{tab:type1} is reproduced by
+\repofile{examples/simulation.R} with seed 20260723.  It contains 200 genes,
+three independently simulated guides per gene, and 27 libraries formed by nine
+dose values crossed with three batches.  Of the genes, 160 are null and 40
+have dose coefficients $+0.9$ or $-0.9$.  Library totals are sampled uniformly
+from 40,000 to 120,000 reads.  Guide baselines are uniform on the logit scale
+from $-7.4$ to $-6.5$, the two nonreference batches have coefficients $0.20$
+and $-0.15$, and counts are drawn from the beta-binomial hierarchy with
+$\rho=0.0015$.
+
+BARCS fits \texttt{\textasciitilde dose + batch}; BARCS-MOD then applies
+Equations~\eqref{eq:guide-moderation}--\eqref{eq:guide-moderated-t}.  The
+naive comparator is a binomial logistic regression, and official MAGeCK-MLE
+0.5.9.5 receives the same design matrix.  BARCS and the naive comparator use
+the same directional Stouffer gene summary, while MAGeCK-MLE retains its native
+gene result.  Type-I error is the unadjusted $p<0.05$ fraction among the 160
+null genes.  Empirical FDP is the null fraction among genes called at
+Benjamini--Hochberg FDR 0.05.  Compact metrics and boundary diagnostics are
+deposited in \repofile{results/simulation_summary.csv} and
+\repofile{results/simulation_diagnostics.csv}.

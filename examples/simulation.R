@@ -182,6 +182,11 @@ naive_gene <- aggregate_gene_result(
   naive_result[, "estimate"], naive_result[, "p_value"]
 )
 bb_gene <- aggregate_gene_result(bb_result$estimate, bb_result$p_value)
+bb_moderated_result <- bb_moderate_dispersion(bb_result, trend = TRUE)
+bb_moderated_gene <- aggregate_gene_result(
+  bb_moderated_result$estimate,
+  bb_moderated_result$p_value
+)
 
 summarize_method <- function(method, estimate, standard_error, p_value,
                              adjusted_p_value) {
@@ -225,6 +230,13 @@ simulation_summary <- rbind(
     bb_gene$fdr
   ),
   summarize_method(
+    "beta-binomial moderated t",
+    bb_moderated_gene$estimate,
+    bb_moderated_gene$std_error,
+    bb_moderated_gene$p_value,
+    bb_moderated_gene$fdr
+  ),
+  summarize_method(
     "official MAGeCK-MLE Wald",
     mageck_result$estimate,
     mageck_result$std_error,
@@ -236,6 +248,25 @@ simulation_summary <- rbind(
 write.csv(
   simulation_summary,
   file.path("results", "simulation_summary.csv"),
+  row.names = FALSE
+)
+
+null_guide <- rep(!truth_gene, each = guides_per_gene)
+simulation_diagnostics <- data.frame(
+  statistic = c(
+    "guide_null_p_below_0_05",
+    "null_guides_at_rho_lower_boundary",
+    "all_guides_at_rho_lower_boundary"
+  ),
+  value = c(
+    mean(bb_result$p_value[null_guide] < 0.05, na.rm = TRUE),
+    mean(bb_result$rho[null_guide] == 0, na.rm = TRUE),
+    mean(bb_result$rho == 0, na.rm = TRUE)
+  )
+)
+write.csv(
+  simulation_diagnostics,
+  file.path("results", "simulation_diagnostics.csv"),
   row.names = FALSE
 )
 

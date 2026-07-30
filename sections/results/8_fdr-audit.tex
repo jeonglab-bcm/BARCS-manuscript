@@ -44,7 +44,10 @@ Chronos negative-control normalization and rounding before all fits.  That
 transformation is meaningful for Chronos, but it changes the effective
 sequencing depths of a method whose likelihood treats read totals as sampling
 information.  Equal preprocessing is therefore not automatically equivalent
-to equal model input.
+to equal model input.  The same limitation applies to the ComBat-corrected,
+renormalized, and rounded Liang matrix used in this manuscript.  Both analyses
+are labeled processed-count sensitivity checks, and neither is used to validate
+a count likelihood.
 
 \begin{table}[ht]
 \centering
@@ -117,8 +120,9 @@ Similarly, treating thousands of correlated gene--screen indicators as
 independent observations in a $t$ test yields uncertainty that is narrower
 than a screen- or cell-line-clustered bootstrap would provide.
 
-The appropriate conclusion is therefore narrower than either ``CB\textsuperscript{2}
-is miscalibrated'' or ``BARCS solves false discovery.''
+The appropriate conclusion is therefore narrower than either
+``CB\textsuperscript{2} is miscalibrated'' or ``BARCS solves false
+discovery.''
 The regression extension repairs the mean-model and dispersion-pooling
 limitations, accepts CNV and other identifiable sample covariates, and gives a
 well-behaved null in the PSN1 check.  It does not by itself supply Chronos's

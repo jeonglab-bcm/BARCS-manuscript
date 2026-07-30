@@ -49,10 +49,49 @@ average slopes in interaction models, and other one-degree-of-freedom
 hypotheses.  Guide-wise two-sided $p$-values are adjusted using the
 Benjamini--Hochberg procedure \citep{benjamini1995controlling}.
 
+\subsubsection{Optional guide-dispersion moderation}
+
+BARCS-MOD is an optional empirical-Bayes transformation of the fitted guide
+statistics, not a separate likelihood.  Let $\nu=m-q$ and let
+$s_g^2=Q_g^{(0)}/\nu$ be guide $g$'s Pearson variance inflation under the
+binomial working model.  A lowess trend in log mean CPM gives a guide-specific
+prior scale $s_{0g}^2$, and the scaled-$F$ log-moment estimator of
+\citet{smyth2004linear} supplies prior degrees of freedom $d_0$.  The moderated
+inflation is
+\begin{equation}
+  \widetilde{s}_g^2
+  =
+  \frac{\nu s_g^2+d_0s_{0g}^2}{\nu+d_0}.
+  \label{eq:guide-moderation}
+\end{equation}
+Because the original beta-binomial fit cannot estimate negative
+overdispersion, its stored standard error corresponds to the fitted inflation
+$s_{g,\mathrm{fit}}^2=\max(1,s_g^2)$.  The implementation therefore reports
+\begin{equation}
+  \operatorname{SE}_{g,\mathrm{mod}}
+  =
+  \operatorname{SE}_{g}
+  \sqrt{\frac{\widetilde{s}_g^2}{\max(1,s_g^2)}},
+  \qquad
+  t_{g,\mathrm{mod}}
+  =
+  \frac{\widehat\beta_g}{\operatorname{SE}_{g,\mathrm{mod}}},
+  \qquad
+  \nu_{\mathrm{mod}}=\nu+d_0 .
+  \label{eq:guide-moderated-t}
+\end{equation}
+The one-sided \texttt{pmax} truncation in
+Equation~\eqref{eq:guide-moderated-t} is part of the implementation and is not
+an estimated scientific constraint.  The optional \texttt{one\_way=TRUE}
+variant additionally replaces $\widetilde{s}_g^2$ by
+$\max(\widetilde{s}_g^2,s_{g,\mathrm{fit}}^2)$, so moderation can only increase
+a standard error.  All reported BARCS-MOD results are simulation ablations;
+the real-data benchmarks use unmoderated BARCS.
+
 \subsubsection{From guide statistics to gene statistics}
 
-BARCS fits the count model guide by guide.  The primary HT-29, FACS,
-simulation, GSE70038, and A375 benchmark scripts then use an explicit
+BARCS fits the count model guide by guide.  The FACS, simulation, GSE70038,
+A375, and descriptive HT-29 benchmark scripts then use an explicit
 directional Stouffer summary, denoted BARCS-ST below, to obtain one gene-level
 statistic.
 For the $j$th valid guide targeting gene $g$, the two-sided guide $p$-value is

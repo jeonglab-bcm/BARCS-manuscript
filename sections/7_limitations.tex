@@ -9,20 +9,25 @@
   a purpose-built joint model such as Waterbear represents that structure
   directly.  Likewise, a 0--100\% bulk pool overlaps its sorted tails.  The
   CRISPulator analysis includes that requested design to measure its empirical
-  behavior, not to redefine bulk as an independent third bin.
+  behavior, not to redefine bulk as an independent third bin.  The HT-29 days
+  are serial harvests of one passaged culture and are therefore reported only
+  as descriptive trajectory scores, not as $t_6$ inference.
 
   \item \textbf{Enough sample-level degrees of freedom.}  Read depth cannot
   replace biological replication.  With very few samples, guide-wise
   $\widehat{\rho}$ is noisy and coefficient tests may be poorly calibrated.
   The model-based covariance treats $\widehat{\rho}$ as a fixed plug-in value,
   and the $t_{m-q}$ reference does not formally propagate its estimation
-  uncertainty.  The local-equivalence result likewise requires increasing
-  numbers of independent libraries; deeper sequencing at fixed replication is
-  not sufficient.  The optional \texttt{bb\_calibrate\_controls()} procedure
+  uncertainty.  Deeper sequencing at fixed replication is not a substitute for
+  additional independent libraries.  The optional
+  \texttt{bb\_calibrate\_controls()} procedure
   additionally requires all control guides to share the same residual degrees
   of freedom, as they do when every guide uses the same complete design.  Guides
   fitted with heterogeneous designs require stratified or redesigned
-  calibration.  The optional \texttt{bb\_gene\_consistency()} statistic can
+  calibration.  A control guide used to estimate a tail-quantile scale cannot
+  also provide an unbiased evaluation of that scale; diagnostics must use
+  held-out controls, cross-fitting, or an independent experiment.  The optional
+  \texttt{bb\_gene\_consistency()} statistic can
   recover concordant multi-guide signal when sample-level degrees of freedom
   are inadequate, but its empirical-null $p$-values measure guide consistency.
   They do not repair the missing biological replication and should not be

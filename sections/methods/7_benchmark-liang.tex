@@ -2,7 +2,7 @@
 \subsubsection{Liang Cas13 longitudinal fitness benchmark}
 
 We analyzed the transcriptome-scale RfxCas13d fitness screens of
-\citet{liang2026lncrna} in HAP1, HEK293FT, K562, MDA-MB-231, and THP1 cells.
+\citet{liang2026lncrna} in HAP1, HEK293FT, MDA-MB-231, and THP1 cells.
 The library contains 56,322 guides targeting 5,496 lncRNAs, 3,156
 protein-coding genes, and 1,000 non-targeting controls.  Deposited Table S2
 contains guide measurements at days 0, 7, and 14.  The previous endpoint
@@ -19,19 +19,17 @@ Consequently, this benchmark is a same-input sensitivity analysis rather than
 a likelihood-faithful raw-count comparison.
 
 BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom fitted a linear
-longitudinal effect with time scaled from 0 to 1 over 14 days.  A replicate
-indicator was included when both replicate trajectories contained all three
-time points.  K562 lacks one deposited day-0 replicate; all methods therefore
-used an unblocked time slope in that cell line rather than fitting an
-incomplete matched trajectory.  BARCS guide statistics were calibrated with
+longitudinal effect with time scaled from 0 to 1 over 14 days and a replicate
+indicator.  K562 was excluded because one deposited day-0 replicate is absent,
+rather than fitting an unmatched trajectory without the replicate block.
+BARCS guide statistics were calibrated with
 the non-targeting controls and combined with the prespecified directional
 Stouffer summary.  BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma--voom used
 two-sided guide or Wald probabilities.  For the four guide-level regression
 methods, coefficient direction was retained in the signed Stouffer score; the
 resulting gene probability was two-sided and was adjusted by the
-Benjamini--Hochberg procedure.  MAGeCK-RRA's negative-selection probability
-and the deposited Liang RRA probability were retained in their native
-depletion-tail form.
+Benjamini--Hochberg procedure.  Endpoint RRA summaries were excluded because
+they do not estimate the three-time-point longitudinal coefficient.
 
 Known-essential protein-coding genes were positives.  Cell-line-specific nulls
 were targeted lncRNAs with TPM equal to zero in both available expression

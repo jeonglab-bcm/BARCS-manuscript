@@ -1,178 +1,28 @@
 % !TeX root = ../../main.tex
-\subsubsection{Legacy representation and local-equivalence result}
+\subsubsection{Relationship to the legacy two-group statistic}
 
-We now separate an algebraic compatibility result from the substantive
-estimating-equation connection.  The first result reproduces
-CB\textsuperscript{2} after its weighted group summaries have already been
-computed; because a saturated two-cell GLS can represent any pair of
-independent group summaries, this result should not be interpreted as proof
-that the implemented \texttt{bbreg()} estimator strictly nests the original
-estimator.  For the original test, let
-\[
- \widehat p_A=\sum_{i\in A}a_iY_i,\qquad
- \widehat p_B=\sum_{i\in B}b_iY_i,
- \qquad \sum_{i\in A}a_i=\sum_{i\in B}b_i=1,
-\]
-where the depth- and dispersion-dependent weights $a_i,b_i$ are those
-estimated by CB\textsuperscript{2}.  Let its estimated group variances be
-$V_A>0$ and $V_B>0$.  The original guide statistic and reference degrees of
-freedom are
-\begin{align}
- T_{\mathrm{CB2}} &=
- \frac{\widehat p_B-\widehat p_A}{\sqrt{V_A+V_B}}, \label{eq:legacyt}\\
- \nu_{\mathrm{CB2}} &=
- \frac{(V_A+V_B)^2}
- {V_A^2/(n_A-1)+V_B^2/(n_B-1)}. \label{eq:legacydf}
-\end{align}
+BARCS and CB\textsuperscript{2} share a sampling principle but not an
+implemented statistic.  CB\textsuperscript{2} estimates two weighted group
+proportions, permits separate group dispersions, forms their difference, and
+uses a Welch--Satterthwaite reference distribution.  BARCS fits a logit
+coefficient with one guide dispersion across the full design and uses residual
+$m-q$ degrees of freedom.  These choices differ in finite samples even for a
+binary design.
 
-\begin{lemma}[Legacy CB\textsuperscript{2} representation]
-\label{lem:legacy}
-Let $X$ have row $(1,0)$ for samples in group $A$ and row $(1,1)$
-for samples in group $B$.  Define the working precision matrix
-\[
- \Omega=\operatorname{diag}\left(
- \left\{\frac{a_i}{V_A}:i\in A\right\},
- \left\{\frac{b_i}{V_B}:i\in B\right\}\right).
-\]
-Then the identity-link generalized least-squares estimator satisfies
-\[
- \widehat{\boldsymbol\beta}_{\mathrm{GLS}}
- =(X^\top\Omega X)^{-1}X^\top\Omega\mathbf{Y}
- =
- \begin{pmatrix}\widehat p_A\\ \widehat p_B-\widehat p_A\end{pmatrix},
-\]
-and
-\[
- (X^\top\Omega X)^{-1}
- =
- \begin{pmatrix}
- V_A & -V_A\\
- -V_A & V_A+V_B
- \end{pmatrix}.
-\]
-Consequently, the GLS $t$ statistic for the slope is exactly
-$T_{\mathrm{CB2}}$.
-\end{lemma}
+An identity-link two-cell generalized least-squares model can be constructed
+to reproduce the already-computed CB\textsuperscript{2} group summaries and
+variances.  This is an algebraic restatement of those summaries, because the
+working precision matrix is defined from CB\textsuperscript{2}'s own weights.
+It is useful as a software check but is not a nesting theorem and supplies no
+evidence about BARCS calibration.
 
-\begin{proof}
-Because the weights within each group sum to one, their groupwise total
-working precisions are
-\[
- \sum_{i\in A}\frac{a_i}{V_A}=\frac{1}{V_A},
- \qquad
- \sum_{i\in B}\frac{b_i}{V_B}=\frac{1}{V_B}.
-\]
-Hence
-\[
- X^\top\Omega X=
- \begin{pmatrix}
- V_A^{-1}+V_B^{-1} & V_B^{-1}\\
- V_B^{-1} & V_B^{-1}
- \end{pmatrix},
-\quad
- X^\top\Omega\mathbf{Y}=
- \begin{pmatrix}
- \widehat p_A/V_A+\widehat p_B/V_B\\
- \widehat p_B/V_B
- \end{pmatrix}.
-\]
-Direct inversion gives the displayed covariance matrix and multiplication
-gives the displayed coefficient vector.  Its slope standard error is
-$\sqrt{V_A+V_B}$, proving the result.
-\end{proof}
-
-\begin{corollary}[Legacy-compatibility identity]
-If the slope statistic in Lemma~\ref{lem:legacy} is referred to
-$t_{\nu_{\mathrm{CB2}}}$ using Equation~\eqref{eq:legacydf}, its two-sided
-$p$-value is identical to the original CB\textsuperscript{2} $p$-value.
-Thus identity-link GLS algebra reproduces the original two-group inference on
-its group-summary scale.  This corollary is a compatibility check, not a claim
-of finite-sample equality with the default logit \texttt{bbreg()} fit.
-\end{corollary}
-
-The default implementation uses the logit link because it respects the
-parameter space for arbitrary designs.  It is therefore important to prove a
-second, weaker relationship rather than claim finite-sample identity.
-
-\begin{proposition}[First-order equivalence of the logit contrast]
-\label{prop:local}
-Suppose the two groups are independent, their weighted proportion estimators
-are consistent, their groupwise and pooled precision estimators converge to a
-common $\kappa$, and under the null or a sequence of local alternatives
-$p_A,p_B\rightarrow p\in(0,1)$ with
-$\widehat p_B-\widehat p_A=O_p(n^{-1/2})$.  Let
-$h(p)=\logit(p)$ and define the delta-method statistic
-\[
- T_{\logit}=
- \frac{h(\widehat p_B)-h(\widehat p_A)}
- {\sqrt{h'(\widehat p_A)^2V_A+h'(\widehat p_B)^2V_B}}.
-\]
-Then
-\[
- T_{\logit}-T_{\mathrm{CB2}}\xrightarrow{p}0.
-\]
-Under a correctly specified common-dispersion beta-binomial model, the
-binary-design IRLS Wald statistic has the same first-order expansion.  If
-$n_A,n_B\rightarrow\infty$ through increasing numbers of independent
-biological libraries, both its residual degrees of freedom and
-Equation~\eqref{eq:legacydf} diverge, so their reference distributions also
-converge to the same standard normal limit.  Holding $n_A,n_B$ fixed while
-only increasing read depths $N_i$ is not this asymptotic regime.
-\end{proposition}
-
-\begin{proof}
-The mean-value theorem and consistency give
-\[
- h(\widehat p_B)-h(\widehat p_A)
- =h'(p)(\widehat p_B-\widehat p_A)+o_p(n^{-1/2}),
-\]
-where $h'(p)=\{p(1-p)\}^{-1}$.  Continuity of $h'$ gives
-\[
- \sqrt{h'(\widehat p_A)^2V_A+h'(\widehat p_B)^2V_B}
- =h'(p)\sqrt{V_A+V_B}\{1+o_p(1)\}.
-\]
-The common positive factor $h'(p)$ cancels, yielding
-$T_{\logit}=T_{\mathrm{CB2}}+o_p(1)$.  It remains to connect this transformed
-cell-mean statistic to IRLS.  Write $\rho=1/(\kappa+1)$.  Within a group having
-mean $\mu_g$, the beta-binomial quasi-score for its logit cell mean is
-proportional to
-\[
- \sum_{i\in g}\frac{N_i}{\kappa+N_i}(Y_i-\mu_g).
-\]
-The original CB\textsuperscript{2} weight is
-\[
- \left(\frac{1}{\kappa}+\frac{1}{N_i}\right)^{-1}
- =\frac{\kappa N_i}{\kappa+N_i}.
-\]
-The factor $\kappa$ disappears on normalization, so for fixed common
-dispersion the two methods use identical within-group relative weights.
-Under the stated common-dispersion model, the separately estimated legacy
-precisions and the IRLS precision converge to the same $\kappa$; the resulting
-binary-design cell means therefore have the same first-order expansion.
-Finally, both $t$ distributions approach the standard normal as their degrees
-of freedom diverge.
-\end{proof}
-
-These results establish two deliberately separate claims.  The original
-statistic has an \emph{algebraically exact legacy representation} after its
-group summaries are computed, while the implemented logit statistic is
-\emph{locally asymptotically equivalent} in the unadjusted binary design under
-the stated common-dispersion assumptions.  Strict finite-sample nesting of the
-implemented estimator is not claimed.  In finite samples,
-\texttt{bbreg(\textasciitilde group)} need not equal
-\texttt{measure\_sgrna\_stats()}: the effect scale, dispersion pooling,
-working weights, and degrees of freedom differ.  What regression adds is an
-estimable coefficient for continuous predictors, adjustment variables, and
-interactions; what it changes must be assessed by calibration and benchmark
-data rather than hidden behind the word ``generalization.''  The executable
-example \repofile{examples/cb2_generalization_proof.R} verifies
-Lemma~\ref{lem:legacy} to machine precision and illustrates the
-convergence in Proposition~\ref{prop:local}.  In its deterministic guide,
-original CB\textsuperscript{2} and the GLS contrast both give effect
-$9.059929\times10^{-4}$, standard error $1.113105\times10^{-4}$,
-$t=8.139330$, $\nu=5.647255$, and two-sided
-$p=2.512928\times10^{-4}$; the maximum numerical discrepancy is
-$1.78\times10^{-15}$.  In the link-scale illustration, shrinking the
-two-group proportion difference from $8\times10^{-4}$ to
-$2.5\times10^{-5}$ reduces the absolute gap between raw and logit statistics
-from $0.0583$ to $0.000151$.
+For small differences away from the probability boundaries, the delta method
+makes a logit contrast approximately proportional to a raw-proportion
+contrast.  A stronger equivalence would additionally require the groupwise and
+pooled dispersion estimators to converge to a common value as the number of
+independent biological libraries increases.  Condition-dependent dispersion
+violates that assumption, and deeper sequencing at a fixed number of
+biological units does not create the required asymptotic regime.  We therefore
+make no formal equivalence claim.  The operational generalization is limited
+to the mean model: BARCS can estimate continuous, adjusted, and interaction
+coefficients that the two-group CB\textsuperscript{2} interface cannot express.

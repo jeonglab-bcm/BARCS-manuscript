@@ -21,9 +21,18 @@ libraries.  In the original CB\textsuperscript{2} study, goodness-of-fit
 comparisons favored the beta-binomial over negative-binomial alternatives for
 pooled CRISPR counts \citep{jeong2019beta}.
 
-CB\textsuperscript{2} applies that sampling model to two independent groups.
-Its limitation is therefore not the variance model but the range of mean
-models it can express.  For guide $g$ observed in library $i$, let $K_{gi}$
+Beta-binomial regression itself is not new.  The \texttt{corncob} framework
+models both the mean and overdispersion of counts conditional on library totals
+\citep{martin2020corncob}, and general implementations are available in
+\texttt{aod}, \texttt{VGAM}, and \texttt{gamlss}
+\citep{lesnoff2012aod,yee1996vgam,rigby2005gamlss}.  BARCS is therefore not
+presented as the first beta-binomial regression method.  Its contribution is a
+CRISPR-screen implementation that preserves immutable guide-library totals,
+uses an R design matrix, returns guide-level coefficient tests at screen scale,
+and connects this workflow to CB\textsuperscript{2}.
+
+CB\textsuperscript{2} applies its sampling model to two independent groups.
+For guide $g$ observed in library $i$, let $K_{gi}$
 denote the guide count, $N_i$ the unfiltered mapped-guide total, and
 $\mathbf{x}_i^\top$ one row of a prespecified, full-rank sample design matrix.
 The regression problem is
@@ -53,24 +62,24 @@ We introduce BARCS (Beta-binomial Analysis and Regression for CRISPR Screens)
 to fill this gap.  BARCS retains the beta-binomial sampling principle of
 CB\textsuperscript{2}, replaces the two group means with an R model matrix, and
 tests a prespecified coefficient or contrast with sample-level inference.  The
-relationship to CB\textsuperscript{2} is formal rather than rhetorical: the
-legacy group-summary statistic is nested exactly, and the default logit
-statistic is first-order equivalent under stated local asymptotics.
+relationship to CB\textsuperscript{2} is structural: both methods condition
+guide counts on library totals and cap the information contributed by deeper
+sequencing.  Their estimators, effect scales, dispersion assumptions, and
+finite-sample reference distributions differ, so BARCS is not claimed to nest
+the implemented CB\textsuperscript{2} test.
 
-The empirical evaluation follows the same progression.  First, two
-longitudinal screens test the principal generalization: the seven-time-point
-HT-29 experiment used to evaluate Chronos and the three-time-point,
-five-cell-line Cas13 study of \citet{liang2026lncrna}.  Second, an ordered-bin
-IL2RA screen with independently validated regulators evaluates a
-donor-adjusted quantitative phenotype.  Third, genome-scale and factorial
-simulations test power, realized false-discovery proportions, dispersion
-moderation, and denominator choice under known truth.  Endpoint and
-copy-number analyses are retained as robustness checks rather than presented
-as the primary use case.
+The empirical evaluation begins with calibration under known truth.  It then
+uses the three-time-point Cas13 study of four replicate-complete cell lines from
+\citet{liang2026lncrna} as a processed-count sensitivity analysis and an
+ordered-bin IL2RA screen as a held-out-control diagnostic.  Genome-scale and
+factorial simulations examine dispersion moderation and denominator choice.
+The serially harvested HT-29 culture, endpoint screens, and copy-number
+analyses are retained as descriptive robustness checks rather than evidence for
+sample-level longitudinal inference.
 
-This design supports a precise claim.  The beta-binomial is the better
-motivated sampling model for guide proportions conditional on known library
-totals, and BARCS makes that model available to designs that
-CB\textsuperscript{2} cannot represent.  The benchmarks test that
-generalization through longitudinal, covariate-adjusted, and interaction
-effects while measuring calibration against prespecified null controls.
+This design supports a deliberately limited claim.  BARCS makes a
+library-total-conditional beta-binomial mean model available to designs that
+CB\textsuperscript{2} cannot represent.  Whether its coefficient probabilities
+are calibrated is a separate empirical question.  The benchmarks therefore
+report failures as well as successes and do not treat the sampling-model choice
+as proof of superiority over negative-binomial regression.

@@ -86,11 +86,14 @@ text(
 
 par(mar = c(5.2, 4.3, 2.7, 0.7))
 null_rate <- null_metrics$fraction_p_below_0_05[
-  match(c("raw", "control_calibrated"), null_metrics$guide_statistic)
+  match(
+    c("raw", "control_calibrated_5fold_heldout"),
+    null_metrics$guide_statistic
+  )
 ]
 null_positions <- barplot(
   null_rate,
-  names.arg = c("Raw", "Control-\ncalibrated"),
+  names.arg = c("Raw", "5-fold\nheld out"),
   col = c("#9ECAE1", barcs_method_colours[["BARCS"]]),
   border = NA,
   ylim = c(0, 0.15),

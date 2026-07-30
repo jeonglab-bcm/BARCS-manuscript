@@ -1,28 +1,59 @@
 % !TeX root = ../../main.tex
-\subsection{Cross-benchmark calibration diagnostics}
+\subsection{Finite-sample calibration is not guaranteed by the sampling model}
 \label{sec:calibration}
 
-Prespecified negative controls provide an empirical check on reported
-$p$-values.  Under a calibrated null, approximately 5\% of non-targeting
-guides, safe-harbor targets, simulated null genes, or non-expressed
-transcripts should satisfy $p<0.05$.  This diagnostic complements ranking and
-recall because a method can gain apparent sensitivity by returning
-anti-conservative probabilities.
+The first analysis uses known truth rather than biological proxy labels.  We
+simulated 200 genes with three guides per gene under the fitted beta-binomial
+model, including 160 null genes, 27 independent libraries, a continuous dose,
+and three batches.  The tested model therefore matches the data-generating mean
+and variance families.  Gene probabilities use the prespecified directional
+Stouffer summary for BARCS and the native gene statistic for MAGeCK-MLE.
 
-The clearest experimental example was the IL2RA FACS screen.  The uncalibrated
-BARCS fit yielded $p<0.05$ for 0.133 of non-targeting guides; negative-control
-calibration reduced that fraction to 0.051 while retaining 22 of 26 validated
-regulators.  Calibration is therefore not an automatic consequence of the
-estimator: it depends on the complete analysis contract, including the
-denominator, design, and use of controls.
+\begin{table}[htbp]
+\centering
+\caption{Nominal-versus-realized error rates in the continuous-dose
+beta-binomial simulation.  Type-I error is the fraction of 160 null genes with
+$p<0.05$.  Empirical FDP is measured among calls at Benjamini--Hochberg FDR
+0.05.  This single deterministic simulation is a diagnostic, not a claim of
+uniform operating characteristics.}
+\label{tab:type1}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrr}
+\toprule
+Method & Null type I & Power & Calls & Empirical FDP\\
+\midrule
+Naive binomial $z$ & 0.844 & 1.000 & 174 & 0.770\\
+BARCS unmoderated $t$ & 0.081 & 1.000 & 46 & 0.130\\
+BARCS moderated $t$ & 0.088 & 1.000 & 44 & 0.091\\
+Official MAGeCK-MLE Wald & 0.038 & 0.975 & 41 & 0.049\\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The longitudinal Liang analysis led to the same distinction.  Across five cell
-lines, BARCS had a macro-averaged null $p<0.05$ rate of 0.076 and hence an
-absolute calibration error of 0.035.  The matched longitudinal MAGeCK-MLE
-analysis had a null rate of 0.153 and an error of 0.103.  General RNA-seq count
-models achieved higher ranking sensitivity but had null rates between 0.139
-and 0.153.
+BARCS is anti-conservative in this example despite correct beta-binomial
+simulation.  The guide-level null rate is 0.077, so the failure is already
+present before gene aggregation.  No fitted guide reaches the lower
+$\widehat\rho=0$ boundary; the truncation mechanism is therefore not the cause
+in this simulation.  More generally, the model-based covariance treats
+$\widehat\rho$ as fixed, and the residual-$t$ reference does not propagate
+guide-specific dispersion uncertainty.  Moderation lowers the empirical FDP
+but does not restore nominal type-I error.
 
-These results argue for reporting empirical null behavior alongside power,
-not for selecting one method in every design.  BARCS was comparatively
-well calibrated among procedures estimating the same longitudinal slope.
+Negative controls can diagnose this behavior, but evaluation must be separated
+from estimation.  In the IL2RA FACS screen, 0.133 of 593 non-targeting guides
+have raw $p<0.05$.  The tail-quantile calibration sets its scale from the
+control tail, so measuring those same controls after calibration would be
+circular.  Five-fold cross-fitting instead estimates each scale on four folds
+and scores the omitted fold.  The resulting held-out rate is 0.049.  This is a
+valid out-of-sample diagnostic of the scaling rule at the selected threshold;
+it does not repair the correlation among bins from one donor or validate the
+independent-library likelihood.
+
+The processed Liang analysis provides a secondary, weaker diagnostic.  BARCS
+has a macro-averaged null $p<0.05$ rate of 0.064.  Its reported calibration
+error, 0.025, is the mean of the four cell-line-specific absolute errors, not
+$|0.064-0.05|=0.014$.  MAGeCK-MLE has corresponding values 0.107 and 0.057.
+Because the common matrix was normalized, ComBat-corrected, and rounded before
+either fit, these values compare procedures on that transformed input but
+cannot establish calibration of their count likelihoods.

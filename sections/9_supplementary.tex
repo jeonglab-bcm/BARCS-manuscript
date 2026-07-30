@@ -43,19 +43,30 @@ missing biological replicates\\
 \end{tabular}
 \end{table}
 
-\input{sections/results/0_calibration}
-
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/waterbear_facs_main.pdf}
 \caption{\textbf{Supporting ordered-bin IL2RA benchmark.}  (A) Directional
 recovery of 26 independently validated regulators.  (B) Total discoveries at
 each method's threshold (log scale).  (C) Empirical non-targeting-guide
-$p<0.05$ rate before and after BARCS control calibration; the dashed line is
-the nominal rate.}
+$p<0.05$ rate before calibration and under five-fold held-out BARCS control
+calibration; the dashed line is the nominal rate.}
 \label{fig:waterbear}
 \end{figure}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/crispulator_facs_moi_10k_f1_by_fdr.pdf}
+\caption{\textbf{CRISPulator threshold sensitivity for the restricted
+genome-scale comparator set.}  (A,B) MOI 0.20 and (C,D) MOI 0.30.  F1 is shown
+on the left and realized FDP on the right; the dashed diagonal denotes realized
+FDP equal to the requested threshold.  The figure supports the BARCS-ST versus
+BARCS-MOD ablation.  It does not include edgeR-QL, DESeq2, or limma--voom and
+therefore does not support a general method-ranking claim.}
+\label{fig:crispulator}
+\end{figure}
+
+\input{sections/results/1_ht29}
 \input{sections/results/supp_ht29-cnv}
 
 \paragraph{Additional multivariable and endpoint benchmarks.}

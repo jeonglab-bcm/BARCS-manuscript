@@ -2,7 +2,8 @@
 
 # Manuscript Figure 1: longitudinal Liang method comparison.
 #
-# The upper rows show all five cell lines in method-specific volcano plots for
+# The upper rows show the four replicate-complete cell lines in method-specific
+# volcano plots for
 # BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom. Panels A-C show the
 # observed day 0, 7, and 14 guide-abundance trajectories for representative
 # false-positive calls.
@@ -23,7 +24,6 @@ if (!file.exists(score_path)) {
 cell_stems <- c(
   HAP1 = "HAP1",
   HEK293FT = "HEK293FT",
-  K562 = "K562",
   `MDA-MB-231` = "MDA_MB_231",
   THP1 = "THP1"
 )
@@ -181,9 +181,9 @@ write.csv(
   row.names = FALSE
 )
 
-# Extend the original method-specific gene-level volcano plots across all five
-# cell lines. Every method uses the same three-time-point longitudinal
-# estimand within each cell line.
+# Extend the original method-specific gene-level volcano plots across the four
+# replicate-complete cell lines. Every method uses the same three-time-point
+# longitudinal estimand with a replicate block within each cell line.
 volcano_methods <- c(
   "BARCS", "MAGeCK-MLE", "edgeR-QL", "DESeq2", "limma-voom"
 )
@@ -210,14 +210,13 @@ if (!identical(
     sep = "::"
   )))
 )) {
-  stop("All 25 cell-line-by-method longitudinal results are required.")
+  stop("All 20 cell-line-by-method longitudinal results are required.")
 }
 
 barcs_colour <- barcs_method_colours[["BARCS"]]
 cell_line_colours <- c(
   HAP1 = "#0072B2",
   HEK293FT = "#009E73",
-  K562 = "#E69F00",
   `MDA-MB-231` = "#CC79A7",
   THP1 = "#D55E00"
 )
@@ -288,7 +287,7 @@ for (method_index in seq_along(volcano_methods)) {
 
 par(mar = c(1.0, 1.0, 2.7, 1.0))
 plot.new()
-title(main = "Five-cell-line comparison", cex.main = 0.95)
+title(main = "Four-cell-line comparison", cex.main = 0.95)
 legend(
   "center",
   legend = c(
@@ -400,7 +399,7 @@ for (case_index in seq_len(nrow(case_specification))) {
 dev.off()
 
 cat(
-  "Figure 1 includes five-cell-line method volcano plots and three ",
+  "Figure 1 includes four-cell-line method volcano plots and three ",
   "guide-count trajectories.\n",
   sep = ""
 )

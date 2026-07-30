@@ -1,49 +1,61 @@
 % !TeX root = ../main.tex
-BARCS extends the beta-binomial sampling principle established by
-CB\textsuperscript{2}.  Pooled-guide counts are represented as proportions
-conditional on observed library totals, and the mean is generalized from two
-groups to an arbitrary design matrix.  The resulting estimand is an ordinary
-coefficient: a time slope, dose response, adjusted treatment effect,
-interaction, or prespecified contrast.
+BARCS contributes a CRISPR-oriented implementation of beta-binomial
+regression: immutable library totals, an arbitrary design matrix, guide-level
+coefficient tests, and screen-scale execution.  This extends the questions
+available through CB\textsuperscript{2}, but it does not establish a new
+distribution family or a finite-sample nesting result.  Beta-binomial
+regression is already available in \texttt{corncob} and general statistical
+packages, and the BARCS and CB\textsuperscript{2} estimators differ materially.
 
-Goodness-of-fit comparisons in the original CB\textsuperscript{2} study
-favored the beta-binomial representation of pooled-guide counts
-\citep{jeong2019beta}.  The present results extend that advantage to
-regression designs.  BARCS maintained comparable essential-gene
-discrimination in HT-29 and substantially improved longitudinal null
-calibration in the Liang screens while using the known library denominator
-directly.
+The most important result is the calibration failure in
+Table~\ref{tab:type1}.  Under a correctly specified beta-binomial simulation,
+unmoderated BARCS has null type-I error 0.081 and empirical FDP 0.130 at
+nominal 0.05.  MAGeCK-MLE is close to or below nominal in the same simulation.
+No guide reaches the $\widehat\rho=0$ boundary, so lower-bound truncation is not
+the explanation in this instance.  Plug-in treatment of guide-specific
+dispersion and the coefficient reference distribution remain plausible
+sources, but identifying the mechanism requires a dedicated simulation grid
+rather than a post hoc assertion.
 
-The two longitudinal analyses are the principal evidence for generalization.
-HT-29 demonstrates that BARCS can analyze eight time points without reducing
-them to an endpoint contrast.  The Liang reanalysis uses days 0, 7, and 14
-jointly across five cell lines, rather than the previous day-0/day-14
-comparison.  Together they show that the method performs the analysis that
-CB\textsuperscript{2} cannot express.  The IL2RA experiment extends the same
-argument to an ordered phenotype with donor adjustment, where intermediate
-bins improved validated-regulator recovery over an outer-bin comparison.
+The real-data diagnostics do not overturn that result.  Five-fold
+cross-fitting in the IL2RA screen yields a held-out non-targeting rate of 0.049,
+showing that the control-scaling rule transfers to omitted controls at the
+chosen tail probability.  The FACS bins are nevertheless correlated partitions
+of three donor pools, so a scalar correction does not make the independent-bin
+likelihood correct.  Waterbear and MAUDE model that structure directly and
+recover more validated regulators.  The selected 33-gene follow-up panel is
+also enriched by design and cannot support an unbiased genome-wide accuracy
+claim.
 
-The simulations refine the performance claim.  BARCS-MOD provided the best F1
-at matched realized false-discovery proportions across the evaluated
-operating points.  The factorial simulation further showed that replacing the
-full library with prespecified control guides increased interaction F1 from
-0.481 to 0.917.  The sampling model, normalization contract, dispersion
-estimator, and calibration procedure therefore form one analysis pipeline.
+The Liang analysis demonstrates that the software can fit a three-time-point
+coefficient in four replicate-complete cell lines.  It separates ranking from a proxy-null
+diagnostic and includes general RNA-sequencing comparators.  BARCS has the
+lowest mean cell-line-specific calibration error, whereas the other methods
+rank essential genes more strongly.  Because every method receives
+normalized, ComBat-corrected, rounded values, this is a robustness analysis of
+procedures on one transformed matrix, not evidence for either the
+beta-binomial or negative-binomial likelihood.  The same preprocessing
+standard is applied to the external Chronos audit.
 
-The external false-discovery audit reinforces the importance of that contract
-(Supplementary Table~\ref{tab:chronosaudit}).  Preserving immutable
-full-library totals reduced the Avana null-only result from 152 reported false
-discoveries to zero on the identical evaluation genes.  In the independent
-PSN1 null split, BARCS produced 4.81\% guide $p<0.05$ and no gene discoveries.
-These results show that the denominator must remain part of the
-beta-binomial sampling model after guide filtering.
+The HT-29 analysis has a different limitation.  Its seven days are serial
+harvests of one passaged culture.  The resulting trajectory scores are useful
+descriptively, but their sample-level degrees of freedom do not represent seven
+independent biological units.  The deposited day-25 MAGeCK score has the
+highest AUROC and high-precision recall, so this dataset supplies no evidence
+that using the time course improves those endpoints.
 
-The appropriate method remains design dependent.  CB\textsuperscript{2} is a
-direct choice for one prespecified two-group contrast.  BARCS is appropriate
-when independent libraries lie on a quantitative or multivariable design.
-Waterbear is preferable when joint FACS-bin dependence is central, and
-Chronos is preferable when knockout timing and population dynamics are the
-scientific model.  Negative controls should be used for calibration when
-available, and post-fit copy-number correction should be accepted only after a
-null-gene diagnostic.  These are not exceptions to the main claim; they define
-its domain.
+The simulation ablations identify useful implementation choices without
+supporting broad competitive claims.  Dispersion moderation improves BARCS
+within the 10,000-gene CRISPulator runs, and control-guide denominators improve
+interaction recovery in simCRISPR.  The broader 400-gene comparison shows that
+edgeR-QL, DESeq2, and limma--voom can match or exceed BARCS ranking and F1,
+albeit at different realized FDPs.  BARCS-MOD is fully defined in
+Equations~\eqref{eq:guide-moderation}--\eqref{eq:guide-moderated-t}, but it has
+not been validated on the real-data settings where calibration is problematic.
+
+Taken together, the results support software availability and a research
+direction, not confirmatory deployment.  A production version requires
+correlation-aware designs for repeated biological units and sorted bins,
+likelihood-compatible raw counts, dispersion inference that attains nominal
+error over a prespecified simulation grid, hierarchical guide-to-gene
+inference, and calibration evaluated only on held-out or cross-fitted controls.
