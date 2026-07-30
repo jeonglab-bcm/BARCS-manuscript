@@ -116,7 +116,7 @@ legend(
   legend = vapply(series, function(entry) entry$label, character(1)),
   col = vapply(series, function(entry) entry$colour, character(1)),
   pch = vapply(series, function(entry) entry$pch, numeric(1)),
-  lty = 1, lwd = 2, ncol = 2, bty = "n", cex = 0.85
+  lty = 1, lwd = 2, ncol = 2, bty = "n", cex = 1.3
 )
 dev.off()
 

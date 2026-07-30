@@ -347,9 +347,9 @@ legend(
     unname(cell_line_colours[volcano_cell_lines]),
     "#3B5BDB"
   ),
-  pt.cex = c(0.8, rep(0.8, length(volcano_cell_lines)), NA),
+  pt.cex = c(1.1, rep(1.1, length(volcano_cell_lines)), NA),
   bty = "n",
-  cex = 0.78
+  cex = 1.2
 )
 
 trajectory_shapes <- c(`1` = 21, `2` = 24)
@@ -437,9 +437,9 @@ for (case_index in seq_len(nrow(case_specification))) {
       lty = unname(trajectory_lines),
       pt.bg = barcs_colour,
       col = "#555555",
-      pt.cex = 0.9,
+      pt.cex = 1.1,
       bty = "n",
-      cex = 0.82
+      cex = 1.2
     )
   }
 }

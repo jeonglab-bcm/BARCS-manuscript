@@ -88,6 +88,6 @@ legend(
   lwd = 2,
   horiz = TRUE,
   bty = "n",
-  cex = 0.86
+  cex = 1.35
 )
 dev.off()
