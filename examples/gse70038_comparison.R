@@ -10,7 +10,7 @@
 # official MAGeCK-MLE executable. Functional comparison of the complementary
 # hit sets is performed by `gse70038_complementary_enrichment.R`.
 
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 source(file.path("R", "method_palette.R"))
 
 geo_url <- paste0(

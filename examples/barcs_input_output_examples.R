@@ -11,7 +11,7 @@ if (file.exists(file.path("CB2", "DESCRIPTION")) &&
 } else if (!requireNamespace("CB2", quietly = TRUE)) {
   stop("Install CB2, or run this script from the BARCS repository root.")
 }
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 section("Example 1 input: two experimental groups")
 

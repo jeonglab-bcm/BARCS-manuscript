@@ -9,18 +9,29 @@ between-library beta-binomial heterogeneity—but replaces the two-group mean
 with an ordinary R model matrix. Guide counts remain the response; dose, time,
 donor, batch, and interaction terms are predictors. Coefficients and named
 contrasts use a Student t reference based on independent samples rather than
-reads. This is an additive path inside CB2, not a replacement for its
-two-group workflow.
+reads. BARCS is a standalone package; it is a generalisation of CB²'s
+two-group test, not a replacement for that workflow.
 
 ## Install
 
-The R package lives in [`jeonglab-bcm/CB2`](https://github.com/jeonglab-bcm/CB2)
-and is tracked here as the `CB2/` submodule, so this repository pins the exact
-package commit used for each manuscript and benchmark revision.
+The R package lives in
+[`jeonglab-bcm/BARCS`](https://github.com/jeonglab-bcm/BARCS) and is tracked
+here as the `BARCS/` submodule, so this repository pins the exact package
+commit used for each manuscript and benchmark revision. CB2 is still tracked
+as a second submodule, but only as a benchmark baseline and as the source of
+the Sanson screen data — nothing in BARCS depends on it.
 
 ```sh
-git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS.git
-cd BARCS
+git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS-manuscript.git
+cd BARCS-manuscript
+```
+
+Analysis scripts load the package through `R/load_barcs.R`, which prefers an
+installed BARCS and otherwise loads the pinned submodule in place. A clean
+checkout therefore needs no install step, though installing is faster:
+
+```sh
+R CMD INSTALL BARCS
 ```
 
 ## Use
@@ -36,8 +47,10 @@ Rscript examples/barcs_quickstart.R
 
 ## Layout
 
-- `R/bbreg.R` — dependency-free implementation; `R/README.md` is the source map
-- `CB2/` — pinned package submodule with the compiled weighted-IRLS kernels
+- `BARCS/` — pinned package submodule; the implementation and its own tests
+- `R/load_barcs.R` — resolves the package for every analysis script
+- `R/method_palette.R` — shared figure colours
+- `CB2/` — pinned submodule, used only as a benchmark baseline and data source
 - `examples/` — quickstart, benchmark scripts, and manuscript figures
 - `scripts/`, `data/derived/`, `results/` — data preparation and versioned metrics
 - `main.tex`, `sections/` — manuscript source; rendered PDF in `output/pdf/`
@@ -45,10 +58,13 @@ Rscript examples/barcs_quickstart.R
 ## Reproduce
 
 ```sh
-Rscript tests/run_tests.R
+Rscript -e 'devtools::test("BARCS")'
 Rscript examples/barcs_quickstart.R
-Rscript -e 'devtools::test("CB2")'
 ```
+
+The package's own test suite lives with the package, in
+`BARCS/tests/testthat/`. It replaced the former `tests/run_tests.R` in this
+repository when BARCS was split out.
 
 Each benchmark is a single script under `examples/` that writes versioned
 outputs to `results/` or `data/derived/`. Some need external tools: official

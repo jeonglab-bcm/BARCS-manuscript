@@ -5,7 +5,7 @@
 #
 #   Rscript examples/simulation.R
 
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 source(file.path("R", "method_palette.R"))
 
 set.seed(20260723)

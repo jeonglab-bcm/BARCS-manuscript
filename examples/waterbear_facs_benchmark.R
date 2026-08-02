@@ -38,12 +38,7 @@ if (!all(file.exists(c(count_source, validation_source)))) {
   )
 }
 
-# Use BARCS's own compiled RcppArmadillo kernels when the package is installed.
-# The base-R fallback in R/bbreg.R remains valid but is slower.
-if (requireNamespace("BARCS", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(BARCS))
-}
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 raw <- read.delim(gzfile(count_source), check.names = FALSE)
 sample_columns <- grep(

@@ -8,11 +8,7 @@
 #   2. immutable full-library totals; and
 #   3. one row of sample metadata per count-matrix column.
 
-if (requireNamespace("BARCS", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(BARCS))
-} else {
-  source(file.path("R", "bbreg.R"))
-}
+source(file.path("R", "load_barcs.R"))
 
 counts <- rbind(
   guide_1 = c(120, 110, 85, 70, 48, 33),

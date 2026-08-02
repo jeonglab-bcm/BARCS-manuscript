@@ -121,13 +121,7 @@ write.csv(
   row.names = FALSE
 )
 
-# Use the CB2 RcppArmadillo WLS kernel if its compiled shared library exists.
-# Use BARCS's own compiled RcppArmadillo kernels when the package is installed.
-# The base-R fallback in R/bbreg.R remains valid but is slower.
-if (requireNamespace("BARCS", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(BARCS))
-}
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 combine_guides <- function(result, retain_controls = TRUE) {
   gene_label <- result$gene
