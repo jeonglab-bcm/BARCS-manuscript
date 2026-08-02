@@ -21,6 +21,10 @@ commit used for each manuscript and benchmark revision. CB2 is still tracked
 as a second submodule, but only as a benchmark baseline and as the source of
 the Sanson screen data — nothing in BARCS depends on it.
 
+The manuscript LaTeX lives in the `overleaf/` submodule, which is the Git
+bridge of the Overleaf project. Coauthors edit it in Overleaf; pushing to that
+submodule publishes to Overleaf, and Overleaf edits show up as commits there.
+
 ```sh
 git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS-manuscript.git
 cd BARCS-manuscript
@@ -53,13 +57,16 @@ Rscript examples/barcs_quickstart.R
 - `CB2/` — pinned submodule, used only as a benchmark baseline and data source
 - `examples/` — quickstart, benchmark scripts, and manuscript figures
 - `scripts/`, `data/derived/`, `results/` — data preparation and versioned metrics
-- `main.tex`, `sections/` — manuscript source; rendered PDF in `output/pdf/`
+- `overleaf/` — manuscript LaTeX submodule (the Overleaf project's Git bridge)
+- `figures/` — generated figures; the three the manuscript cites are published
+  into `overleaf/figures/` by `scripts/publish_figures.sh`
 
 ## Reproduce
 
 ```sh
 Rscript -e 'devtools::test("BARCS")'
 Rscript examples/barcs_quickstart.R
+latexmk -pdf -cd overleaf/main.tex
 ```
 
 The package's own test suite lives with the package, in
@@ -79,7 +86,8 @@ MAGeCK 0.5.9.5 at `.venv/bin/mageck`, and Julia for the CRISPulator simulation
   guide-to-gene statistics and their diagnostics
 - [`docs/barcs-external-method-comparison.md`](docs/barcs-external-method-comparison.md) —
   comparison with MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom
-- [`DEVELOPMENT.md`](DEVELOPMENT.md) — two-repository submodule workflow
+- [`DEVELOPMENT.md`](DEVELOPMENT.md) — submodule workflow, Overleaf sync, and
+  the continuous PDF build
 
 ## Scope and limitations
 
