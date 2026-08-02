@@ -46,12 +46,7 @@ if (!requireNamespace("rhdf5", quietly = TRUE)) {
   stop("The Bioconductor package `rhdf5` is required.", call. = FALSE)
 }
 
-# Use BARCS's own compiled RcppArmadillo kernels when the package is installed.
-# The base-R fallback in R/bbreg.R remains valid but is slower.
-if (requireNamespace("BARCS", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(BARCS))
-}
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 raw <- read.delim(
   gzfile(file.path(raw_dir, "Tzelepis_HT29_counts.txt.gz")),

@@ -59,12 +59,7 @@ if (n_replicates < 1L) {
   stop("At least one screen replicate is required.")
 }
 
-# Use BARCS's own compiled RcppArmadillo kernels when the package is installed.
-# The base-R fallback in R/bbreg.R remains valid but is slower.
-if (requireNamespace("BARCS", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(BARCS))
-}
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 conditional_normal_mean <- function(lower, upper) {
   mass <- pnorm(upper) - pnorm(lower)

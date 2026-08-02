@@ -9,10 +9,7 @@
 
 options(stringsAsFactors = FALSE)
 
-if (requireNamespace("BARCS", quietly = TRUE)) {
-  suppressPackageStartupMessages(library(BARCS))
-}
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 output_dir <- file.path("data", "derived")
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)

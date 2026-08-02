@@ -1,6 +1,0 @@
-# Hand-maintained: R/bbreg.R is not roxygen-documented.
-useDynLib(BARCS, .registration = TRUE)
-importFrom(Rcpp, evalCpp)
-importFrom(stats, pt, qt, median, mad, quantile, model.matrix, terms,
-           p.adjust, pnorm, qnorm, sd, var, complete.cases)
-exportPattern("^(bbreg|bb_)")

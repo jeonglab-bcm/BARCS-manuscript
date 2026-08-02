@@ -10,7 +10,7 @@
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 result_dir <- file.path("results", "liang_cas13")
 score_path <- file.path(result_dir, "all_gene_scores.csv.gz")

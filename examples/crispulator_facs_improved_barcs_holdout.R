@@ -95,7 +95,7 @@ suppressPackageStartupMessages({
   library(limma)
   library(DESeq2)
 })
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 auroc <- function(truth, score) {
   ranks <- rank(score, ties.method = "average")

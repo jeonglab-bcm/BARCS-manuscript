@@ -87,7 +87,7 @@ if (length(absent)) {
     call. = FALSE
   )
 }
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 mageck <- file.path(".venv", "bin", "mageck")
 if (!file.exists(mageck)) {

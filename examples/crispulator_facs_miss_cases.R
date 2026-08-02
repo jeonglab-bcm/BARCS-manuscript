@@ -31,7 +31,7 @@ suppressPackageStartupMessages({
   library(limma)
   library(DESeq2)
 })
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 
 data_dir <- file.path("data", "derived", "crispulator_facs")
 count_table <- read.delim(file.path(data_dir, "counts.tsv"), check.names = FALSE)

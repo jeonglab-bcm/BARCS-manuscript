@@ -2,3 +2,7 @@
 	path = CB2
 	url = https://github.com/jeonglab-bcm/CB2.git
 	branch = feature/cb2-reg
+[submodule "BARCS"]
+	path = BARCS
+	url = https://github.com/jeonglab-bcm/BARCS.git
+	branch = main

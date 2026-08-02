@@ -1,17 +1,22 @@
-# Developing the parent project and CB2
+# Developing the manuscript and the BARCS package
 
 This repository has two coordinated histories:
 
-- `jeonglab-bcm/BARCS` contains the manuscript, benchmark code, compact
-  result summaries, and figures.
-- `jeonglab-bcm/CB2` contains the R package. It is checked out here as the
-  `CB2/` Git submodule.
+- `jeonglab-bcm/BARCS-manuscript` (this repository) contains the manuscript,
+  benchmark code, compact result summaries, and figures.
+- `jeonglab-bcm/BARCS` contains the R package. It is checked out here as the
+  `BARCS/` Git submodule.
+
+A third submodule, `CB2/`, pins the older CB2 package. It is **not** a
+dependency of BARCS. It is kept for two reasons only:
+`examples/barcs_input_output_examples.R` runs original CB2 as a benchmark
+baseline, and two scripts load the Sanson screen from `CB2/data/`.
 
 ## Clone both repositories
 
 ```sh
-git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS.git
-cd BARCS
+git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS-manuscript.git
+cd BARCS-manuscript
 ```
 
 For a clone created without `--recurse-submodules`:
@@ -20,15 +25,34 @@ For a clone created without `--recurse-submodules`:
 git submodule update --init --recursive
 ```
 
-## Change the CB2 package
+## How scripts find the package
 
-The parent project currently follows the `feature/barcs` package branch.
+Every analysis script starts with
+
+```r
+source(file.path("R", "load_barcs.R"))
+```
+
+run from the repository root. That loader prefers an installed BARCS and
+otherwise loads the `BARCS/` submodule in place with `pkgload::load_all()`, so
+a fresh clone works with no install step. Installing is faster, because the
+compiled kernels are then built once rather than once per session:
 
 ```sh
-cd CB2
-git switch feature/barcs
+R CMD INSTALL BARCS
+```
 
-# Edit and test the package.
+The loader also enforces a minimum package version, so a stale submodule fails
+with a clear message rather than a missing-function error.
+
+## Change the BARCS package
+
+```sh
+cd BARCS
+git switch main
+
+# Edit, document, and test the package.
+Rscript -e 'devtools::document()'
 Rscript -e 'devtools::test()'
 
 git add <changed-package-files>
@@ -37,17 +61,22 @@ git push
 cd ..
 ```
 
-The parent repository still points to the previous CB2 commit until its
-submodule pointer is updated:
+Bumping `Version:` in `BARCS/DESCRIPTION` on `main` makes the package's release
+workflow tag that version and publish a source tarball. Editing DESCRIPTION
+without changing the version does nothing, so the workflow is safe to re-run.
+
+This repository still points at the previous package commit until its submodule
+pointer is updated:
 
 ```sh
-git add CB2
-git commit -m "chore: update CB2 submodule"
+git add BARCS
+git commit -m "chore: update BARCS submodule"
 git push
 ```
 
-This two-commit workflow is intentional: package code remains reviewable in
-CB2, while each analysis revision records the exact package commit it used.
+This two-commit workflow is intentional: package code stays reviewable in its
+own repository, while each analysis revision records the exact package commit
+it used.
 
 ## Pull coordinated updates
 
@@ -56,20 +85,24 @@ git pull
 git submodule update --init --recursive
 ```
 
-To advance the submodule to the newest commit on its configured branch:
+To advance a submodule to the newest commit on its configured branch:
 
 ```sh
-git submodule update --remote CB2
-git add CB2
-git commit -m "chore: update CB2 submodule"
+git submodule update --remote BARCS
+git add BARCS
+git commit -m "chore: update BARCS submodule"
 ```
 
 ## Verify before publishing
 
 ```sh
-Rscript tests/run_tests.R
-Rscript -e 'devtools::test("CB2")'
-R CMD build CB2
-R CMD check --no-manual CB2_*.tar.gz
+Rscript -e 'devtools::test("BARCS")'
+R CMD build BARCS
+R CMD check --no-manual BARCS_*.tar.gz
+Rscript examples/barcs_quickstart.R
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
+
+The package's own test suite lives in `BARCS/tests/testthat/`. It replaced the
+former `tests/run_tests.R` in this repository when BARCS was split out, so
+there is one copy of both the implementation and its tests.

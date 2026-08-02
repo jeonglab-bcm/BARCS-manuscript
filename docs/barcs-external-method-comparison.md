@@ -88,7 +88,7 @@ count model.
 
 Two properties of that model explain the two halves of the trade-off:
 
-- `.bb_estimate_rho()` in `R/bbreg.R` fits the beta-binomial overdispersion
+- `.bb_estimate_rho()` in `BARCS/R/bbreg.R` fits the beta-binomial overdispersion
   separately for each guide, from that guide's own residuals. edgeR-QL,
   limma-voom, and DESeq2 shrink each guide's dispersion toward a trend fitted
   across the whole library. With $2R-1$ residual degrees of freedom per guide

@@ -4,7 +4,7 @@
 # CB2. Essential and nonessential reference genes define an observable target:
 # a better ranking should separate the two classes more accurately.
 
-source(file.path("R", "bbreg.R"))
+source(file.path("R", "load_barcs.R"))
 source(file.path("R", "method_palette.R"))
 load(file.path("CB2", "data", "Sanson_CRISPRn_A375.rda"))
 
