@@ -127,6 +127,31 @@ git add overleaf && git commit -m "chore: update overleaf submodule"
 fails if a cited figure has not been built. Everything else in `figures/` is a
 diagnostic plot and is gitignored.
 
+### Continuous PDF builds
+
+`.github/workflows/manuscript.yaml` compiles the manuscript and fails if the
+LaTeX does not build, attaching the PDF as an artifact and the LaTeX log when a
+build fails. It runs when the `overleaf/` submodule pointer moves on `main` or
+in a pull request, and weekly on a schedule.
+
+The schedule matters because Overleaf edits do not touch this repository at
+all: until someone bumps the submodule pointer, this repository still pins the
+old commit. The weekly run builds the newest commit on the Overleaf side
+instead of the pinned one, so a coauthor's broken LaTeX surfaces without
+waiting for a pointer bump. `workflow_dispatch` can do the same on demand with
+the `use_latest` input.
+
+The workflow needs one repository secret, because the Overleaf Git bridge is
+authenticated:
+
+| Secret | Value |
+|---|---|
+| `OVERLEAF_GIT_TOKEN` | An Overleaf Git access token (Account Settings, Git integration) |
+| `OVERLEAF_GIT_USER` | Optional. Only if the bridge wants a username other than `git` |
+
+Without the token the workflow stops on its first step with an explanatory
+error rather than a confusing checkout failure.
+
 ## Pull coordinated updates
 
 ```sh

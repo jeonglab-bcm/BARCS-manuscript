@@ -86,7 +86,8 @@ MAGeCK 0.5.9.5 at `.venv/bin/mageck`, and Julia for the CRISPulator simulation
   guide-to-gene statistics and their diagnostics
 - [`docs/barcs-external-method-comparison.md`](docs/barcs-external-method-comparison.md) —
   comparison with MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom
-- [`DEVELOPMENT.md`](DEVELOPMENT.md) — two-repository submodule workflow
+- [`DEVELOPMENT.md`](DEVELOPMENT.md) — submodule workflow, Overleaf sync, and
+  the continuous PDF build
 
 ## Scope and limitations
 
