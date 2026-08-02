@@ -6,8 +6,9 @@ This repository coordinates three histories of its own plus one legacy pin:
   compact result summaries, and generated figures.
 - `jeonglab-bcm/BARCS` holds the R package, checked out as the `BARCS/`
   submodule.
-- The Overleaf project holds the manuscript LaTeX, checked out as the
-  `overleaf/` submodule. See "Change the manuscript text" below.
+- `jeonglab-bcm/BARCS-tex` holds the manuscript LaTeX, checked out as the
+  `overleaf/` submodule. It is a public mirror of the Overleaf project where
+  the writing actually happens. See "Change the manuscript text" below.
 
 `CB2/` pins the older CB2 package. It is **not** a dependency of BARCS. It is
 kept for two reasons only: `examples/barcs_input_output_examples.R` runs
@@ -85,21 +86,34 @@ it used.
 
 ## Change the manuscript text
 
-`overleaf/` is the Git bridge of Overleaf project
-`6a6ec212d3ea56f57964b094`. The bridge is bidirectional, so there is no export
-step and no second copy of the LaTeX:
+The manuscript has one history served from two places:
 
-- Edits made in Overleaf arrive as commits when you `git -C overleaf pull`.
-- Commits you push from `overleaf/` appear in Overleaf immediately.
+| Remote | Where | Why |
+|---|---|---|
+| `origin` | `github.com/jeonglab-bcm/BARCS-tex` | What `overleaf/` clones from. Public, so anonymous clones and CI need no credentials, and **GitHub indexes the prose for search and diffs**. |
+| `overleaf` | `latex.bioinfolder.com` Git bridge | Where coauthors edit. Authenticated. |
+
+`scripts/manuscript_sync.sh` keeps them in step. It is idempotent: run it after
+a fresh clone to add the Overleaf remote, and any time afterwards to sync.
 
 ```sh
-git -C overleaf pull
+scripts/manuscript_sync.sh          # fetch Overleaf, fast-forward, push to both
 $EDITOR overleaf/sections/3_barcs-results.tex
 git -C overleaf commit -am "Revise the results section"
-git -C overleaf push
+scripts/manuscript_sync.sh          # push the edit to both remotes
 
 git add overleaf
 git commit -m "chore: update overleaf submodule"
+```
+
+The script refuses to guess: it stops if `overleaf/` is dirty, or if the two
+remotes have genuinely diverged with commits on both sides.
+
+Note the submodule URL changed when the mirror was introduced. An existing
+clone needs one command to notice:
+
+```sh
+git submodule sync -- overleaf
 ```
 
 Build the PDF from the submodule; `-cd` makes latexmk run in `overleaf/` so the
@@ -125,7 +139,8 @@ git add overleaf && git commit -m "chore: update overleaf submodule"
 
 `scripts/publish_figures.sh` copies only those three, reports what changed, and
 fails if a cited figure has not been built. Everything else in `figures/` is a
-diagnostic plot and is gitignored.
+diagnostic plot and is gitignored. Follow it with
+`scripts/manuscript_sync.sh` to push the new figure to both remotes.
 
 ### Continuous PDF builds
 
@@ -141,16 +156,12 @@ instead of the pinned one, so a coauthor's broken LaTeX surfaces without
 waiting for a pointer bump. `workflow_dispatch` can do the same on demand with
 the `use_latest` input.
 
-The workflow needs one repository secret, because the Overleaf Git bridge is
-authenticated:
+No secret is required, because the submodule clones from the public mirror.
 
-| Secret | Value |
-|---|---|
-| `OVERLEAF_GIT_TOKEN` | An Overleaf Git access token (Account Settings, Git integration) |
-| `OVERLEAF_GIT_USER` | Optional. Only if the bridge wants a username other than `git` |
-
-Without the token the workflow stops on its first step with an explanatory
-error rather than a confusing checkout failure.
+The `OVERLEAF_GIT_TOKEN` secret is optional and only affects the scheduled run:
+with it, that run builds straight from the Overleaf bridge and so catches a
+broken edit before anyone has mirrored it. Without it, the scheduled run builds
+the mirror's newest commit instead, which is still ahead of the pinned one.
 
 ## Pull coordinated updates
 

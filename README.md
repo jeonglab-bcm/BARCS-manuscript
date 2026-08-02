@@ -21,9 +21,10 @@ commit used for each manuscript and benchmark revision. CB2 is still tracked
 as a second submodule, but only as a benchmark baseline and as the source of
 the Sanson screen data — nothing in BARCS depends on it.
 
-The manuscript LaTeX lives in the `overleaf/` submodule, which is the Git
-bridge of the Overleaf project. Coauthors edit it in Overleaf; pushing to that
-submodule publishes to Overleaf, and Overleaf edits show up as commits there.
+The manuscript LaTeX lives in the `overleaf/` submodule, which clones from the
+public mirror [`jeonglab-bcm/BARCS-tex`](https://github.com/jeonglab-bcm/BARCS-tex)
+so that the prose stays searchable and diffable on GitHub. Coauthors edit it in
+Overleaf; `scripts/manuscript_sync.sh` keeps the mirror and Overleaf in step.
 
 ```sh
 git clone --recurse-submodules https://github.com/jeonglab-bcm/BARCS-manuscript.git
@@ -57,7 +58,7 @@ Rscript examples/barcs_quickstart.R
 - `CB2/` — pinned submodule, used only as a benchmark baseline and data source
 - `examples/` — quickstart, benchmark scripts, and manuscript figures
 - `scripts/`, `data/derived/`, `results/` — data preparation and versioned metrics
-- `overleaf/` — manuscript LaTeX submodule (the Overleaf project's Git bridge)
+- `overleaf/` — manuscript LaTeX submodule, mirroring the Overleaf project
 - `figures/` — generated figures; the three the manuscript cites are published
   into `overleaf/figures/` by `scripts/publish_figures.sh`
 

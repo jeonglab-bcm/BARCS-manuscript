@@ -2,19 +2,17 @@ name: manuscript
 
 # Builds the manuscript PDF and fails if the LaTeX does not compile.
 #
-# The text lives in the `overleaf/` submodule, so this repository only changes
-# when that submodule pointer moves — which is what the push and pull_request
-# triggers below watch. Edits made directly in Overleaf do not touch this
-# repository at all, so the weekly schedule rebuilds the newest commit on the
-# Overleaf side to catch breakage before someone bumps the pointer.
+# The text lives in the `overleaf/` submodule, which clones from the public
+# mirror github.com/jeonglab-bcm/BARCS-tex. That means no credentials are
+# needed for an ordinary build, and GitHub indexes the prose for search and
+# diffs instead of showing an opaque submodule pointer.
 #
-# Requires one repository secret, because the Overleaf Git bridge is
-# authenticated:
-#
-#   OVERLEAF_GIT_TOKEN  - an Overleaf Git access token
-#
-# Optionally also OVERLEAF_GIT_USER, if the bridge wants something other than
-# the `git` username already in the submodule URL.
+# The Overleaf bridge is still the place coauthors edit, and it is
+# authenticated. Reaching it directly is therefore optional here: set the
+# OVERLEAF_GIT_TOKEN secret and the scheduled run will build straight from
+# Overleaf, catching a broken edit before anyone has mirrored it. Without the
+# secret the scheduled run falls back to the mirror's newest commit, which is
+# still ahead of the pinned one.
 
 on:
   push:
@@ -27,12 +25,12 @@ on:
       - overleaf
       - .github/workflows/manuscript.yaml
   schedule:
-    # Mondays 07:00 UTC. Catches Overleaf-side edits that have not been pinned.
+    # Mondays 07:00 UTC.
     - cron: '0 7 * * 1'
   workflow_dispatch:
     inputs:
       use_latest:
-        description: Build the newest Overleaf commit instead of the pinned one
+        description: Build the newest manuscript commit rather than the pinned one
         type: boolean
         default: false
 
@@ -48,79 +46,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Submodules are checked out by hand below, because only `overleaf/` is
-      # needed and the other two carry the R package and the CB2 baseline.
+      # Only `overleaf/` is fetched. BARCS/ and CB2/ carry the R package and
+      # the CB2 baseline and are not needed to typeset.
       - uses: actions/checkout@v4
+        with:
+          submodules: false
 
-      - name: Require the Overleaf token
-        env:
-          OVERLEAF_GIT_TOKEN: ${{ secrets.OVERLEAF_GIT_TOKEN }}
-        run: |
-          if [ -z "${OVERLEAF_GIT_TOKEN}" ]; then
-            echo "::error::The OVERLEAF_GIT_TOKEN secret is not set, so the" \
-                 "manuscript submodule cannot be checked out. Create a Git" \
-                 "access token in Overleaf (Account Settings -> Git" \
-                 "integration) and add it under Settings -> Secrets and" \
-                 "variables -> Actions."
-            exit 1
-          fi
+      - name: Check out the manuscript
+        run: git submodule update --init --depth 1 overleaf
 
-      - name: Check out the manuscript submodule
-        env:
-          OVERLEAF_GIT_USER: ${{ secrets.OVERLEAF_GIT_USER || 'git' }}
-          OVERLEAF_GIT_TOKEN: ${{ secrets.OVERLEAF_GIT_TOKEN }}
-        run: |
-          # Supply credentials through a rewrite rule rather than editing the
-          # submodule URL, so the token never lands in .git/config of a
-          # checked-out tree or in the logs.
-          git config --global credential.helper store
-          printf 'https://%s:%s@latex.bioinfolder.com\n' \
-            "${OVERLEAF_GIT_USER}" "${OVERLEAF_GIT_TOKEN}" > ~/.git-credentials
-          chmod 600 ~/.git-credentials
-          git submodule update --init --depth 1 overleaf
-          rm -f ~/.git-credentials
-
-      - name: Build the newest Overleaf commit
+      - name: Move to the newest manuscript commit
         if: github.event_name == 'schedule' || inputs.use_latest
         env:
-          OVERLEAF_GIT_USER: ${{ secrets.OVERLEAF_GIT_USER || 'git' }}
           OVERLEAF_GIT_TOKEN: ${{ secrets.OVERLEAF_GIT_TOKEN }}
+          OVERLEAF_GIT_USER: ${{ secrets.OVERLEAF_GIT_USER || 'git' }}
         run: |
-          git config --global credential.helper store
-          printf 'https://%s:%s@latex.bioinfolder.com\n' \
-            "${OVERLEAF_GIT_USER}" "${OVERLEAF_GIT_TOKEN}" > ~/.git-credentials
-          chmod 600 ~/.git-credentials
-          git -C overleaf fetch --depth 1 origin main
-          git -C overleaf checkout --detach FETCH_HEAD
-          rm -f ~/.git-credentials
-          echo "Building $(git -C overleaf rev-parse --short HEAD) from Overleaf."
+          if [ -n "${OVERLEAF_GIT_TOKEN}" ]; then
+            echo "Building straight from the Overleaf bridge."
+            git config --global credential.helper store
+            printf 'https://%s:%s@latex.bioinfolder.com\n' \
+              "${OVERLEAF_GIT_USER}" "${OVERLEAF_GIT_TOKEN}" > ~/.git-credentials
+            chmod 600 ~/.git-credentials
+            git -C overleaf remote add overleaf \
+              https://git@latex.bioinfolder.com/git/6a6ec212d3ea56f57964b094
+            git -C overleaf fetch --depth 1 overleaf main
+            git -C overleaf checkout --detach FETCH_HEAD
+            rm -f ~/.git-credentials
+          else
+            echo "::notice::OVERLEAF_GIT_TOKEN is not set, so this run builds" \
+                 "the newest mirrored commit rather than reaching Overleaf" \
+                 "directly. Unmirrored edits will not be seen."
+            git -C overleaf fetch --depth 1 origin main
+            git -C overleaf checkout --detach FETCH_HEAD
+          fi
 
       - name: Report what is being built
         run: |
-          echo "Overleaf commit: $(git -C overleaf rev-parse HEAD)"
-          echo "LaTeX sources:   $(find overleaf -name '*.tex' | wc -l)"
-          echo "Figures:         $(find overleaf/figures -name '*.pdf' 2>/dev/null | wc -l)"
+          echo "Manuscript commit: $(git -C overleaf rev-parse HEAD)"
+          echo "LaTeX sources:     $(find overleaf -name '*.tex' | wc -l)"
+          echo "Figures:           $(find overleaf/figures -name '*.pdf' 2>/dev/null | wc -l)"
 
-      # Every figure the manuscript includes has to be committed to the
-      # Overleaf project; this repository's figures/ is gitignored output.
-      # Checking here turns a confusing LaTeX error into a clear one.
+      # Every figure the manuscript includes has to be committed alongside it;
+      # this repository's figures/ is gitignored output. Checking here turns a
+      # confusing LaTeX error into a clear one.
       - name: Check that every included figure exists
+        shell: bash
         run: |
           missing=0
           while read -r figure; do
             if [ ! -f "overleaf/${figure}" ]; then
               echo "::error::${figure} is included by the manuscript but is not" \
-                   "in the Overleaf project. Run scripts/publish_figures.sh," \
-                   "then commit and push inside overleaf/."
+                   "committed alongside it. Run scripts/publish_figures.sh, then" \
+                   "scripts/manuscript_sync.sh."
               missing=$((missing + 1))
             fi
           done < <(grep -rhoE 'figures/[A-Za-z0-9_.-]+\.(pdf|png|jpg)' overleaf --include='*.tex' | sort -u)
           if [ "$missing" -gt 0 ]; then
-            echo "${missing} included figure(s) are missing from the Overleaf project."
+            echo "${missing} included figure(s) are missing."
             exit 1
           fi
           echo "All included figures are present."
-        shell: bash
 
       - name: Compile
         uses: xu-cheng/latex-action@v3
@@ -132,11 +117,12 @@ jobs:
 
       - name: Summarise the result
         run: |
-          size=$(du -h overleaf/main.pdf | cut -f1)
-          echo "### Manuscript built" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Overleaf commit \`$(git -C overleaf rev-parse --short HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- PDF size ${size}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Manuscript built"
+            echo
+            echo "- Commit \`$(git -C overleaf rev-parse --short HEAD)\`"
+            echo "- PDF size $(du -h overleaf/main.pdf | cut -f1)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -144,8 +130,8 @@ jobs:
           path: overleaf/main.pdf
           if-no-files-found: error
 
-      # A failed compile is far easier to diagnose from the log file than from
-      # the truncated console output.
+      # A failed compile is far easier to diagnose from the log than from
+      # truncated console output.
       - name: Upload the LaTeX log on failure
         if: failure()
         uses: actions/upload-artifact@v4
