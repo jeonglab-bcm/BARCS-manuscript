@@ -25,6 +25,11 @@ results/
 # ...but the manuscript source directory of the same name is versioned
 !sections/results/
 
+# Generated figures. The three the manuscript cites are versioned in the
+# overleaf/ submodule; publish them with scripts/publish_figures.sh.
+figures/*.pdf
+figures/*.png
+
 # Rendered page images used only for visual QA
 output/rendered/
 .Rproj.user
