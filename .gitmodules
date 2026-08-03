@@ -8,5 +8,5 @@
 	branch = main
 [submodule "overleaf"]
 	path = overleaf
-	url = https://git@latex.bioinfolder.com/git/6a6ec212d3ea56f57964b094
+	url = https://github.com/jeonglab-bcm/BARCS-tex.git
 	branch = main
