@@ -2,11 +2,11 @@
 
 # Manuscript Figure 1: longitudinal Liang method comparison.
 #
-# The upper rows show the four replicate-complete cell lines in method-specific
-# volcano plots for
-# BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom. Panels A-C show the
-# observed day 0, 7, and 14 guide-abundance trajectories for representative
-# disagreements within the prespecified proxy-null set.
+# Panels A-E show the four replicate-complete cell lines in method-specific
+# volcano plots for BARCS, MAGeCK-MLE, edgeR-QL, DESeq2, and limma-voom, on a
+# shared x and y scale. Panels F-H show the observed day 0, 7, and 14
+# guide-abundance trajectories for representative disagreements within the
+# prespecified proxy-null set. Colour means cell line throughout.
 
 options(stringsAsFactors = FALSE)
 source(file.path("R", "method_palette.R"))
@@ -50,15 +50,26 @@ guide_truth <- unique(gene_scores[
   c("cell_line", "gene", "truth")
 ])
 
+require_result_file <- function(path) {
+  if (!file.exists(path)) {
+    stop(
+      "Missing ", path, ". Run `examples/liang_cas13_benchmark.R` before ",
+      "drawing Figure 1.",
+      call. = FALSE
+    )
+  }
+  path
+}
+
 load_guide_results <- function(cell_line, method) {
   cell_stem <- cell_stems[[cell_line]]
-  path <- file.path(
+  path <- require_result_file(file.path(
     result_dir,
     paste0(
       cell_stem, "_longitudinal_",
       guide_method_files[[method]], "_guide.csv.gz"
     )
-  )
+  ))
   result <- read.csv(gzfile(path))
   is_control <- result$gene == "non-targeting" |
     startsWith(result$gene, "NT_")
@@ -222,10 +233,10 @@ write.csv(
 
 load_count_trajectory <- function(cell_line, gene, guide) {
   cell_stem <- cell_stems[[cell_line]]
-  path <- file.path(
+  path <- require_result_file(file.path(
     result_dir,
     paste0(cell_stem, "_longitudinal_counts.tsv")
-  )
+  ))
   count_table <- read.delim(path, check.names = FALSE)
   count_columns <- setdiff(names(count_table), c("sgRNA", "Gene"))
   guide_row <- count_table[
@@ -304,7 +315,6 @@ if (!identical(
   stop("All 20 cell-line-by-method longitudinal results are required.")
 }
 
-barcs_colour <- barcs_method_colours[["BARCS"]]
 cell_line_colours <- c(
   HAP1 = "#0072B2",
   HEK293FT = "#009E73",
@@ -334,10 +344,36 @@ signed_log_effect <- function(value) {
   sign(value) * log10(1 + abs(value) / effect_scale)
 }
 y_clip <- 60
-x_tick_effects <- c(-10, -5, -2, -1, -0.5, 0, 0.5, 1, 2)
+# Ticks are chosen so that their signed-log positions are close to evenly
+# spaced. A denser set does not fit in a one-third-width panel, and base
+# `axis()` then silently drops a different subset in each panel, which reads as
+# five different x scales.
+x_tick_effects <- c(-10, -2, -0.5, 0, 0.5, 2)
 x_tick_positions <- signed_log_effect(x_tick_effects)
 common_xlim <- range(signed_log_effect(volcano_scores$effect))
 common_ylim <- c(0, y_clip)
+# Name the transform on the axis rather than only in the caption, so the tick
+# spacing is reproducible from the figure alone.
+effect_axis_label <- sprintf(
+  "Longitudinal effect (signed log, offset %s)",
+  format(effect_scale)
+)
+# Every panel of Figure 1 uses colour for cell line and never for method, so
+# the letters run straight through both rows.
+volcano_letters <- LETTERS[seq_along(volcano_methods)]
+trajectory_letters <- LETTERS[
+  length(volcano_methods) + seq_len(nrow(case_specification))
+]
+
+# Sharing `common_xlim` is not sufficient for a shared x scale: `layout()` gives
+# every cell the same width, so any panel that reserves extra width for a y-axis
+# label ends up with a narrower plot region and therefore more effect units per
+# inch. Keeping `mar` identical across all five panels is what makes the scale
+# comparable; only the labels are conditional. `panel_plot_widths` asserts the
+# invariant so the regression cannot return unnoticed.
+volcano_mar <- c(4.5, 4.6, 2.8, 0.8)
+panel_plot_widths <- numeric(length(volcano_methods))
+panel_clipped_counts <- integer(length(volcano_methods))
 
 for (method_index in seq_along(volcano_methods)) {
   method <- volcano_methods[method_index]
@@ -354,7 +390,7 @@ for (method_index in seq_along(volcano_methods)) {
   show_y_axis <- method_index %in% c(1L, 4L)
 
   par(
-    mar = c(4.5, if (show_y_axis) 4.6 else 1.2, 2.8, 0.8),
+    mar = volcano_mar,
     cex.axis = 0.92,
     cex.lab = 0.98
   )
@@ -368,27 +404,39 @@ for (method_index in seq_along(volcano_methods)) {
     ylim = common_ylim,
     xaxt = "n",
     yaxt = if (show_y_axis) "s" else "n",
-    xlab = "Longitudinal effect (signed-log scale)",
+    xlab = effect_axis_label,
     ylab = if (show_y_axis) {
       expression(-log[10]("two-sided " * italic(p)))
     } else {
       ""
     },
-    main = method,
+    main = paste0(volcano_letters[method_index], "  ", method),
     bty = "l",
     cex.main = 1.05
   )
+  panel_plot_widths[method_index] <- par("pin")[1L]
+  panel_clipped_counts[method_index] <- sum(clipped)
+  # A dense row of triangles on the top rule is a plotting artefact, not a pile
+  # of identical p-values. Say how many points it stands for.
+  mtext(
+    sprintf("%d clipped", sum(clipped)),
+    side = 3,
+    line = 0.1,
+    adj = 1,
+    cex = 0.66,
+    col = "#666666"
+  )
+  in_range <- x_tick_positions >= common_xlim[1L] &
+    x_tick_positions <= common_xlim[2L]
   axis(
     1,
-    at = x_tick_positions[
-      x_tick_positions >= common_xlim[1L] &
-        x_tick_positions <= common_xlim[2L]
-    ],
-    labels = x_tick_effects[
-      x_tick_positions >= common_xlim[1L] &
-        x_tick_positions <= common_xlim[2L]
-    ]
+    at = x_tick_positions[in_range],
+    labels = x_tick_effects[in_range]
   )
+  if (!show_y_axis) {
+    # Same breaks as the labelled panels, without repeating the numbers.
+    axis(2, labels = FALSE, tcl = -0.3)
+  }
   for (cell_line in volcano_cell_lines) {
     cell_rows <- depleted_call & panel$cell_line == cell_line
     points(
@@ -424,31 +472,60 @@ for (method_index in seq_along(volcano_methods)) {
   abline(v = 0, col = "#666666", lty = 3)
 }
 
+if (diff(range(panel_plot_widths)) > 1e-6) {
+  stop(
+    "Volcano panels have unequal plot widths, so their x axes are not on a ",
+    "common scale: ",
+    paste(sprintf("%s=%.3fin", volcano_methods, panel_plot_widths),
+      collapse = ", "
+    ),
+    call. = FALSE
+  )
+}
+
+write.csv(
+  data.frame(
+    method = volcano_methods,
+    genes_plotted = as.integer(table(volcano_scores$method)[volcano_methods]),
+    clipped_at_y = panel_clipped_counts,
+    y_clip = y_clip,
+    stringsAsFactors = FALSE
+  ),
+  file.path("data", "derived", "liang_volcano_clipped_counts.csv"),
+  row.names = FALSE
+)
+
 par(mar = c(1.0, 1.0, 2.7, 1.0))
 plot.new()
 title(main = "Four-cell-line comparison", cex.main = 1.05)
 legend(
   "center",
+  title = "Colour: cell line, depleted at FDR 0.10",
   legend = c(
     "All genes",
     volcano_cell_lines,
+    sprintf("Clipped at -log10(p) = %d", y_clip),
     "Nominal two-sided p = 0.05"
   ),
-  pch = c(16, rep(16, length(volcano_cell_lines)), NA),
-  lty = c(NA, rep(NA, length(volcano_cell_lines)), 2),
+  pch = c(16, rep(16, length(volcano_cell_lines)), 17, NA),
+  lty = c(NA, rep(NA, length(volcano_cell_lines)), NA, 2),
   col = c(
     "#8C8C8C",
     unname(cell_line_colours[volcano_cell_lines]),
+    "#777777",
     "#3B5BDB"
   ),
-  pt.cex = c(1.1, rep(1.1, length(volcano_cell_lines)), NA),
+  pt.cex = c(1.1, rep(1.1, length(volcano_cell_lines)), 1.0, NA),
   bty = "n",
-  cex = 1.2
+  cex = 1.05
 )
 
 trajectory_shapes <- c(`1` = 21, `2` = 24)
 trajectory_lines <- c(`1` = 1, `2` = 2)
 trajectory_ylim <- c(0, 1.08 * max(count_trajectories$counts_per_million))
+# Identical margins keep the three square panels the same size and aligned on a
+# common left edge, for the same reason the volcano row needs it.
+trajectory_mar <- c(4.6, 4.8, 3.9, 0.8)
 
 for (case_index in seq_len(nrow(case_specification))) {
   cell_line <- case_specification$cell_line[case_index]
@@ -462,11 +539,15 @@ for (case_index in seq_len(nrow(case_specification))) {
     case_results$cell_line == cell_line &
       case_results$method == "BARCS"
   ]
+  # Filling by cell line keeps colour meaning the same thing in both rows. The
+  # previous BARCS fill made one hue mean "cell line HAP1" above and "BARCS"
+  # below, in a figure where the method is already given by the panel title.
+  trajectory_fill <- cell_line_colours[[cell_line]]
 
   par(
-    mar = c(4.6, if (case_index == 1L) 4.8 else 2.2, 3.9, 0.8),
-    cex.axis = 0.94,
-    cex.lab = 1.0,
+    mar = trajectory_mar,
+    cex.axis = 0.92,
+    cex.lab = 0.98,
     pty = "s"
   )
   plot(
@@ -481,7 +562,7 @@ for (case_index in seq_len(nrow(case_specification))) {
       ""
     },
     main = paste0(
-      LETTERS[case_index], "  ",
+      trajectory_letters[case_index], "  ",
       cell_line, ": ", guide
     ),
     bty = "l",
@@ -518,7 +599,7 @@ for (case_index in seq_len(nrow(case_specification))) {
       replicate_rows$counts_per_million,
       pch = trajectory_shapes[[as.character(replicate)]],
       cex = 1.22,
-      bg = barcs_colour,
+      bg = trajectory_fill,
       col = "#222222",
       lwd = 0.8
     )
@@ -530,11 +611,11 @@ for (case_index in seq_len(nrow(case_specification))) {
       legend = c("Replicate 1", "Replicate 2"),
       pch = unname(trajectory_shapes),
       lty = unname(trajectory_lines),
-      pt.bg = barcs_colour,
+      pt.bg = trajectory_fill,
       col = "#555555",
       pt.cex = 1.1,
       bty = "n",
-      cex = 1.2
+      cex = 1.05
     )
   }
 }
