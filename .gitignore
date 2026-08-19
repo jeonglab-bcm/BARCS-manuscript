@@ -20,8 +20,13 @@ main.pdf
 *.synctex.gz
 
 # Downloaded datasets and generated benchmark intermediates
-data/raw/
+data/raw/**
 results/
+# ...but every raw-data provenance README is versioned. A bare `data/raw/`
+# rule would exclude the directory itself, and Git cannot re-include a file
+# whose parent directory is excluded, so match the contents instead.
+!data/raw/**/
+!data/raw/**/README.md
 # ...but the manuscript source directory of the same name is versioned
 !sections/results/
 

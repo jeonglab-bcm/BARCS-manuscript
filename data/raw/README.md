@@ -23,3 +23,12 @@ files, Chronos Figshare file identifiers, and DepMap sources.
 
 See [`waterbear/README.md`](waterbear/README.md) for direct download URLs and
 SHA-256 checksums.
+
+## Liang et al. Cas13/PRJNA1344834
+
+See [`liang_cas13/README.md`](liang_cas13/README.md). Unlike the datasets
+above, these inputs are fetched and prepared for you:
+
+```sh
+Rscript scripts/prepare_liang_cas13.R
+```
