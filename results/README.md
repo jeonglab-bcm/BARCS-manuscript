@@ -20,6 +20,8 @@ The repository tracks compact summary tables used by the manuscript:
 - `waterbear_facs/effect_rank_correlations.csv`
 - `waterbear_facs/non_targeting_calibration.csv`
 - `waterbear_facs/validation_panel_metrics.csv`
+- `BARCS-studio/BARCS_PI_summary.md` (and its accompanying model-input and
+  BARCS-output CSVs)
 
 The compact simulation diagnostics report the guide-level null rejection
 rate and the fraction of fitted dispersions at the lower boundary.  The
@@ -43,5 +45,17 @@ correlation, and a deterministic null-gene split measures post-aggregation
 held-out calibration.  Seed-level and summarized guide- and gene-error rates
 are tracked under `data/derived/`, together with the observed lower-boundary
 fractions for HT-29, IL2RA, and Liang.
+
+The `BARCS-studio/` directory holds a BARCS Studio re-analysis of the Liu et
+al. in vivo T cell CRISPR screen (Nature 2026, doi:10.1038/s41586-026-10906-9,
+Supplementary Table 5).  It refits the focused sub-library screen with a
+guide-level beta-binomial model that keeps donor and mouse in the design
+(`~ gate + donor`, plus a `~ gate + mouse` sensitivity fit on Arm A).  The
+directory contains the regenerated model inputs (`*_counts.csv`,
+`*_metadata.csv`), the gene- and guide-level BARCS outputs
+(`*_GENES.csv`, `*_GUIDES.csv`), and a standalone report,
+`BARCS_PI_summary.md`, that documents the fit diagnostics, the reproduced
+published hits, and the donor-versus-mouse pairing result.  This is a
+re-analysis of published normalised counts, not an independent replication.
 
 Run the scripts in `examples/` to regenerate the full result tree.
