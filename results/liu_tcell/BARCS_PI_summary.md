@@ -126,9 +126,21 @@ under the donor model is consistent with animal-to-animal bottleneck variance.
 
 ## Reproducibility
 
-The full pipeline was run twice from scratch, re-downloading and re-parsing the Nature
-supplementary archive each time. Both runs produced byte-identical model inputs and
-byte-identical result files. BARCS is deterministic on this data.
+Every output file is regenerated directly from the committed model inputs by
+`examples/liu_tcell_barcs.R`, using the BARCS R package only (no BARCS Studio):
+
+```
+Rscript examples/liu_tcell_barcs.R
+```
+
+The script reads `results/liu_tcell/input/` and rewrites `results/liu_tcell/output/`.
+For each arm it fits `bb_screen(term = "gate")`, applies non-targeting-control tail
+calibration with `bb_calibrate_controls()`, and produces the gene-level table with
+`bb_gene_consistency()`. BARCS is deterministic on this data; gene effects, the
+calibration scale, and the hit list reproduce the numbers quoted above. One SPTLC2
+guide sits on the beta-binomial convergence boundary and may be counted as converged
+or not depending on the local linear-algebra backend, shifting a few guide-level FDRs
+by ≈0.004 without changing any gene call.
 
 ## Suggested next step
 
@@ -140,9 +152,11 @@ far more genes at stake.
 
 ## Files
 
-Model inputs (regenerated from the published archive, reproducible):
-`BARCS_2026-08-24_armA_counts.csv`, `armA_metadata.csv`, `armB_counts.csv`, `armB_metadata.csv`
+Generator: `examples/liu_tcell_barcs.R`.
 
-BARCS outputs (gene level 37 × 13 cols; guide level 268 × 17 cols):
-`BARCS_2026-08-24_armA_…_gate-donor_GENES/GUIDES.csv`,
-`…_gate-mouse_GENES/GUIDES.csv`, `…_armB_…_gate-donor_GENES/GUIDES.csv`
+Model inputs (`results/liu_tcell/input/`, regenerated from the published archive):
+`armA_counts.csv`, `armA_metadata.csv`, `armB_counts.csv`, `armB_metadata.csv`
+
+BARCS outputs (`results/liu_tcell/output/`; gene level 37 × 13 cols, guide level 268 × 17 cols):
+`armA_gate-donor_GENES.csv` / `_GUIDES.csv`, `armA_gate-mouse_GENES.csv` / `_GUIDES.csv`,
+`armB_gate-donor_GENES.csv` / `_GUIDES.csv`
