@@ -22,7 +22,7 @@ normalised counts, not an independent replication.
 
 ## What was done
 
-| | |
+| Item | Description |
 |---|---|
 | Data | Supplementary Table 5 — the only screen in the paper publishing per-mouse counts |
 | Library | 268 sgRNAs · 36 genes × 6 guides · 52 non-targeting controls (NTCTRL) |
@@ -33,6 +33,15 @@ normalised counts, not an independent replication.
 
 A positive coefficient means the knockout is enriched among IFNγ-high T cells — i.e.
 losing that gene makes T cells better effectors.
+
+**This is not the model the paper used.** The published analysis called hits with
+MAGeCK, which collapses each contrast to a single treatment-vs-control comparison and
+does not carry donor or mouse as explicit terms. BARCS instead fits a guide-level
+beta-binomial regression with those factors kept in the design, so the two are
+comparable in the **sign and rank** of gene effects but not in their numeric
+magnitudes (see Limits #5). Keeping donor and mouse in the model is exactly what makes
+the Result 3 pairing analysis possible — it is the intended point of difference, not
+an attempt to reproduce MAGeCK's arithmetic.
 
 ## Result 1 — the fit is trustworthy
 
@@ -91,13 +100,27 @@ under the donor model is consistent with animal-to-animal bottleneck variance.
    fit. The screen FASTQs were never deposited (only RNA-seq, GSE330227), so raw counts
    are not publicly obtainable. Library totals are uniform by construction and are not
    true sequencing depths; ranks and signs are sound, absolute dispersion is optimistic.
-3. **The two arms were normalised in separate MAGeCK runs**, so they were fitted
-   separately. A pooled `gate × system` interaction — the more powerful design — is not
-   available without raw counts.
+3. **The two arms were normalised in separate MAGeCK runs.** In Supplementary Table 5
+   the CD3-scFv arm (Arm A) and the NY-ESO-1 TCR arm (Arm B) are each reported as
+   already-normalised counts, and the median normalisation that produced them was run
+   independently within each arm — so a guide's count in Arm A and the same guide's
+   count in Arm B sit on different, non-comparable scales. Because the normalisation
+   baselines differ, the arms cannot be placed in one model; they were fitted
+   separately and their results compared only in sign and rank (this is why the r = 0.72
+   cross-arm correlation in Result 2 is a concordance check, not a joint fit). A pooled
+   `gate × system` interaction — the more powerful design — is not available without the
+   raw per-library counts, which would let both arms be normalised together on one
+   scale.
 4. **GNAS is not settled by this table.** 0.087 with donor, 0.105 with mouse.
-   Directionally consistent in all three fits, decisive in none. The paper's case for
-   GNAS rests on the genome-wide IFNγ screen plus individual-knockout validation, and
-   nothing here contradicts that.
+   Directionally consistent in all three fits, decisive in none. GNAS matters because it
+   is one of the two targets the authors prioritised out of the whole screen: it encodes
+   the stimulatory G-protein α-subunit (Gαs) that drives cAMP signalling, a pathway long
+   argued to suppress T cell effector function, so a GNAS knockout that raises IFNγ is a
+   mechanistically clean and therapeutically attractive hit — which is why the paper
+   singles it out. This table gives GNAS the right sign in every fit but never crosses a
+   confident FDR threshold, so it supports the paper's direction without independently
+   confirming the hit. The paper's own case for GNAS rests on the genome-wide IFNγ screen
+   plus individual-knockout validation, and nothing here contradicts that.
 5. Effects are logit-scale beta-binomial coefficients — comparable to the published
    MAGeCK results in **sign and rank only**, not in magnitude.
 
