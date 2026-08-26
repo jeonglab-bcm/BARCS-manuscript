@@ -20,7 +20,7 @@
 # `total` in the metadata equals the column sum of its counts. They are used
 # as the beta-binomial denominators unchanged. This is a re-analysis of
 # published normalised counts, not an independent replication; see
-# `results/liu_tcell/BARCS_PI_summary.md` for the full interpretation and
+# `results/liu_tcell/BARCS_summary.md` for the full interpretation and
 # limits.
 
 options(stringsAsFactors = FALSE)
@@ -74,8 +74,8 @@ read_arm <- function(arm) {
   count_matrix <- as.matrix(counts_table[, metadata$sample, drop = FALSE])
   storage.mode(count_matrix) <- "double"
 
-  # The exported counts are already integer-valued; guard against a silent
-  # regression if the inputs are ever regenerated differently.
+  # A beta-binomial denominator counts reads, so non-integer counts would make
+  # every fit silently return NA; fail loudly if the inputs ever regress.
   if (any(abs(count_matrix - round(count_matrix)) >= sqrt(.Machine$double.eps))) {
     stop("Input counts must be integer-valued library counts.", call. = FALSE)
   }
@@ -85,9 +85,7 @@ read_arm <- function(arm) {
     metadata = metadata,
     guide = counts_table$guide,
     gene = counts_table$gene,
-    # The `control` column marks the 52 non-targeting guides (NTCTRL).
     control = tolower(as.character(counts_table$control)) == "true",
-    # Library denominators: the immutable per-library totals from the metadata.
     totals = metadata$total
   )
 }
@@ -104,12 +102,8 @@ fit_pairing <- function(arm_data, pairing) {
     min_total_count = 0
   )
 
-  # Non-targeting-control tail calibration. Adds raw_std_error / raw_t_value /
-  # raw_p_value / raw_fdr and rescales the reported guide statistics.
   guides <- bb_calibrate_controls(guides, control = arm_data$control)
 
-  # Record which guides are the non-targeting controls, and present the guide
-  # columns in reporting order (calibrated statistics first, raw_* last).
   guides$control <- arm_data$control
   guide_columns <- c(
     "gene", "guide", "estimate", "std_error", "t_value", "df", "p_value",
@@ -118,18 +112,13 @@ fit_pairing <- function(arm_data, pairing) {
   )
   guides <- guides[, guide_columns, drop = FALSE]
 
-  # Control-aware gene-level summary: signed guide-direction agreement plus a
-  # control-gene-centred null (raw_statistic, control_gene). Non-targeting
-  # guides are grouped as the NTCTRL pseudo-gene.
   genes <- bb_gene_consistency(guides, control = arm_data$control)
 
-  # bb_gene_consistency() returns the fitted null location and scale as
-  # attributes; the reported GENES table carries them as explicit columns
-  # (one shared value per row) so the calibration is visible in the file.
+  # null_center / null_scale come back as attributes; promote them to columns
+  # so the shared calibration constants are visible in the written table.
   genes$null_center <- attr(genes, "null_center")
   genes$null_scale <- attr(genes, "null_scale")
 
-  # Order the gene columns as the reported table presents them.
   gene_columns <- c(
     "gene", "n_guides", "estimate", "std_error", "statistic", "p_value",
     "fdr", "guide_direction_agreement", "raw_statistic", "converged_fraction",

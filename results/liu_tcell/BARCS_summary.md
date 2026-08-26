@@ -126,16 +126,21 @@ under the donor model is consistent with animal-to-animal bottleneck variance.
 
 ## Reproducibility
 
-Every output file is regenerated directly from the committed model inputs by
-`examples/liu_tcell_barcs.R`, using the BARCS R package only (no BARCS Studio):
+The analysis runs end to end from the published archive in two steps, with the
+BARCS R package only (no BARCS Studio):
 
 ```
-Rscript examples/liu_tcell_barcs.R
+Rscript scripts/prepare_liu_tcell.R   # download Supp. Table 5 -> input/
+Rscript examples/liu_tcell_barcs.R    # input/ -> output/
 ```
 
-The script reads `results/liu_tcell/input/` and rewrites `results/liu_tcell/output/`.
-For each arm it fits `bb_screen(term = "gate")`, applies non-targeting-control tail
-calibration with `bb_calibrate_controls()`, and produces the gene-level table with
+`prepare_liu_tcell.R` downloads the Nature supplementary archive, reads the two pooled
+sgRNA-summary sheets of Supplementary Table 5, splits each guide's `/`-separated
+per-library counts, rounds them half-up to integers, and writes the four input files;
+`data/raw/liu_tcell/README.md` records the sheet-level provenance. The inputs are also
+committed, so the second step alone reproduces the outputs on a clean checkout.
+`liu_tcell_barcs.R` fits `bb_screen(term = "gate")` per arm, applies non-targeting-control
+tail calibration with `bb_calibrate_controls()`, and produces the gene-level table with
 `bb_gene_consistency()`. BARCS is deterministic on this data; gene effects, the
 calibration scale, and the hit list reproduce the numbers quoted above. One SPTLC2
 guide sits on the beta-binomial convergence boundary and may be counted as converged
@@ -152,9 +157,9 @@ far more genes at stake.
 
 ## Files
 
-Generator: `examples/liu_tcell_barcs.R`.
+Input generator: `scripts/prepare_liu_tcell.R`. Output generator: `examples/liu_tcell_barcs.R`.
 
-Model inputs (`results/liu_tcell/input/`, regenerated from the published archive):
+Model inputs (`results/liu_tcell/input/`, built from the published archive by the prepare script):
 `armA_counts.csv`, `armA_metadata.csv`, `armB_counts.csv`, `armB_metadata.csv`
 
 BARCS outputs (`results/liu_tcell/output/`; gene level 37 × 13 cols, guide level 268 × 17 cols):
