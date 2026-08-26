@@ -16,9 +16,13 @@ non-targeting controls come out null, the empirical-null calibration factor is 1
 controls IFNG and TNF are the two strongest signals in the correct direction. BARCS
 recovers the published hits, including GNAS. The one result the original analysis
 could not produce comes from pairing on the animal instead of the donor: **P2RY8 and
-PTGER4 do not survive that pairing**, indicating their apparent signal was
-between-mouse variance rather than biology. This is a re-analysis of published
-normalised counts, not an independent replication.
+PTGER4 are not called under either pairing and weaken when paired on the animal**,
+the pattern expected from between-mouse variance rather than a stable effect. That
+is a clean caution for PTGER4, which the paper never validated individually; for
+P2RY8, which the paper validated extensively by orthogonal assays, it means only that
+this pooled per-mouse table is underpowered to call it, not that the gene is
+unsupported. This is a re-analysis of published normalised counts, not an independent
+replication.
 
 ## What was done
 
@@ -71,6 +75,18 @@ reaching FDR < 0.10 in either arm. Both targets the authors prioritised reappear
 GNAS in Arm A (0.087), STUB1 in Arm B (0.048) — each in the arm where the paper's own
 analysis found it strongest.
 
+**Which of these the paper validated experimentally.** Only two of the FDR < 0.10 genes
+were individually knocked out and tested by Liu et al.: **GNAS** (extensive individual-KO,
+mechanistic GPCR/cAMP, and safety work) and **STUB1** (individual KO in the same CD19-A549
+system, improved tumour control, deprioritised in favour of the more potent GNAS). The
+remaining calls are not independently validated in this paper: **TNFAIP3** and **RASA2**
+are cited as targets already established in earlier literature (RASA2 from Carnevale et al.
+2022), **STT3B** is named once as an IFNγ-screen-unique hit that dropped out of the
+abundance screen, and **MED12** and **NFKBIA** are not discussed in the main text. BARCS
+recovering them is consistent-direction screen evidence, not confirmation — the calibrated
+null and the cross-arm sign agreement are the reason to take the ranks seriously, but only
+GNAS and STUB1 carry orthogonal experimental support.
+
 ## Result 3 — the new finding
 
 Both sort gates come from the same animal, so mouse is the natural pairing factor.
@@ -85,12 +101,27 @@ Refitting Arm A as `~ gate + mouse` costs degrees of freedom (12 → 7) but lowe
 | MED12 | +0.246 | 0.008 | 0.036 | 0.647 | Holds in Arm A |
 | STT3B | +0.247 | 0.008 | 0.025 | 0.487 | Holds in Arm A |
 | GNAS | +0.204 | 0.087 | 0.105 | 0.208 | Borderline both ways |
-| **P2RY8** | −0.105 | 0.109 | **0.555** | 0.881 | **Collapses** |
-| **PTGER4** | +0.149 | 0.109 | **0.496** | 0.881 | **Collapses** |
+| P2RY8 | −0.105 | 0.109 | **0.555** | 0.881 | Not called here (validated elsewhere) |
+| **PTGER4** | +0.149 | 0.109 | **0.496** | 0.881 | Not called, and never validated |
 | NTCTRL | −0.019 | 0.631 | 0.652 | 0.383 | Null, as required |
 
-**Recommendation:** treat P2RY8 and PTGER4 as unsupported by this screen. Their signal
-under the donor model is consistent with animal-to-animal bottleneck variance.
+**Reading, stated carefully.** Neither P2RY8 nor PTGER4 reaches FDR < 0.10 in this
+per-mouse counts table under either pairing, and both weaken further when the fit is
+paired on the animal — the pattern expected when apparent signal is animal-to-animal
+bottleneck variance rather than a stable knockout effect.
+
+For **PTGER4** that is the whole story: the paper cites it as a known regulator but never
+tested it individually, so this table gives no independent support and neither does the
+rest of the paper — it is the one genuinely cautionary case here.
+
+**P2RY8 is different, and the earlier draft overstated this.** Liu et al. validated P2RY8
+extensively by orthogonal means — tumour-supernatant migration assays, LC-MS/MS of the GGG
+ligand, 48 h in vivo competition across three antigen systems, tumour control in four
+models, and the GNAS/P2RY8 dual knockout. That evidence, not this counts table, is what
+supports P2RY8. The correct conclusion is therefore narrow: **this per-mouse table alone is
+underpowered to call P2RY8**, most likely because the counts are pooled-and-renormalised
+rather than true per-library depths (Limit 2). It is a statement about the resolution of
+this input, not evidence against the gene.
 
 ## Limits — state these before any number is quoted
 
