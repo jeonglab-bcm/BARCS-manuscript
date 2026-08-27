@@ -36,3 +36,21 @@ checkout. `liu_tcell_barcs.R` reads `input/` and rewrites `output/` with the
 BARCS R package directly (no BARCS Studio): for each arm it fits
 `bb_screen(term = "gate")`, calibrates against the non-targeting controls with
 `bb_calibrate_controls()`, and summarises genes with `bb_gene_consistency()`.
+
+## Comparison with the publication
+
+`examples/liu_tcell_publication_comparison.R` draws BARCS against the published
+MAGeCK analysis (Extended Data Fig. 5) and writes
+`figures/liu_tcell_publication_comparison.png` (figures are generated output and
+are not versioned). It needs `readxl` and the prepared Supplementary Table 5:
+
+```
+Rscript examples/liu_tcell_publication_comparison.R
+```
+
+Panels: (a, b) BARCS effect versus the published MAGeCK gene log2 fold change
+for each arm (Spearman ρ ≈ 0.90 / 0.92); (c) BARCS Arm A versus Arm B, the
+cross-model agreement the paper shows with RRA scores in panel g; (d) a BARCS
+Arm A volcano, the counterpart of the MAGeCK RRA volcano in panel f. BARCS
+reports a logit-scale coefficient and MAGeCK a log2 fold change, so the panels
+are read as concordance in sign and rank, not as a fitted slope.
