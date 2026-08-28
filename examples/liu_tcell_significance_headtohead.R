@@ -77,13 +77,27 @@ headtohead_panel <- function(barcs_neglog, mageck_neglog, xlab, ylab, letter,
                              subtitle, floor_value) {
   hit <- merged$fdr < hit_fdr
   spearman <- cor(barcs_neglog, mageck_neglog, method = "spearman")
-  at_floor <- sum(abs(mageck_neglog - floor_value) < 1e-9)
+  on_floor <- abs(mageck_neglog - floor_value) < 1e-9
+  at_floor <- sum(on_floor)
+
+  # Every gene MAGeCK pins to the RRA floor shares one y-value, so the points
+  # and their labels overprint into an unreadable line. Spread the tied genes
+  # into a thin band just above the floor, ordered by BARCS significance, so
+  # each is legible. The dashed line still marks the true (shared) floor value;
+  # the vertical position within the band is display jitter, not a real y.
+  band_height <- 0.9
+  plot_y <- mageck_neglog
+  if (at_floor > 1) {
+    order_in_band <- rank(barcs_neglog[on_floor], ties.method = "first")
+    plot_y[on_floor] <- floor_value +
+      band_height * (order_in_band - 1) / (at_floor - 1)
+  }
 
   par(mar = c(4.2, 4.4, 2.8, 1.2), cex.axis = 0.92, cex.lab = 0.98)
   plot(
-    barcs_neglog, mageck_neglog, type = "n",
-    xlim = c(0, max(barcs_neglog) * 1.08),
-    ylim = c(0, max(mageck_neglog) * 1.12),
+    barcs_neglog, plot_y, type = "n",
+    xlim = c(0, max(barcs_neglog) * 1.12),
+    ylim = c(0, max(plot_y) * 1.08),
     xlab = xlab, ylab = ylab,
     main = paste0(letter, "  ", subtitle),
     bty = "l", cex.main = 1.02
@@ -91,33 +105,36 @@ headtohead_panel <- function(barcs_neglog, mageck_neglog, xlab, ylab, letter,
   # The MAGeCK RRA permutation resolution limit, where the ties accumulate.
   abline(h = floor_value, col = colour_floor, lty = 2)
   text(
-    max(barcs_neglog) * 1.05, floor_value, "MAGeCK RRA floor",
-    col = colour_floor, cex = 0.68, pos = 3, adj = 1, xpd = NA
+    0, floor_value, "MAGeCK RRA floor (tied genes above, jittered)",
+    col = colour_floor, cex = 0.62, pos = 1, adj = 0, xpd = NA
   )
   abline(a = 0, b = 1, col = "#999999", lty = 3)
   points(
-    barcs_neglog[!hit], mageck_neglog[!hit], pch = 16, cex = 0.9,
+    barcs_neglog[!hit], plot_y[!hit], pch = 16, cex = 0.9,
     col = adjustcolor(colour_null, alpha.f = 0.55)
   )
   points(
-    barcs_neglog[hit], mageck_neglog[hit], pch = 16, cex = 1.1,
+    barcs_neglog[hit], plot_y[hit], pch = 16, cex = 1.1,
     col = adjustcolor(colour_hit, alpha.f = 0.85)
   )
+  # Labels: tied genes read to the right (band is sorted, so they stack
+  # cleanly); off-floor genes to the left to avoid the diagonal.
   to_label <- merged$gene %in% label_genes
+  label_side <- ifelse(on_floor, 4, 2)
   text(
-    barcs_neglog[to_label], mageck_neglog[to_label],
-    labels = merged$gene[to_label], pos = 4, offset = 0.35, cex = 0.68,
-    col = "#333333", xpd = NA
+    barcs_neglog[to_label], plot_y[to_label],
+    labels = merged$gene[to_label], pos = label_side[to_label],
+    offset = 0.35, cex = 0.66, col = "#333333", xpd = NA
   )
   legend(
-    "topleft",
+    "bottomright",
     legend = c(
       sprintf("Spearman rho = %.2f", spearman),
       sprintf("%d/%d MAGeCK genes at the floor", at_floor, nrow(merged)),
       "Called by BARCS (FDR < 0.10)"
     ),
     pch = c(NA, NA, 16), col = c(NA, NA, colour_hit),
-    bty = "n", cex = 0.74, text.col = "#333333"
+    bty = "n", cex = 0.72, text.col = "#333333"
   )
 }
 
