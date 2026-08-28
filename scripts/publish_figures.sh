@@ -20,6 +20,7 @@ CITED=(
   crispulator_facs_moi_10k_f1_by_fdr.pdf
   liang_longitudinal_volcano_trajectories.pdf
   simcrispr_interaction.pdf
+  liu_tcell_publication_comparison.pdf
 )
 
 if [ ! -d overleaf ]; then

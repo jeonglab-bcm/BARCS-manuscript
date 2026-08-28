@@ -160,8 +160,8 @@ cross_arm_panel <- function(armA, armB, letter) {
     type = "n",
     xlim = padded_range(merged$estimate_A),
     ylim = padded_range(merged$estimate_B),
-    xlab = "BARCS effect — Arm A (A375low)",
-    ylab = "BARCS effect — Arm B (NY-ESO-1)",
+    xlab = "BARCS effect - Arm A (A375low)",
+    ylab = "BARCS effect - Arm B (NY-ESO-1)",
     main = paste0(letter, "  Cross-model agreement (cf. Fig. 5g)"),
     bty = "l", cex.main = 1.05
   )
@@ -239,18 +239,30 @@ volcano_panel <- function(barcs, letter) {
   )
 }
 
+draw_figure <- function() {
+  layout(matrix(seq_len(4), nrow = 2, byrow = TRUE))
+  concordance_panel(
+    barcs_armA_donor, published_armA, "a", "Arm A: BARCS vs MAGeCK (A375low)"
+  )
+  concordance_panel(
+    barcs_armB_donor, published_armB, "b", "Arm B: BARCS vs MAGeCK (NY-ESO-1)"
+  )
+  cross_arm_panel(barcs_armA_donor, barcs_armB_donor, "c")
+  volcano_panel(barcs_armA_donor, "d")
+}
+
 dir.create("figures", showWarnings = FALSE)
-figure_path <- file.path("figures", "liu_tcell_publication_comparison.png")
-png(figure_path, width = 2000, height = 2000, res = 200)
-layout(matrix(seq_len(4), nrow = 2, byrow = TRUE))
-concordance_panel(
-  barcs_armA_donor, published_armA, "a", "Arm A: BARCS vs MAGeCK (A375low)"
-)
-concordance_panel(
-  barcs_armB_donor, published_armB, "b", "Arm B: BARCS vs MAGeCK (NY-ESO-1)"
-)
-cross_arm_panel(barcs_armA_donor, barcs_armB_donor, "c")
-volcano_panel(barcs_armA_donor, "d")
+figure_stem <- file.path("figures", "liu_tcell_publication_comparison")
+
+# PNG for quick review (a repo-only diagnostic), PDF for the manuscript, which
+# includes figures as vector PDF.
+png(paste0(figure_stem, ".png"), width = 2000, height = 2000, res = 200)
+draw_figure()
 invisible(dev.off())
 
-message("Wrote ", figure_path)
+pdf(paste0(figure_stem, ".pdf"), width = 10, height = 10, pointsize = 12,
+    useDingbats = FALSE)
+draw_figure()
+invisible(dev.off())
+
+message("Wrote ", figure_stem, ".png and ", figure_stem, ".pdf")
