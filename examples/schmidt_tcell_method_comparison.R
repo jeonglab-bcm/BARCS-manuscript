@@ -334,13 +334,19 @@ draw <- function() {
          col = c(colour_barcs, colour_mageck), legend = c("BARCS", "MAGeCK"))
   par(mar = c(4.2, 4.2, 2.6, 1.0))
 
-  # (f) hit counts under each method's own rule
-  counts <- rbind(concordance$barcs_hits, concordance$barcs_control_scale_hits,
+  # (f) hit counts. The published MAGeCK rule is a conjunction -- FDR < 0.05 and
+  # median |log2FC| > 0.5 -- so it is shown next to MAGeCK at a bare FDR, which
+  # is the rule shape BARCS is read at.
+  counts <- rbind(concordance$barcs_hits, concordance$mageck_hits_fdr_only,
                   concordance$mageck_hits)
   colnames(counts) <- sub("_", "\n", screens)
-  barplot(counts, beside = TRUE, col = method_colours, border = NA,
-          ylab = "genes called", main = "Hits per screen", cex.names = 0.7,
-          legend.text = c("BARCS", "BARCS, control scale", "MAGeCK (published rule)"),
+  barplot(counts, beside = TRUE,
+          col = c(colour_barcs, adjustcolor(colour_mageck, alpha.f = 0.45),
+                  colour_mageck),
+          border = NA, ylab = "genes called", main = "Hits per screen",
+          cex.names = 0.7,
+          legend.text = c("BARCS, FDR<0.05", "MAGeCK, FDR<0.05",
+                          "MAGeCK, published rule"),
           args.legend = list(bty = "n", cex = 0.6, x = "topleft"))
 
   if (is.null(null_calibration)) {
