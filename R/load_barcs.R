@@ -14,7 +14,7 @@
 # install step.
 
 local({
-  minimum_version <- "0.1.0"
+  minimum_version <- "0.2.0"
 
   loaded_from <- if (requireNamespace("BARCS", quietly = TRUE)) {
     suppressPackageStartupMessages(

@@ -1,10 +1,10 @@
 "cell_line","day","processed_replicate","sample","processed_column","input_scale","mean_absolute_rounding","maximum_absolute_rounding"
-"HAP1",0,1,"HAP1_Day00_R1","Day0 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.24997700635045,0.499999093355996
-"HAP1",0,2,"HAP1_Day00_R2","Day0 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.24997700635045,0.499999093355996
-"HAP1",7,1,"HAP1_Day07_R1","Day7 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.24997700635045,0.499999093355996
-"HAP1",7,2,"HAP1_Day07_R2","Day7 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.24997700635045,0.499999093355996
-"HAP1",14,1,"HAP1_Day14_R1","Day14 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.24997700635045,0.499999093355996
-"HAP1",14,2,"HAP1_Day14_R2","Day14 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.24997700635045,0.499999093355996
+"HAP1",0,1,"HAP1_Day00_R1","Day0 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.249977006350451,0.499999093355996
+"HAP1",0,2,"HAP1_Day00_R2","Day0 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.249977006350451,0.499999093355996
+"HAP1",7,1,"HAP1_Day07_R1","Day7 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.249977006350451,0.499999093355996
+"HAP1",7,2,"HAP1_Day07_R2","Day7 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.249977006350451,0.499999093355996
+"HAP1",14,1,"HAP1_Day14_R1","Day14 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.249977006350451,0.499999093355996
+"HAP1",14,2,"HAP1_Day14_R2","Day14 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.249977006350451,0.499999093355996
 "HEK293FT",0,1,"HEK293FT_Day00_R1","Day0 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.250355693721803,0.499998584820105
 "HEK293FT",0,2,"HEK293FT_Day00_R2","Day0 Replicate 2 (Count)","rounded_normalized_ComBat_pseudocount",0.250355693721803,0.499998584820105
 "HEK293FT",7,1,"HEK293FT_Day07_R1","Day7 Replicate 1 (Count)","rounded_normalized_ComBat_pseudocount",0.250355693721803,0.499998584820105

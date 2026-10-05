@@ -140,6 +140,8 @@ fit_barcs_design <- function(counts, sample_data, guide_truth, sample_types) {
     formula = ~ phenotype_z + replicate, term = "phenotype_z",
     guide = guide_truth$guide, gene = guide_truth$gene,
     min_total_count = 30,
+    # The explicit moderation below needs the unmoderated fit.
+    moderate = FALSE,
     ncores = as.integer(Sys.getenv("BARCS_NCORES", "4"))
   )
   negative_control <- guide_truth$class == "negcontrol"

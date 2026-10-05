@@ -73,7 +73,9 @@ bb_result <- bb_screen(
   term = "dose",
   totals = library_size,
   guide = guide,
-  gene = gene
+  gene = gene,
+  # The explicit moderation below needs the unmoderated fit.
+  moderate = FALSE
 )
 
 # Run the official MAGeCK-MLE executable on the identical continuous design.

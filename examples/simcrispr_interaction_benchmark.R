@@ -223,6 +223,8 @@ evaluate_one <- function(seed) {
       counts = counts, totals = totals, data = design_data,
       formula = ~ knockout * treatment, term = "knockout:treatment",
       guide = rownames(counts), min_total_count = 30,
+      # The explicit moderation below needs the unmoderated fit.
+      moderate = FALSE,
       ncores = as.integer(Sys.getenv("BARCS_NCORES", "4"))
     )
     if (identical(normalization, "library")) {
