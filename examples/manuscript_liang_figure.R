@@ -33,17 +33,6 @@ guide_method_files <- c(
   `edgeR-QL` = "edger_ql",
   `limma-voom` = "limma_voom"
 )
-case_specification <- data.frame(
-  cell_line = c("HAP1", "MDA-MB-231", "HEK293FT"),
-  gene = c(
-    "Hum_XLOC_013346",
-    "Hum_XLOC_029247",
-    "Hum_XLOC_000540"
-  ),
-  guide = c("gL_036790", "gL_017527", "gL_000389"),
-  stringsAsFactors = FALSE
-)
-
 gene_scores <- read.csv(gzfile(score_path))
 guide_truth <- unique(gene_scores[
   gene_scores$method == "BARCS",
@@ -120,31 +109,6 @@ load_case_results <- function(cell_line, gene, guide) {
   do.call(rbind, result)
 }
 
-case_results <- do.call(rbind, lapply(
-  seq_len(nrow(case_specification)),
-  function(index) {
-    load_case_results(
-      case_specification$cell_line[index],
-      case_specification$gene[index],
-      case_specification$guide[index]
-    )
-  }
-))
-if (any(
-  case_results$p_value[case_results$method == "BARCS"] < 0.20
-) || any(
-  case_results$p_value[case_results$method != "BARCS"] >= 0.05
-)) {
-  stop("Single-guide examples no longer satisfy the stated selection rule.")
-}
-write.csv(
-  case_results,
-  file.path(
-    "data", "derived", "liang_single_guide_null_examples.csv"
-  ),
-  row.names = FALSE
-)
-
 guide_disagreement <- do.call(rbind, lapply(
   names(cell_stems),
   function(cell_line) {
@@ -179,40 +143,68 @@ forward <- proxy_null &
 reverse <- proxy_null &
   guide_disagreement$p_BARCS < 0.05 &
   apply(guide_disagreement[, competitor_p] >= 0.05, 1L, all)
-forward_candidates <- guide_disagreement[forward, , drop = FALSE]
-forward_candidates$largest_competitor_p <- apply(
-  forward_candidates[, competitor_p], 1L, max
+# Under moderated BARCS every remaining all-method disagreement among proxy-null
+# guides runs one way: BARCS significant, all three alternatives not. The panels
+# show the most extreme of those, selected by rule rather than by hand: within
+# each cell line the candidate with the smallest BARCS p, then the three cell
+# lines whose candidate has the largest ratio of the smallest alternative p to
+# the BARCS p.
+reverse_candidates <- guide_disagreement[reverse %in% TRUE, , drop = FALSE]
+if (!nrow(reverse_candidates)) {
+  stop("No proxy-null guide satisfies the stated disagreement rule.")
+}
+reverse_candidates$smallest_competitor_p <- apply(
+  reverse_candidates[, competitor_p], 1L, min
 )
 best_within_cell_line <- do.call(rbind, lapply(
-  split(forward_candidates, forward_candidates$cell_line),
+  split(reverse_candidates, reverse_candidates$cell_line),
   function(x) {
-    x[order(x$largest_competitor_p, x$guide), , drop = FALSE][1L, ]
+    x[order(x$p_BARCS, x$guide), , drop = FALSE][1L, ]
   }
 ))
 best_within_cell_line$disagreement_ratio <-
-  best_within_cell_line$p_BARCS /
-  best_within_cell_line$largest_competitor_p
+  best_within_cell_line$smallest_competitor_p /
+  best_within_cell_line$p_BARCS
 display_cases <- head(
   best_within_cell_line[
     order(best_within_cell_line$disagreement_ratio, decreasing = TRUE),
+    ,
+    drop = FALSE
   ],
   3L
 )
-specified_key <- paste(
-  case_specification$cell_line,
-  case_specification$gene,
-  case_specification$guide,
-  sep = "::"
+case_specification <- data.frame(
+  cell_line = display_cases$cell_line,
+  gene = display_cases$gene,
+  guide = display_cases$guide,
+  stringsAsFactors = FALSE
 )
-selected_key <- paste(
-  display_cases$cell_line,
-  display_cases$gene,
-  display_cases$guide,
-  sep = "::"
-)
-if (!setequal(specified_key, selected_key)) {
-  stop("Displayed trajectories no longer match the documented selection rule.")
+
+case_results <- do.call(rbind, lapply(
+  seq_len(nrow(case_specification)),
+  function(index) {
+    load_case_results(
+      case_specification$cell_line[index],
+      case_specification$gene[index],
+      case_specification$guide[index]
+    )
+  }
+))
+if (any(
+  case_results$p_value[case_results$method == "BARCS"] >= 0.05
+) || any(
+  case_results$p_value[case_results$method != "BARCS"] < 0.05
+)) {
+  stop("Single-guide examples no longer satisfy the stated selection rule.")
 }
+write.csv(
+  case_results,
+  file.path(
+    "data", "derived", "liang_single_guide_null_examples.csv"
+  ),
+  row.names = FALSE
+)
+
 write.csv(
   data.frame(
     direction = c(
@@ -571,7 +563,7 @@ for (case_index in seq_len(nrow(case_specification))) {
   axis(1, at = c(0, 7, 14))
   mtext(
     sprintf(
-      "Two-sided p: BARCS %.2f (NS); others < 0.05",
+      "Two-sided p: BARCS %.2g; others >= 0.05",
       barcs_p
     ),
     side = 3,

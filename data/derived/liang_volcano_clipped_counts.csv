@@ -1,0 +1,6 @@
+"method","genes_plotted","clipped_at_y","y_clip"
+"BARCS",34608,1,60
+"MAGeCK-MLE",34608,0,60
+"edgeR-QL",34608,4,60
+"DESeq2",34608,72,60
+"limma-voom",34608,2,60
