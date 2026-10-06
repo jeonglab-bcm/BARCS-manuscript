@@ -1,0 +1,819 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{kotex}
+\setmainhangulfont{NanumMyeongjo}
+\setsanshangulfont{NanumGothic}
+\setmonohangulfont{NanumGothicCoding}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{barcsblue}{HTML}{0072B2}
+\newtcolorbox{keyidea}{colback=barcsblue!6,colframe=barcsblue,
+  fonttitle=\bfseries,title=핵심 개념,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{example}[1][]{colback=gray!5,colframe=gray!60,
+  fonttitle=\bfseries,title=예제#1,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{incode}{colback=white,colframe=gray!40,
+  fonttitle=\bfseries,title=패키지에서는,boxrule=0.4pt,arc=2pt}
+
+\newcommand{\logit}{\operatorname{logit}}
+\newcommand{\Var}{\operatorname{Var}}
+
+\newlist{choices}{enumerate}{1}
+\setlist[choices]{label=(\Alph*),leftmargin=2.2em,itemsep=1pt,topsep=2pt}
+
+\title{\textbf{BARCS 이해하기}\\[4pt]
+\large 방법론 자습 가이드: 예제, 객관식 퀴즈, 해설}
+\author{정현환, 이규원}
+\date{BARCS 버전 0.2.0}
+
+\begin{document}
+\sloppy
+\maketitle
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{BARCS가 푸는 문제}
+%=====================================================================
+
+풀드(pooled) CRISPR 스크린은 각 가이드 $g$와 시퀀싱한 각 라이브러리 $i$에
+대해 리드 수 $K_{gi}$를 만든다. 각 라이브러리에는 매핑된 가이드 리드의 총합
+$N_i$도 있다. 관심 있는 질문은 가이드 풍부도가 실험 설계, 즉 시간, 정렬된
+FACS 빈, 용량, 공여자, 처리, 또는 이들의 상호작용에 따라 어떻게 달라지는가이다.
+
+CB\textsuperscript{2}는 두 그룹에 대해 이 질문에 답했다. BARCS는 같은 샘플링
+모델을 유지하되, 두 그룹 평균을 임의의 설계 행렬에 대한 회귀로 바꾼다. 세 가지
+객체가 함께 움직인다.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+객체 & 형태 & 규칙\\
+\midrule
+\texttt{counts} & 가이드 $\times$ 라이브러리 & 원래의 정수 리드 수\\
+\texttt{totals} & 라이브러리당 하나 & 필터링 전 매핑된 가이드 총합 $N_i$\\
+\texttt{data} & 라이브러리당 한 행 & \texttt{counts}의 열 순서와 동일\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keyidea}
+BARCS는 가이드의 리드 수를 해당 라이브러리 안에서의 비율로 다룬다. 분모 $N_i$는
+가이드를 하나라도 제거하기 \emph{전에} 기록한 총합이어야 한다. 가이드를 제거한 뒤
+총합을 다시 계산하면, 남은 모든 계수의 의미가 조용히 바뀐다.
+\end{keyidea}
+
+%=====================================================================
+\section{샘플링 모델}
+%=====================================================================
+
+\subsection{이항분포에서 베타-이항분포로}
+
+어떤 조건의 모든 라이브러리가 정확히 같은 가이드 비율 $\mu_i$를 가진다면,
+시퀀싱은 순수한 이항 샘플링이다: $K_{gi}\sim\mathrm{Binomial}(N_i,\mu_i)$.
+실제 라이브러리는 생물학적 반복이므로 진짜 비율 자체가 라이브러리마다 달라진다.
+BARCS는 라이브러리별 비율 $P_i$가 베타분포를 따르도록 한다.
+\begin{align}
+K_i \mid P_i &\sim \mathrm{Binomial}(N_i, P_i), &
+P_i &\sim \mathrm{Beta}\big(\mu_i\kappa,\,(1-\mu_i)\kappa\big), &
+\rho &= \frac{1}{\kappa+1}.
+\end{align}
+주변분포로 보면 $K_i$는 평균 $N_i\mu_i$, 분산
+\begin{equation}
+\Var(K_i) = N_i\mu_i(1-\mu_i)\,\{1+(N_i-1)\rho\}
+\label{eq:var}
+\end{equation}
+인 베타-이항분포를 따른다. 급내상관 $\rho\ge0$이 과분산(overdispersion)이며,
+$\rho=0$이면 이항분포로 돌아간다.
+
+\subsection{시퀀싱 깊이와 생물학적 반복을 분리하는 이유}
+
+$N_i$로 나누면 관측 비율 $Y_i=K_i/N_i$의 분산은
+\begin{equation}
+\Var(Y_i)=\mu_i(1-\mu_i)\left\{\frac{1-\rho}{N_i}+\rho\right\}
+\label{eq:propvar}
+\end{equation}
+이다. 첫째 항은 시퀀싱 깊이 $N_i$가 커지면 줄어들지만, 둘째 항은 줄지 않는다.
+라이브러리를 충분히 깊게 시퀀싱하면 남는 불확실성은 생물학적인 것이다.
+
+\begin{example}[: 더 깊이 시퀀싱해도 거의 도움이 안 된다]
+$\mu=10^{-4}$, $\rho=10^{-5}$라 하자. 식~\eqref{eq:propvar}의 괄호 안은
+\[
+N=10^6:\ 10^{-6}+10^{-5}=1.1\times10^{-5},\qquad
+N=10^7:\ 10^{-7}+10^{-5}=1.01\times10^{-5}.
+\]
+리드를 10배 늘려도 분산은 약 8\%만 줄어든다. 반면 \emph{라이브러리}를 하나 더
+추가하면 평균의 분산이 절반이 된다. BARCS가 자유도를 리드가 아니라 라이브러리
+수에서 가져오는 이유가 바로 이것이다.
+\end{example}
+
+%=====================================================================
+\section{회귀 모델}
+%=====================================================================
+
+라이브러리 $i$의 가이드 $g$에 대해
+\begin{equation}
+K_{gi}\mid N_i\sim\mathrm{BetaBinomial}(N_i,\mu_{gi},\rho_g),\qquad
+\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol\beta_g .
+\label{eq:model}
+\end{equation}
+모든 가이드는 자기만의 계수 $\boldsymbol\beta_g$와 과분산 $\rho_g$를 가진다.
+설계 벡터 $\mathbf{x}_i$는 R 모델 행렬의 한 행이므로
+\texttt{\textasciitilde{} dose + batch},
+\texttt{\textasciitilde{} replicate + time},
+\texttt{\textasciitilde{} knockout * treatment} 모두 쓸 수 있다.
+
+\paragraph{계수의 해석.}
+$\beta_{gd}$는 다른 열을 고정했을 때 예측변수 $d$가 한 단위 변할 때 가이드의
+라이브러리 내 비율의 로그오즈 변화량이다. 가이드 비율은 매우 작으므로
+$\logit(\mu)\approx\log\mu$이고, 따라서 $\beta_{gd}$는 $x_d$ 한 단위당
+풍부도의 로그 배수 변화(log fold change)와 거의 같다.
+
+\paragraph{대비(contrast).}
+임의의 선형결합 $\mathbf{c}^\top\boldsymbol\beta$를 검정할 수 있다. 예를 들어
+두 처리군 사이의 차이를 검정한다(\texttt{bb\_contrast()}).
+
+%=====================================================================
+\section{추정: 실현가능 IRLS}
+%=====================================================================
+
+BARCS는 각 가이드를 따로, 실현가능(feasible) 반복 재가중 최소제곱(IRLS)으로
+적합한다. 가이드 첨자를 생략하고 현재의 $\boldsymbol\beta$와 $\rho$에서
+\begin{align}
+\eta_i&=\mathbf{x}_i^\top\boldsymbol\beta, &
+\mu_i&=\frac{e^{\eta_i}}{1+e^{\eta_i}},\\
+z_i&=\eta_i+\frac{Y_i-\mu_i}{\mu_i(1-\mu_i)}, &
+w_i&=\frac{N_i\mu_i(1-\mu_i)}{1+(N_i-1)\rho}.
+\end{align}
+갱신은 작업 반응(working response)에 대한 가중 최소제곱이다:
+$\widehat{\boldsymbol\beta}_{\text{new}}=(X^\top WX)^{-1}X^\top W\mathbf{z}$.
+
+\paragraph{$\rho$의 추정.}
+각 적합 평균에서 $\rho$는 피어슨 추정방정식
+\begin{equation}
+\sum_{i=1}^{m}\frac{(K_i-N_i\hat\mu_i)^2}
+{N_i\hat\mu_i(1-\hat\mu_i)\{1+(N_i-1)\hat\rho\}}=m-q
+\label{eq:pearson}
+\end{equation}
+의 해이다. 여기서 $m$은 라이브러리 수, $q$는 계수의 수이다. 좌변은 $\rho$에
+대해 감소하며, 세 가지 경우가 있다.
+\begin{enumerate}[itemsep=1pt]
+\item 이항 피어슨 통계량($\rho=0$)이 이미 $m-q$ 이하이면 과분산이 없는
+것이므로 $\hat\rho$를 0으로 자른다.
+\item 그렇지 않으면 수치적으로 근을 찾는다.
+\item $\rho$를 상한까지 올려도 통계량이 $m-q$보다 크면 $\hat\rho$를 상한으로
+두고, 남은 피어슨 스케일을 공분산에 곱한다.
+\end{enumerate}
+계수 갱신과 과분산 갱신을 번갈아 하면서 계수 변화가 허용오차보다 작아지면
+멈춘다.
+
+\paragraph{가중치는 포화된다.}
+$\rho>0$이면 $N_i\to\infty$일 때 $w_i\to\mu_i(1-\mu_i)/\rho$이다. 라이브러리의
+가중치는 깊이에 따라 끝없이 커지지 않는다. 이는 식~\eqref{eq:propvar}을 적합
+쪽에서 본 것이다.
+
+\begin{incode}
+\texttt{bbreg()}는 가이드 하나를 적합하고, \texttt{bb\_screen()}은 리드 수
+행렬의 모든 행을 (병렬로도) 적합한다. 가중 교차곱은 RcppArmadillo로 C++에서
+계산한다.
+\end{incode}
+
+%=====================================================================
+\section{가이드 하나에 대한 추론}
+%=====================================================================
+
+수렴했을 때 공분산은 $\widehat{\mathrm{Cov}}(\widehat{\boldsymbol\beta})
+=(X^\top\widehat WX)^{-1}$이고, 계수 $j$에 대해
+\begin{equation}
+t_j=\frac{\hat\beta_j}{\sqrt{\widehat{\mathrm{Cov}}_{jj}}}\ \sim\ t_{m-q}
+\end{equation}
+이다. 기준 자유도는 $m-q$, 즉 독립 라이브러리 수에서 계수 수를 뺀 값이다.
+총 리드 수는 들어가지 않는다.
+
+\begin{example}[: Cas13 스크린의 자유도]
+각 세포주에는 라이브러리 6개(0, 7, 14일 $\times$ 반복 2개)가 있고,
+모델 \texttt{\textasciitilde{} replicate + time}의 계수는 3개(절편, 반복,
+시간)이다. 따라서 각 가이드의 잔차 자유도는 $6-3=3$이다. 자유도 3으로 추정한
+분산은 매우 불안정하며, 이것이 다음 절의 동기가 된다.
+\end{example}
+
+$t$ 분포는 정규분포보다 꼬리가 두껍지만 $\hat\rho$를 알려진 값으로 취급한다.
+과분산 추정의 불확실성을 정확히 보정하는 것은 아니며, 실제로는 조절
+(moderation)과 음성 대조군이 안전장치 역할을 한다.
+
+%=====================================================================
+\section{과분산 조절(기본으로 켜짐)}
+%=====================================================================
+
+\subsection{아이디어}
+
+잔차 자유도가 3이면 어떤 가이드는 우연히 조용해 보여 표준오차가 아주 작아지고,
+어떤 가이드는 시끄러워 보여 표준오차가 커진다. 조절은 limma와 edgeR처럼 각
+가이드의 분산을 라이브러리 전체의 추세 쪽으로 수축시킨다.
+
+\subsection{절차}
+
+\begin{enumerate}[itemsep=2pt]
+\item \textbf{원래 팽창(inflation).} $\nu=m-q$, $s_g^2=Q^{(0)}_g/\nu$로 둔다.
+$Q^{(0)}_g$는 \emph{이항} 모델에서의 가이드 피어슨 통계량이다. $\hat\rho$와
+달리 $s_g^2$는 잘리지 않으므로 $\chi^2_\nu/\nu$에 스케일을 곱한 것처럼 행동한다.
+\item \textbf{추세.} $\log s_g^2$를 로그 평균 CPM에 대해 lowess로 적합한다
+(span 0.5). 적합값을 $\log s^2_{\text{trend},g}$라 한다.
+\item \textbf{사전 자유도(Smyth 2004).}
+$e_g=\log s_g^2-\log s^2_{\text{trend},g}-\psi(\nu/2)+\log(\nu/2)$로 둔다.
+$\psi$는 디감마 함수이다. 그리고
+\[
+\text{초과분산}=\widehat{\Var}(e_g)-\psi'(\nu/2)
+\]
+를 계산한다. 초과분산 $>0$이면 $\psi'(d_0/2)=\text{초과분산}$을 $d_0$에 대해
+풀고, 아니면 $d_0=\infty$(완전 수축)로 둔다.
+\item \textbf{사전 스케일.} $s_{0g}^2=\exp\{\log s^2_{\text{trend},g}
++\bar e+\psi(d_0/2)-\log(d_0/2)\}$.
+\item \textbf{사후값.}
+\begin{equation}
+\tilde s_g^2=\frac{\nu s_g^2+d_0 s_{0g}^2}{\nu+d_0}.
+\end{equation}
+\item \textbf{재스케일.} 적합된 표준오차는 이미 $\max(1,s_g^2)$를 반영하므로
+\[
+\mathrm{SE}_{g,\text{mod}}=\mathrm{SE}_g\sqrt{\tilde s_g^2/\max(1,s_g^2)},\qquad
+t_{g,\text{mod}}=\hat\beta_g/\mathrm{SE}_{g,\text{mod}},\qquad
+\text{자유도}=\nu+d_0.
+\]
+\end{enumerate}
+계수 $\hat\beta_g$는 절대 바뀌지 않는다. 바뀌는 것은 표준오차와 기준분포뿐이다.
+
+\begin{example}[: 가이드 하나]
+$\nu=3$, $s_g^2=4$, 사전값 $s_{0g}^2=1.5$, $d_0=12$.
+\[
+\tilde s_g^2=\frac{3(4)+12(1.5)}{15}=2.0,\qquad
+\text{재스케일}=\sqrt{2/4}=0.71,\qquad \text{자유도}=15.
+\]
+시끄러운 가이드의 표준오차가 29\% 줄고, 검정은 $t_3$ 대신 $t_{15}$를
+기준으로 한다. 반대로 $s_g^2=0.5$인 가이드는 사전값 쪽으로 \emph{올라가서}
+거짓 확신을 막는다.
+\end{example}
+
+\begin{incode}
+\texttt{bb\_screen(moderate = NULL)}은 사용 가능한 가이드가 50개 이상이면
+조절한다. \texttt{moderate = FALSE}로 끌 수 있다. 옵션:
+\texttt{trend = FALSE}는 상수 하나로 수축, \texttt{one\_way = TRUE}는 분산을
+올리기만 함, \texttt{borrow\_df = FALSE}는 자유도를 $\nu$로 유지한다. 이미
+조절된 결과는 다시 조절할 수 없다.
+\end{incode}
+
+\paragraph{왜 중요한가.} Cas13 스크린에서 조절은 필수 유전자 평균정밀도를
+0.838에서 0.876으로 올려 limma--voom, edgeR-QL과 같은 수준으로 만들었고, 모든
+세포주에서 개선되었다.
+
+%=====================================================================
+\section{분모: 계수는 무엇에 대한 상대값인가}
+%=====================================================================
+
+\subsection{라이브러리 전체 총합과 조성 이동}
+
+$N_i$를 분모로 쓰면 $\beta$는 라이브러리 내 비율의 변화를 뜻한다. 탈락
+(dropout) 스크린처럼 많은 가이드가 줄어들면, 절대량이 그대로인 가이드도 살아남은
+것만으로 비율이 커진다. 그러면 귀무 가이드의 계수가 양수가 되고, $t$ 통계량도
+커질 수 있다.
+
+\subsection{대조군 기반 총합}
+
+\texttt{barcs\_control\_totals()}는 선택한 대조군 집합 $C$가 모든 라이브러리에서
+일정한 비율을 갖도록 총합을 만든다.
+\begin{equation}
+N_i^{\text{ctrl}}=\operatorname{round}\!\left(
+\frac{\sum_{g\in C}K_{gi}}{\overline{\sum_{g\in C}K_{g\cdot}}}\;
+\overline{N_\cdot}\right),
+\quad\text{필요하면 } N_i^{\text{ctrl}}\ge\max_g K_{gi}\text{가 되도록 올림.}
+\end{equation}
+그러면 계수는 대조군에 대한 상대 풍부도를 뜻한다.
+
+\begin{example}[: 대조군 총합]
+라이브러리 2개, 대조 가이드 2개는 두 라이브러리 모두에서 각각 500 리드, 히트
+가이드 1개는 라이브러리 1에서 1,000, 라이브러리 2에서 100 리드라 하자. 전체
+총합은 2,000과 1,100(평균 1,550)이다. 대조군 총합은 두 라이브러리 모두
+$1000\times1550/1000=1550$이므로 대조군은 같은 비율을 유지하고, 히트의 감소는
+대조군에 대해 측정된다.
+\end{example}
+
+\paragraph{대조군 선택.} Non-targeting 가이드는 DNA를 자르지 않고, safe-harbor
+가이드는 자르지만 유전자를 맞히지 않는다. Safe-harbor로 정규화하면 공통적인
+절단 반응이 흡수된다. 총합을 만드는 데 쓴 가이드는 결과를 평가하는 데 쓰지
+않아야 한다.
+
+%=====================================================================
+\section{음성 대조군 보정}
+%=====================================================================
+
+모델 가정이 깨지면(예: 한 공여자의 FACS 빈들이 같은 세포를 나눠 가짐) 귀무
+$t$ 통계량의 분포가 너무 넓어진다. \texttt{bb\_calibrate\_controls()}는 음성
+대조군에서 추정한 하나의 배율로 모든 $t$ 통계량을 재조정한다.
+\begin{itemize}[itemsep=1pt]
+\item \texttt{tail\_quantile}: $\text{배율}=Q_{0.95}(|t_{\text{대조}}|)/t_{\nu,0.975}$;
+\item \texttt{qq\_slope}: 0.50--0.95 구간에서 대조군 분위수를 $t$ 분위수에 대해
+원점을 지나도록 회귀한 기울기(변동이 더 작음);
+\end{itemize}
+그 다음 $\text{배율}\leftarrow\max(1,\text{배율})$로 두므로, 보정은 검정을 더
+보수적으로만 만든다. 표준오차에는 배율을 곱하고 $t$ 통계량은 나누며, 추정치는
+바뀌지 않는다.
+
+\begin{example}[: 꼬리 배율]
+대조군 $|t|$의 95번째 백분위수가 3.5, $\nu=4$라 하자. $t_{4,0.975}=2.776$이므로
+배율은 $3.5/2.776=1.26$이고, 모든 $t$를 1.26으로 나눈다.
+\end{example}
+
+\paragraph{정직한 평가.} 같은 대조군으로 배율을 정하고 그 대조군으로 귀무 비율을
+보고하면, 5\%라는 결과는 정의상 자동으로 나온다. 그래서 IL2RA 분석은 5겹
+교차적합을 쓴다. 각 대조군은 나머지 4개 겹에서 추정한 배율로 평가된다.
+
+%=====================================================================
+\section{가이드에서 유전자로}
+%=====================================================================
+
+\subsection{방향성 Stouffer}
+
+유전자 $g$의 $j$번째 유효 가이드에 대해, 양측 $p$값을 부호가 있는 정규 점수로
+되돌린 뒤 더한다.
+\begin{equation}
+z_{gj}=\operatorname{sign}(\hat\beta_{gj})\,\Phi^{-1}\!\left(1-\tfrac{p_{gj}}{2}\right),
+\qquad
+Z_g=\frac{\sum_{j=1}^{m_g}z_{gj}}{\sqrt{m_g}},\qquad p_g=2\Phi(-|Z_g|).
+\end{equation}
+방향이 같은 가이드는 서로 강화하고, 반대인 가이드는 상쇄된다. 보고하는 유전자
+효과는 가이드 계수의 \emph{중앙값}으로, 극단적인 가이드 하나에 휘둘리지 않는다.
+유전자 $p$값은 이후 BH로 보정한다.
+
+\subsection{독립성 문제}
+
+$\sqrt{m_g}$는 \emph{독립인} 표준정규변수 $m_g$개 합의 표준편차이다. 그런데 한
+유전자의 가이드들은 모든 라이브러리를 공유하므로, 잡음을 공유하면 귀무 점수
+사이에 양의 상관 $r$이 생기고
+\begin{equation}
+\Var\Big(\sum_j z_{gj}\Big)=m_g+m_g(m_g-1)\,r
+\end{equation}
+가 된다. BARCS는 대신 이 값의 제곱근으로 나눈다.
+\begin{equation}
+Z_g^{\text{c}}=\frac{\sum_{j}z_{gj}}{\sqrt{m_g+m_g(m_g-1)\hat r}} .
+\end{equation}
+
+\begin{example}[: 상관이 하는 일]
+가이드 5개의 점수 합이 $\sum z=5.59$(각 $z\approx1.12$)라 하자. 보정 전
+$Z=5.59/\sqrt5=2.5$, $p=0.012$이다. $r=0.4$이면 분산은
+$5+5\cdot4\cdot0.4=13$이고 $Z^{\text{c}}=5.59/\sqrt{13}=1.55$, $p=0.12$로
+더 이상 유의하지 않다.
+\end{example}
+
+\subsection{실제 신호에 속지 않고 $r$을 추정하기}
+
+\begin{enumerate}[itemsep=2pt]
+\item 각 가이드의 라이브러리별 피어슨 잔차 벡터를 길이 1로 정규화한다.
+\item 가이드가 2개 이상인 각 유전자에서 쌍별 내적(상관)의 평균을 구하고, 이를
+유전자마다 같은 가중치로 평균한다(큰 대조군 ``유전자''가 지배하지 않도록).
+\item \emph{서로 다른} 유전자의 가이드 쌍(결정적으로 정한 쌍)에 대해서도 같은
+값을 구한다. 이 기준선은 라이브러리 전체가 공유하는 상관을 제거한다.
+\item $\hat r=\min\{1,\max(0,\ \text{유전자 내}-\text{유전자 간})\}$.
+\end{enumerate}
+
+\begin{keyidea}
+잔차는 적합된 평균이 실제 유전자 효과를 포함한 모든 설계 효과를 흡수하고 남은
+것이다. 따라서 모든 가이드가 강하게 감소하는 유전자라도 잔차는 상관되지
+\emph{않는다}. 가이드들이 공유하는 잡음만 잔차 상관을 만든다. 그래서 이 보정은
+진짜 히트에 불이익을 주지 않는다.
+\end{keyidea}
+
+$r=0.4$인 시뮬레이션에서 보정 후 유전자 수준 1종 오류는 0.018--0.052였고,
+보정 전에는 최대 0.262였다. 분석한 실제 스크린에서 $\hat r$은 0.008--0.026이어서
+보정에 따른 변화는 작았다.
+
+\subsection{실험적 대안}
+
+네 가지 다른 요약은 검정 대신 효과 크기를 합친다:
+\texttt{bb\_gene\_normal()}, \texttt{bb\_gene\_consistency()},
+\texttt{bb\_gene\_partial\_pool()}, \texttt{bb\_gene\_eb\_moderate()}.
+시뮬레이션 FACS 벤치마크에서 Stouffer보다 유전자 순위가 나빴으므로 민감도
+분석용으로만 남겨 두었다.
+
+%=====================================================================
+\section{벤치마크에서 성공을 측정하는 방법}
+%=====================================================================
+
+\begin{center}
+\begin{tabular}{lp{0.6\textwidth}}
+\toprule
+지표 & 의미\\
+\midrule
+AUROC & 임의의 양성이 임의의 음성보다 높은 순위일 확률.\\
+평균정밀도(AP) & 각 참양성 순위에서의 정밀도 평균. 목록 상단에 민감.\\
+5\% 귀무 FPR에서의 재현율 & 귀무 유전자의 5\%만 넘는 점수 위에 있는 양성의
+비율. 보정 정도와 무관.\\
+FDR 0.10에서의 재현율 & 방법 자체의 명목 FDR에서 검출된 양성 비율. 보정에
+의존.\\
+실현 FDP & 정답을 알 때 검출 중 거짓의 비율.\\
+대리 귀무 & 귀무로 가정한 유전자(예: 발현되지 않는 lncRNA). 불완전하므로 귀무
+비율은 진단용.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{주요 결과 (BARCS 0.2.0).}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+벤치마크 & BARCS & 비교\\
+\midrule
+Cas13 AP & 0.876 & limma 0.876, edgeR 0.874, MAGeCK 0.877\\
+Cas13 FDR 0.10 재현율 & 0.767 & 0.692--0.767\\
+IL2RA 검증된 조절인자 & 23/26, 61개 검출 & MAGeCK 17/26, 72개 검출\\
+CRISPulator F1 (조절) & 0.847 & 조절 전 0.811\\
+귀무 그리드, 상관된 가이드 & 0.018--0.052 & 보정 전 최대 0.262\\
+A375 FDR 0.05 재현율 & 0.883 & MAGeCK 0.710\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%=====================================================================
+\section{유의할 한계}
+%=====================================================================
+
+\begin{itemize}[itemsep=2pt]
+\item \textbf{독립 라이브러리.} 한 공여자의 FACS 빈들과 한 배양에서 반복
+수확한 라이브러리는 서로 종속이다. 공여자 지시변수는 평균을 보정하고 대조군은
+잘못된 보정을 바로잡지만, 종속성 자체를 모델링하지는 않는다.
+\item \textbf{대입(plug-in) 과분산.} $t$ 기준분포는 $\hat\rho$를 알려진 값으로
+취급한다. 조절이 이 근사를 줄이지만 없애지는 않는다.
+\item \textbf{가능도와 맞는 리드 수.} Cas13 벤치마크는 정규화·배치보정된 값을
+정수로 반올림해 사용했다. 원시 리드 수로 다시 분석하는 것이 더 강한 검증이다.
+\item \textbf{분모 선택.} 전체 라이브러리 기준 계수와 대조군 기준 계수는 서로
+다른 질문에 답한다. 결과를 보기 전에 정해야 한다.
+\end{itemize}
+
+%=====================================================================
+\section{파이프라인 한눈에 보기}
+%=====================================================================
+
+\begin{enumerate}[itemsep=2pt]
+\item \texttt{barcs\_quant()}: FASTQ $\rightarrow$ \texttt{counts},
+\texttt{totals}.
+\item 선택: \texttt{barcs\_control\_totals()}로 기준 선택.
+\item \texttt{bb\_screen()}: 가이드별 베타-이항 회귀, $t$ 검정, 과분산 조절,
+잔차 상관 $\hat r$.
+\item 선택: \texttt{bb\_calibrate\_controls()}로 음성 대조군 배율.
+\item \texttt{bb\_gene\_stouffer()}: 상관을 반영한 유전자 통계량, 중앙값 효과,
+BH FDR.
+\end{enumerate}
+
+%=====================================================================
+\newpage
+\section{퀴즈}
+%=====================================================================
+
+가장 알맞은 답을 하나 고르시오. 해설이 포함된 정답은 다음 페이지부터 있다.
+
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.6em,itemsep=8pt]
+
+\item BARCS에서 라이브러리 $i$의 총합 $N_i$는 무엇이어야 하는가?
+\begin{choices}
+\item 가이드별 리드 수의 중앙값
+\item 리드 수가 적은 가이드를 제거한 뒤의 합
+\item 가이드 필터링 전에 기록한 매핑된 가이드 리드 전체 총합
+\item FASTQ 파일의 리드 수
+\end{choices}
+
+\item 가이드 리드 수의 베타-이항 분산은 $N\mu(1-\mu)\{1+(N-1)\rho\}$이다.
+$\rho=0$으로 두면?
+\begin{choices}
+\item 분산이 0
+\item 이항분포 분산
+\item 포아송 분산
+\item 음이항분포 분산
+\end{choices}
+
+\item $\mu=10^{-4}$, $\rho=10^{-5}$일 때 시퀀싱 깊이를 $10^6$에서 $10^7$
+리드로 늘리면 관측 비율의 분산은 대략 얼마나 줄어드는가?
+\begin{choices}
+\item 8\%
+\item 50\%
+\item 90\%
+\item 0\%
+\end{choices}
+
+\item BARCS 가이드 검정의 잔차 자유도는?
+\begin{choices}
+\item 독립 라이브러리 수 $-$ 계수 수
+\item 유전자당 가이드 수 $-1$
+\item 30으로 고정
+\item 총 리드 수 $-$ 계수 수
+\end{choices}
+
+\item 모델 $\logit(\mu_{gi})=\mathbf x_i^\top\boldsymbol\beta_g$에서 계수
+$\beta_{gd}$의 가장 알맞은 해석은?
+\begin{choices}
+\item 가이드의 과분산
+\item 가이드가 필수일 확률
+\item $x_d$ 한 단위당 원시 리드 수의 변화
+\item 다른 열을 고정했을 때 $x_d$ 한 단위당 가이드 풍부도의 대략적인 로그
+배수 변화
+\end{choices}
+
+\item $\rho>0$에서 $N_i\to\infty$일 때 IRLS 가중치
+$w_i=N_i\mu_i(1-\mu_i)/\{1+(N_i-1)\rho\}$는?
+\begin{choices}
+\item 끝없이 커진다
+\item 0으로 간다
+\item $\mu_i(1-\mu_i)/\rho$로 간다
+\item $N_i$와 같다
+\end{choices}
+
+\item 가이드의 이항 피어슨 통계량이 이미 $m-q$보다 작으면 BARCS는
+$\hat\rho$를 무엇으로 두는가?
+\begin{choices}
+\item 0
+\item 라이브러리 전체 중앙값
+\item $1/(m-q)$
+\item 상한값
+\end{choices}
+
+\item Cas13 세포주 하나에 라이브러리가 6개이고 모델이
+\texttt{\textasciitilde{} replicate + time}이다. 각 가이드의 잔차 자유도는?
+\begin{choices}
+\item 5
+\item 3
+\item 4
+\item 2
+\end{choices}
+
+\item 과분산 조절이 바꾸는 것은?
+\begin{choices}
+\item 라이브러리 총합
+\item 표준오차와 기준 자유도 (단, $\hat\beta_g$는 그대로)
+\item 가이드--유전자 배정
+\item 계수 추정치 $\hat\beta_g$
+\end{choices}
+
+\item 조절은 각 가이드의 로그 분산 팽창을 무엇 쪽으로 수축시키는가?
+\begin{choices}
+\item 전체 가이드에 대한 로그 평균 CPM의 lowess 추세
+\item 0
+\item 음성 대조군의 팽창만
+\item 라이브러리에서 가장 큰 팽창
+\end{choices}
+
+\item 사전 자유도 $d_0$는 어떻게 추정하는가?
+\begin{choices}
+\item 4로 고정된 상수
+\item 리드 수에 대한 최대가능도
+\item 필수 유전자에 대한 교차검증
+\item 디감마·트라이감마 함수를 쓰는 Smyth(2004)의 scaled-$F$ 적률법
+\end{choices}
+
+\item $\nu=3$, $s_g^2=4$, $s_{0g}^2=1.5$, $d_0=12$일 때 조절된 팽창
+$\tilde s_g^2$는?
+\begin{choices}
+\item 2.75
+\item 4.0
+\item 2.0
+\item 1.5
+\end{choices}
+
+\item 조절이 $\hat\rho_g$ 대신 $s_g^2=Q_g^{(0)}/\nu$를 쓰는 이유는?
+\begin{choices}
+\item $\hat\rho_g$는 시퀀싱 깊이에만 의존한다
+\item $s_g^2$는 설계를 무시한다
+\item \texttt{bb\_screen()}이 $\hat\rho_g$를 저장하지 않는다
+\item $\hat\rho_g$는 0에서 잘리므로 스케일된 $\chi^2$처럼 행동하지 않는다
+\end{choices}
+
+\item 기본 설정에서 \texttt{bb\_screen()}은 언제 과분산을 조절하는가?
+\begin{choices}
+\item 사용자가 음성 대조군을 제공할 때
+\item 설계에 그룹이 세 개 이상일 때
+\item 사용 가능한 가이드가 50개 이상일 때
+\item 항상, 가이드가 5개뿐이어도
+\end{choices}
+
+\item 전체 라이브러리 총합을 쓰는 탈락 스크린에서 귀무 가이드의 계수는
+보통 어떻게 나타나는가?
+\begin{choices}
+\item 모든 가이드가 줄어들므로 음수
+\item 정의되지 않음
+\item 0 근처
+\item 살아남은 가이드의 라이브러리 내 비율이 커지므로 양수
+\end{choices}
+
+\item \texttt{barcs\_control\_totals()}가 만드는 총합은?
+\begin{choices}
+\item 백만 리드당 수(CPM)로 정규화된 값
+\item 선택한 대조군 집합이 모든 라이브러리에서 일정한 비율을 갖도록 한 값
+\item 대조 가이드를 제외한 값
+\item FASTQ 리드 수와 같은 값
+\end{choices}
+
+\item Non-targeting 대신 safe-harbor 가이드로 정규화하면?
+\begin{choices}
+\item 공통 절단 반응이 기준에 흡수된다
+\item 모든 조성 이동과 절단 효과가 사라진다
+\item 총합이 정수가 아니게 된다
+\item 아무 효과가 없다
+\end{choices}
+
+\item \texttt{min\_scale = 1}인 \texttt{bb\_calibrate\_controls()}는?
+\begin{choices}
+\item 검정을 더 관대하게만 만든다
+\item 검정을 더 보수적으로만 만든다(또는 그대로 둔다)
+\item 유전자 배정을 바꾼다
+\item 계수 추정치를 바꾼다
+\end{choices}
+
+\item 대조군 $|t|$의 95번째 백분위수가 3.5, $\nu=4$
+($t_{4,0.975}=2.776$)이다. 꼬리 배율은 약?
+\begin{choices}
+\item 3.50
+\item 1.00
+\item 1.26
+\item 0.79
+\end{choices}
+
+\item IL2RA 분석에서 대조군 보정에 5겹 교차적합을 쓴 이유는?
+\begin{choices}
+\item 스크린에 공여자가 다섯 명이라서
+\item 계산을 빠르게 하려고
+\item 같은 대조군으로 배율을 추정하고 귀무 비율을 평가하면 5\%가 정의상
+자동으로 나오기 때문에
+\item 가이드 상관을 추정하려고
+\end{choices}
+
+\item 방향성 Stouffer에서 가이드의 부호 있는 점수는?
+\begin{choices}
+\item $-\log_{10}p_{gj}$
+\item 항상 $\hat\beta_{gj}/\mathrm{SE}_{gj}$
+\item $\operatorname{sign}(\hat\beta_{gj})\,\Phi^{-1}(1-p_{gj}/2)$
+\item $\Phi^{-1}(p_{gj})$
+\end{choices}
+
+\item BARCS가 보고하는 유전자 효과는?
+\begin{choices}
+\item 가이드 계수의 평균
+\item 가이드 계수의 중앙값
+\item Stouffer $Z$
+\item 가장 큰 가이드 계수
+\end{choices}
+
+\item 귀무 가이드 점수 $m$개가 각각 분산 1, 쌍별 상관 $r$을 가지면 합의
+분산은?
+\begin{choices}
+\item $m$
+\item $m+m(m-1)r$
+\item $m^2r$
+\item $m(1-r)$
+\end{choices}
+
+\item 가이드 5개, $r=0.4$이면 보정된 Stouffer 분모는 $\sqrt5$ 대신
+$\sqrt{13}$이다. 보정 전 $Z=2.5$($p=0.012$)는 대략?
+\begin{choices}
+\item $Z=4.0$, $p<0.001$
+\item $Z=1.55$, $p=0.12$
+\item $Z=2.5$, $p=0.012$
+\item $Z=0$, $p=1$
+\end{choices}
+
+\item BARCS가 유전자 내 상관을 잔차로 추정하는 이유는?
+\begin{choices}
+\item 실제 유전자 효과는 적합된 평균에 흡수되어 잔차 상관을 키우지 않지만,
+공유 잡음은 키우기 때문에
+\item 잔차는 설계에 의존하지 않으므로
+\item 잔차는 항상 독립이므로
+\item 잔차가 리드 수보다 작으므로
+\end{choices}
+
+\item BARCS가 \emph{서로 다른} 유전자 가이드 간 평균 상관을 빼는 이유는?
+\begin{choices}
+\item 가이드 길이를 보정하려고
+\item $\hat r$을 음수로 만들려고
+\item 서로 다른 유전자는 완벽하게 상관되어 있으므로
+\item 정규화 인공물처럼 라이브러리 전체가 공유하는 상관을 제거하려고
+\end{choices}
+
+\item 유전자 내 평균에서 각 유전자에 같은 가중치를 주는 이유는?
+\begin{choices}
+\item 추정치를 항상 0으로 만들려고
+\item 가이드가 많은 유전자가 지배하도록
+\item 필수 유전자를 무시하려고
+\item 하나의 ``유전자''로 묶인 큰 대조 가이드 집합이 추정치를 지배하지
+못하도록
+\end{choices}
+
+\item 분석한 실제 스크린에서 추정된 유전자 내 상관은?
+\begin{choices}
+\item 0.008--0.026으로, 보정에 따른 변화는 작았다
+\item 모든 스크린에서 0.5보다 컸다
+\item 약 0.4였다
+\item 정의상 정확히 0이었다
+\end{choices}
+
+\item 5\% 경험적 귀무 위양성률에서의 재현율이 FDR 0.10에서의 재현율과 다른
+점은?
+\begin{choices}
+\item 순위를 무시한다
+\item 음성 대조군이 필요하다
+\item 필수 유전자만 사용한다
+\item 방법의 $p$값이 얼마나 잘 보정되었는지에 의존하지 않는다
+\end{choices}
+
+\item Cas13 벤치마크에서 BARCS가 버전 0.2.0에서 limma와 edgeR을 따라잡은
+주된 이유는?
+\begin{choices}
+\item 7일차 라이브러리를 제거해서
+\item 음이항 가능도로 바꿔서
+\item 대조군 기반 총합을 써서
+\item 가이드 간에 정보를 빌려오는 과분산 조절 덕분에
+\end{choices}
+
+\item 한 공여자의 FACS 빈에 대한 설명으로 옳은 것은?
+\begin{choices}
+\item 분석 전에 합쳐야 한다
+\item 이항 모델이 필요하다
+\item 같은 세포를 나눠 가지므로 종속이며, 공여자 지시변수는 평균은 보정하지만
+그 종속성은 모델링하지 않는다
+\item 독립 라이브러리이므로 BARCS가 정확히 모델링한다
+\end{choices}
+
+\item 실험적 유전자 요약(\texttt{bb\_gene\_partial\_pool()} 등)을 남겨 둔
+이유는?
+\begin{choices}
+\item \texttt{bb\_screen()}에 필요하므로
+\item 보정을 대체하므로
+\item 벤치마크에서 유전자 순위가 가장 좋았으므로
+\item 민감도 분석용이다. 시뮬레이션 FACS 벤치마크에서는 Stouffer가 유전자
+순위를 더 잘 매겼다
+\end{choices}
+
+\end{enumerate}
+
+%=====================================================================
+\newpage
+\section{정답 및 해설}
+%=====================================================================
+
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.6em,itemsep=5pt]
+\item \textbf{C.} 분모는 실제로 시퀀싱한 라이브러리를 나타내야 한다. 필터링 후
+다시 계산하면 남은 모든 가이드의 비율이 조용히 바뀐다(1절).
+\item \textbf{B.} $\rho=0$이면 괄호가 1이 되어 이항분산 $N\mu(1-\mu)$만 남는다.
+\item \textbf{A.} 괄호 $(1-\rho)/N+\rho$가 $1.1\times10^{-5}$에서
+$1.01\times10^{-5}$로, 약 8\% 줄어든다. 생물학적 변동이 지배한다.
+\item \textbf{A.} $m-q$. 깊이는 라이브러리 내 정밀도에는 영향을 주지만 자유도는
+늘리지 않는다.
+\item \textbf{D.} 가이드 비율이 매우 작아 로그오즈 $\approx$ 로그 비율이므로,
+계수는 조건부 로그 배수 변화이다.
+\item \textbf{C.} 분모가 $N\rho$처럼 커지므로 가중치는 $\mu(1-\mu)/\rho$에서
+포화된다.
+\item \textbf{A.} 이항 이상의 과분산이 보이지 않으므로 $\hat\rho$를 0으로 자른다.
+\item \textbf{B.} $6-3=3$.
+\item \textbf{B.} 조절은 표준오차를 재조정하고 사전 자유도를 더한다.
+$\hat\beta_g$는 바뀌지 않는다.
+\item \textbf{A.} 사전값은 로그 평균 CPM에 대한 로그 팽창의 lowess 추세를
+따른다(\texttt{trend = FALSE}면 상수).
+\item \textbf{D.} 중심화한 로그 팽창의 분산이 $\psi'(\nu/2)$를 넘는 양을
+$\psi'(d_0/2)$와 맞춘다.
+\item \textbf{C.} $(3\cdot4+12\cdot1.5)/15=30/15=2.0$.
+\item \textbf{D.} 0에서 자르면 분포가 왜곡된다. 잘리지 않은 피어슨 팽창은
+scaled-$F$ 모델이 가정하는 $\chi^2_\nu/\nu$처럼 행동한다.
+\item \textbf{C.} 사용 가능한 가이드가 50개 미만이면 사전값을 믿을 만하게
+추정할 수 없어, 강제하지 않는 한 조절을 건너뛴다.
+\item \textbf{D.} 조성 이동: 필수 가이드가 빠지면 남은 가이드의 비율이 커져
+귀무 계수가 양수 쪽으로 이동한다.
+\item \textbf{B.} 대조군 총합은 대조군의 비율을 고정하고, 평균 라이브러리
+크기로 재조정한 뒤 반올림한다.
+\item \textbf{A.} Safe-harbor 가이드는 DNA를 자르므로, 이것으로 정규화하면
+표적 효과에서 공통 절단 반응이 빠진다.
+\item \textbf{B.} 배율의 하한이 1이므로 검정통계량은 1 이상의 수로만 나뉜다.
+\item \textbf{C.} $3.5/2.776=1.26$.
+\item \textbf{C.} 따로 떼어 둔 대조군으로 평가해야, 배율을 정한 대조군으로
+보정을 평가하는 순환 논리를 피할 수 있다.
+\item \textbf{C.} 양측 $p$값을 정규 편차로 되돌리고 계수의 부호를 붙인다.
+\item \textbf{B.} 중앙값은 극단적인 가이드 하나에 강하다.
+\item \textbf{B.} 분산 항 $m$개와 크기 $r$인 공분산 항 $m(m-1)$개의 합이다.
+\item \textbf{B.} $Z^{\text c}=2.5\sqrt5/\sqrt{13}=1.55$, $p=0.12$.
+\item \textbf{A.} 잔차는 적합된 설계 효과를 제외하므로 공유 잡음만 잔차 상관을
+만든다.
+\item \textbf{D.} 유전자 간 기준선은 특정 유전자에 고유하지 않은, 라이브러리
+전체의 상관을 제거한다.
+\item \textbf{D.} 유전자마다 같은 가중치를 주면 큰 가상 유전자가 평균을 지배하지
+못한다.
+\item \textbf{A.} 추정된 $\hat r$은 Cas13에서 0.008--0.026, IL2RA 0.011,
+Evers 0.011이었다.
+\item \textbf{D.} 대리 귀무로 위양성률을 경험적으로 고정하므로, $p$값 보정과
+무관하게 순위를 비교한다.
+\item \textbf{D.} 조절로 AP가 0.838에서 0.876으로 올랐다. 조절이 없으면 각
+가이드의 분산은 자유도 3에만 의존한다.
+\item \textbf{C.} 빈들은 하나의 세포 풀을 나누므로 음의 종속이 있다. 음성 대조군
+보정이 그로 인한 잘못된 보정을 바로잡고, Waterbear는 종속성을 직접 모델링한다.
+\item \textbf{D.} 민감도 분석용으로 남겼다. 대부분의 시뮬레이션 시나리오에서
+Stouffer의 평균정밀도와 F1이 더 높았다.
+\end{enumerate}
+
+\end{document}
