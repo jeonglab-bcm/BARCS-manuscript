@@ -91,7 +91,10 @@ if (file.exists(mageck_executable) && !file.exists(mageck_gene_path)) {
       "-d", design_path,
       "-n", mageck_prefix,
       "--norm-method", "median",
-      "--permutation-round", "1",
+      # The comparison uses only MAGeCK's beta and Wald p-value, which come
+      # from the model fit. Permutation p-values are not used, and the
+      # permutation step multiplies the run time several-fold on this design.
+      "--permutation-round", "0",
       "--threads", "4"
     )
   )
