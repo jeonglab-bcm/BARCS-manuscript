@@ -1,0 +1,3 @@
+"method","delta_AUROC","delta_average_precision","delta_recall_at_FDR_0.05","delta_F1_at_FDR_0.05"
+"beta-binomial regression",-0.011531167237456,-0.00422207574722044,-0.00265604249667994,-0.00117450996725899
+"official MAGeCK-MLE",-0.00958116135381759,-0.00332323566643367,0,0
