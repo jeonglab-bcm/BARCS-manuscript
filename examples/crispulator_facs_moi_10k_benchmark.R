@@ -140,6 +140,8 @@ fit_barcs_design <- function(counts, sample_data, guide_truth, sample_types) {
     formula = ~ phenotype_z + replicate, term = "phenotype_z",
     guide = guide_truth$guide, gene = guide_truth$gene,
     min_total_count = 30,
+    # The explicit moderation below needs the unmoderated fit.
+    moderate = FALSE,
     ncores = as.integer(Sys.getenv("BARCS_NCORES", "4"))
   )
   negative_control <- guide_truth$class == "negcontrol"
@@ -480,7 +482,18 @@ for (moi in moi_levels) {
         call. = FALSE
       )
     }
-    fitted <- fit_one_run(directory)
+    # Cache each run's evaluation so an interrupted benchmark resumes rather
+    # than restarting. The cache is keyed by the BARCS version that made it.
+    cache_path <- file.path(
+      directory,
+      paste0("evaluation_barcs_", utils::packageVersion("BARCS"), ".rds")
+    )
+    if (file.exists(cache_path)) {
+      fitted <- readRDS(cache_path)
+    } else {
+      fitted <- fit_one_run(directory)
+      saveRDS(fitted, cache_path)
+    }
     run_metrics <- fitted$point
     scan_metrics <- fitted$scan
     scan_metrics$moi <- moi

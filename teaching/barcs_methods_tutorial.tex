@@ -1,0 +1,855 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{barcsblue}{HTML}{0072B2}
+\newtcolorbox{keyidea}{colback=barcsblue!6,colframe=barcsblue,
+  fonttitle=\bfseries,title=Key idea,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{example}[1][]{colback=gray!5,colframe=gray!60,
+  fonttitle=\bfseries,title=Worked example#1,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{incode}{colback=white,colframe=gray!40,
+  fonttitle=\bfseries,title=In the package,boxrule=0.4pt,arc=2pt}
+
+\newcommand{\logit}{\operatorname{logit}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\E}{\operatorname{E}}
+
+\newlist{choices}{enumerate}{1}
+\setlist[choices]{label=(\Alph*),leftmargin=2.2em,itemsep=1pt,topsep=2pt}
+
+\title{\textbf{Understanding BARCS}\\[4pt]
+\large A self-study guide to the methodology, with worked examples,\\
+a multiple-choice quiz, and an answer key}
+\author{Prepared for Hyun-Hwan Jeong and Kyu-Won Lee}
+\date{BARCS version 0.2.0}
+
+\begin{document}
+\sloppy
+\maketitle
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{The problem BARCS solves}
+%=====================================================================
+
+A pooled CRISPR screen produces, for every guide $g$ and every sequenced
+library $i$, a read count $K_{gi}$.  Each library also has a total number of
+mapped guide reads, $N_i$.  The question of interest is how guide abundance
+depends on the experimental design: time, an ordered FACS bin, a dose, a
+donor, a treatment, or an interaction between them.
+
+CB\textsuperscript{2} answered this for two groups.  BARCS keeps the same
+sampling model but replaces the two group means with a regression on an
+arbitrary design matrix.  Three objects travel together:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Object & Shape & Rule\\
+\midrule
+\texttt{counts} & guides $\times$ libraries & raw integer read counts\\
+\texttt{totals} & one per library & unfiltered mapped-guide totals $N_i$\\
+\texttt{data} & one row per library & same order as the columns of \texttt{counts}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{keyidea}
+BARCS treats a guide's count as a proportion of its library.  The denominator
+$N_i$ is the total recorded \emph{before} any guide is filtered out, because
+removing guides and recomputing totals silently changes what every remaining
+coefficient means.
+\end{keyidea}
+
+%=====================================================================
+\section{The sampling model}
+%=====================================================================
+
+\subsection{From binomial to beta-binomial}
+
+If every library of a given condition contained exactly the same guide
+proportion $\mu_i$, sequencing would be pure binomial sampling:
+$K_{gi}\sim\mathrm{Binomial}(N_i,\mu_i)$.  Real libraries are biological
+replicates, so the true proportion itself varies from library to library.
+BARCS lets the per-library proportion $P_i$ follow a beta distribution:
+\begin{align}
+K_i \mid P_i &\sim \mathrm{Binomial}(N_i, P_i), &
+P_i &\sim \mathrm{Beta}\big(\mu_i\kappa,\,(1-\mu_i)\kappa\big), &
+\rho &= \frac{1}{\kappa+1}.
+\end{align}
+Marginally, $K_i$ is beta-binomial with mean $N_i\mu_i$ and variance
+\begin{equation}
+\Var(K_i) = N_i\mu_i(1-\mu_i)\,\{1+(N_i-1)\rho\}.
+\label{eq:var}
+\end{equation}
+The intraclass correlation $\rho\ge 0$ is the overdispersion: $\rho=0$
+recovers the binomial.
+
+\subsection{Why this separates depth from replication}
+
+Divide by $N_i$ to get the variance of the observed proportion
+$Y_i=K_i/N_i$:
+\begin{equation}
+\Var(Y_i)=\mu_i(1-\mu_i)\left\{\frac{1-\rho}{N_i}+\rho\right\}.
+\label{eq:propvar}
+\end{equation}
+The first term shrinks as sequencing depth $N_i$ grows; the second does not.
+Once a library is sequenced deeply, the remaining uncertainty is biological.
+
+\begin{example}[: deeper sequencing barely helps]
+Take $\mu=10^{-4}$ and $\rho=10^{-5}$.  The bracket in
+Equation~\eqref{eq:propvar} is
+\[
+N=10^6:\ 10^{-6}+10^{-5}=1.1\times10^{-5},\qquad
+N=10^7:\ 10^{-7}+10^{-5}=1.01\times10^{-5}.
+\]
+Ten times more reads reduce the variance by only about 8\%.  Adding a second
+\emph{library}, by contrast, halves the variance of a mean.  This is the
+whole reason BARCS takes its degrees of freedom from libraries, not reads.
+\end{example}
+
+%=====================================================================
+\section{The regression model}
+%=====================================================================
+
+For guide $g$ in library $i$,
+\begin{equation}
+K_{gi}\mid N_i\sim\mathrm{BetaBinomial}(N_i,\mu_{gi},\rho_g),\qquad
+\logit(\mu_{gi})=\mathbf{x}_i^\top\boldsymbol\beta_g .
+\label{eq:model}
+\end{equation}
+Every guide has its own coefficients $\boldsymbol\beta_g$ and its own
+dispersion $\rho_g$.  The design vector $\mathbf{x}_i$ is an ordinary row of
+an R model matrix, so \texttt{\textasciitilde{} dose + batch},
+\texttt{\textasciitilde{} replicate + time}, or
+\texttt{\textasciitilde{} knockout * treatment} all work.
+
+\paragraph{Interpreting a coefficient.}
+$\beta_{gd}$ is the change in log-odds of the guide's library share per unit
+of predictor $d$, holding the other columns fixed.  Because guide proportions
+are tiny, $\logit(\mu)\approx\log\mu$, so $\beta_{gd}$ is approximately a log
+fold change in abundance per unit of $x_d$.
+
+\paragraph{Contrasts.}
+Any linear combination $\mathbf{c}^\top\boldsymbol\beta$ can be tested, for
+example the difference between two treatment arms
+(\texttt{bb\_contrast()}).
+
+%=====================================================================
+\section{Estimation: feasible IRLS}
+%=====================================================================
+
+BARCS fits each guide separately by feasible iteratively reweighted least
+squares.  Suppressing the guide index, with current $\boldsymbol\beta$ and
+$\rho$:
+\begin{align}
+\eta_i&=\mathbf{x}_i^\top\boldsymbol\beta, &
+\mu_i&=\frac{e^{\eta_i}}{1+e^{\eta_i}},\\
+z_i&=\eta_i+\frac{Y_i-\mu_i}{\mu_i(1-\mu_i)}, &
+w_i&=\frac{N_i\mu_i(1-\mu_i)}{1+(N_i-1)\rho}.
+\end{align}
+The update is weighted least squares on the working response:
+$\widehat{\boldsymbol\beta}_{\text{new}}=(X^\top WX)^{-1}X^\top W\mathbf{z}$.
+
+\paragraph{Estimating $\rho$.}
+At each fitted mean, $\rho$ solves the Pearson estimating equation
+\begin{equation}
+\sum_{i=1}^{m}\frac{(K_i-N_i\hat\mu_i)^2}
+{N_i\hat\mu_i(1-\hat\mu_i)\{1+(N_i-1)\hat\rho\}}=m-q,
+\label{eq:pearson}
+\end{equation}
+where $m$ is the number of libraries and $q$ the number of coefficients.  The
+left side decreases in $\rho$.  Three cases arise:
+\begin{enumerate}[itemsep=1pt]
+\item If the binomial Pearson statistic ($\rho=0$) is already $\le m-q$, the
+counts are not overdispersed and $\hat\rho$ is truncated at 0.
+\item Otherwise BARCS finds the root numerically.
+\item If even $\rho$ at its upper bound leaves the statistic above $m-q$,
+$\hat\rho$ is set to the bound and the covariance is multiplied by the
+remaining Pearson scale.
+\end{enumerate}
+Coefficient and dispersion updates alternate until the coefficients change by
+less than the tolerance.
+
+\paragraph{The weight saturates.}
+For $\rho>0$, $w_i\to\mu_i(1-\mu_i)/\rho$ as $N_i\to\infty$.  A library's
+weight cannot grow without bound with depth, which is Equation~\eqref{eq:propvar}
+seen from the fitting side.
+
+\begin{incode}
+\texttt{bbreg()} fits one guide; \texttt{bb\_screen()} fits every row of the
+count matrix (optionally in parallel).  The weighted cross-products are
+computed in C++ with RcppArmadillo.
+\end{incode}
+
+%=====================================================================
+\section{Inference for a single guide}
+%=====================================================================
+
+At convergence the covariance is $\widehat{\mathrm{Cov}}(\widehat{\boldsymbol\beta})
+=(X^\top\widehat WX)^{-1}$ and, for coefficient $j$,
+\begin{equation}
+t_j=\frac{\hat\beta_j}{\sqrt{\widehat{\mathrm{Cov}}_{jj}}}\ \sim\ t_{m-q}.
+\end{equation}
+The reference degrees of freedom are $m-q$: independent libraries minus
+coefficients.  Total read count never enters.
+
+\begin{example}[: degrees of freedom in the Cas13 screens]
+Each cell line has 6 libraries (days 0, 7, 14 $\times$ 2 replicates) and the
+model \texttt{\textasciitilde{} replicate + time} has 3 coefficients
+(intercept, replicate, time).  Each guide therefore has $6-3=3$ residual
+degrees of freedom.  A variance estimated from 3 degrees of freedom is very
+noisy, which motivates the next section.
+\end{example}
+
+The $t$ reference is heavier-tailed than a normal, but it treats
+$\hat\rho$ as known.  It is not an exact correction for dispersion
+uncertainty; moderation and negative controls are the practical safeguards.
+
+%=====================================================================
+\section{Dispersion moderation (on by default)}
+%=====================================================================
+
+\subsection{The idea}
+
+With 3 residual degrees of freedom, some guides look quiet by chance and get
+tiny standard errors, others look noisy and get huge ones.  Moderation shrinks
+each guide's variance toward a library-wide trend, as limma and edgeR do.
+
+\subsection{The procedure}
+
+\begin{enumerate}[itemsep=2pt]
+\item \textbf{Raw inflation.} Let $\nu=m-q$ and
+$s_g^2=Q^{(0)}_g/\nu$, where $Q^{(0)}_g$ is the guide's Pearson statistic
+under the \emph{binomial} model.  Unlike $\hat\rho$, $s_g^2$ is not
+truncated, so it behaves like a scaled $\chi^2_\nu/\nu$.
+\item \textbf{Trend.} Fit a lowess curve of $\log s_g^2$ against log mean
+CPM (span 0.5).  Call the fitted value $\log s^2_{\text{trend},g}$.
+\item \textbf{Prior degrees of freedom (Smyth 2004).} Let
+$e_g=\log s_g^2-\log s^2_{\text{trend},g}-\psi(\nu/2)+\log(\nu/2)$, with
+$\psi$ the digamma function.  Compute
+\[
+\text{excess}=\widehat{\Var}(e_g)-\psi'(\nu/2).
+\]
+If $\text{excess}>0$, solve $\psi'(d_0/2)=\text{excess}$ for $d_0$;
+otherwise $d_0=\infty$ (complete shrinkage).
+\item \textbf{Prior scale.} $s_{0g}^2=\exp\{\log s^2_{\text{trend},g}
++\bar e+\psi(d_0/2)-\log(d_0/2)\}$.
+\item \textbf{Posterior.}
+\begin{equation}
+\tilde s_g^2=\frac{\nu s_g^2+d_0 s_{0g}^2}{\nu+d_0}.
+\end{equation}
+\item \textbf{Rescale.} The fitted standard error already reflects
+$\max(1,s_g^2)$, so
+\[
+\mathrm{SE}_{g,\text{mod}}=\mathrm{SE}_g\sqrt{\tilde s_g^2/\max(1,s_g^2)},\qquad
+t_{g,\text{mod}}=\hat\beta_g/\mathrm{SE}_{g,\text{mod}},\qquad
+\text{df}=\nu+d_0.
+\]
+\end{enumerate}
+The coefficient $\hat\beta_g$ never changes; only its standard error and
+reference distribution do.
+
+\begin{example}[: one guide]
+$\nu=3$, $s_g^2=4$, prior $s_{0g}^2=1.5$, $d_0=12$.
+\[
+\tilde s_g^2=\frac{3(4)+12(1.5)}{15}=2.0,\qquad
+\text{rescale}=\sqrt{2/4}=0.71,\qquad \text{df}=15.
+\]
+The noisy guide's standard error shrinks by 29\% and its test now uses a
+$t_{15}$ reference instead of $t_3$.  A guide with $s_g^2=0.5$ would instead
+be pulled \emph{up} toward the prior, protecting against false confidence.
+\end{example}
+
+\begin{incode}
+\texttt{bb\_screen(moderate = NULL)} moderates when at least 50 guides are
+usable; \texttt{moderate = FALSE} turns it off.  Options:
+\texttt{trend = FALSE} shrinks to one constant; \texttt{one\_way = TRUE} only
+ever raises a variance; \texttt{borrow\_df = FALSE} keeps $\nu$ degrees of
+freedom.  A result cannot be moderated twice.
+\end{incode}
+
+\paragraph{Why it matters.} In the Cas13 screens, moderation raised
+essential-gene average precision from 0.838 to 0.876, level with limma--voom
+and edgeR-QL, and improved every cell line.
+
+%=====================================================================
+\section{The denominator: what a coefficient is relative to}
+%=====================================================================
+
+\subsection{Full-library totals and composition shift}
+
+With $N_i$ as the denominator, $\beta$ measures change in library share.  If
+many guides deplete (a dropout screen), every surviving guide's share rises
+even when its absolute abundance is unchanged.  Null guides then have
+positive coefficients, and their $t$ statistics can be large.
+
+\subsection{Control-based totals}
+
+\texttt{barcs\_control\_totals()} holds a chosen control class $C$ at a
+constant share of every library:
+\begin{equation}
+N_i^{\text{ctrl}}=\operatorname{round}\!\left(
+\frac{\sum_{g\in C}K_{gi}}{\overline{\sum_{g\in C}K_{g\cdot}}}\;
+\overline{N_\cdot}\right),
+\quad\text{raised if needed so that } N_i^{\text{ctrl}}\ge\max_g K_{gi}.
+\end{equation}
+Coefficients then describe abundance relative to the controls.
+
+\begin{example}[: control totals]
+Two libraries; two control guides with 500 reads each in both; one hit with
+1,000 reads in library 1 and 100 in library 2.  Full totals are 2,000 and
+1,100 (mean 1,550).  Control totals are $1000\times1550/1000=1550$ in both
+libraries, so the controls keep the same share and the hit's depletion is
+measured against them.
+\end{example}
+
+\paragraph{Choosing the control class.} Non-targeting guides do not cut;
+safe-harbor guides cut but hit no gene.  Normalizing on safe-harbor guides
+absorbs the shared cutting response.  Guides used to build the totals should
+not also be used to judge the result.
+
+%=====================================================================
+\section{Negative-control calibration}
+%=====================================================================
+
+When the model's assumptions are violated (for example, FACS bins from one
+donor partition the same cells), null $t$ statistics are too wide.
+\texttt{bb\_calibrate\_controls()} rescales all $t$ statistics by one factor
+estimated from negative controls:
+\begin{itemize}[itemsep=1pt]
+\item \texttt{tail\_quantile}: $\text{scale}=Q_{0.95}(|t_{\text{ctrl}}|)/t_{\nu,0.975}$;
+\item \texttt{qq\_slope}: the slope, through the origin, of control quantiles
+against $t$ quantiles over the 0.50--0.95 band (less variable);
+\end{itemize}
+and then $\text{scale}\leftarrow\max(1,\text{scale})$, so calibration can only
+make tests more conservative.  Standard errors are multiplied and $t$
+statistics divided by the scale; estimates are unchanged.
+
+\begin{example}[: tail scale]
+Controls' 95th percentile of $|t|$ is 3.5 with $\nu=4$.  Since
+$t_{4,0.975}=2.776$, the scale is $3.5/2.776=1.26$: every $t$ is divided by
+1.26.
+\end{example}
+
+\paragraph{Honest evaluation.} If the same controls choose the scale and are
+then used to report the null rate, the 5\% rate is guaranteed by construction.
+The IL2RA analysis therefore uses five-fold cross-fitting: each control is
+evaluated with a scale estimated from the other four folds.
+
+%=====================================================================
+\section{From guides to genes}
+%=====================================================================
+
+\subsection{Directional Stouffer}
+
+For the $j$th valid guide of gene $g$, convert the two-sided $p$-value back to
+a signed normal score, then sum:
+\begin{equation}
+z_{gj}=\operatorname{sign}(\hat\beta_{gj})\,\Phi^{-1}\!\left(1-\tfrac{p_{gj}}{2}\right),
+\qquad
+Z_g=\frac{\sum_{j=1}^{m_g}z_{gj}}{\sqrt{m_g}},\qquad p_g=2\Phi(-|Z_g|).
+\end{equation}
+Concordant guides reinforce each other; discordant ones cancel.  The reported
+gene effect is the \emph{median} guide coefficient, which resists one extreme
+guide.  Gene $p$-values are then BH-adjusted.
+
+\subsection{The independence problem}
+
+$\sqrt{m_g}$ is the standard deviation of a sum of $m_g$ \emph{independent}
+standard normals.  But guides of one gene share every library; if they share
+noise, their null scores have positive correlation $r$, and
+\begin{equation}
+\Var\Big(\sum_j z_{gj}\Big)=m_g+m_g(m_g-1)\,r .
+\end{equation}
+BARCS divides by the square root of this instead:
+\begin{equation}
+Z_g^{\text{c}}=\frac{\sum_{j}z_{gj}}{\sqrt{m_g+m_g(m_g-1)\hat r}} .
+\end{equation}
+
+\begin{example}[: what correlation does]
+Five guides, each with $z=2.5$, so $\sum z=12.5$.  Uncorrected,
+$Z=12.5/\sqrt5=5.59$.  Suppose instead the five guides have sum
+$\sum z=5.59$ (each $z\approx1.12$).  Uncorrected $Z=2.5$, $p=0.012$.
+With $r=0.4$, the variance is $5+5\cdot4\cdot0.4=13$ and
+$Z^{\text{c}}=5.59/\sqrt{13}=1.55$, $p=0.12$: no longer significant.
+\end{example}
+
+\subsection{Estimating $r$ without being fooled by real signal}
+
+\begin{enumerate}[itemsep=2pt]
+\item Take each guide's Pearson residual vector across libraries and scale it
+to unit length.
+\item For each gene with at least two guides, average the pairwise inner
+products (correlations); then average over genes, giving each gene equal
+weight (so a large control ``gene'' cannot dominate).
+\item Do the same for deterministic pairs of guides from \emph{different}
+genes; this baseline removes correlation shared by the whole library.
+\item $\hat r=\min\{1,\max(0,\ \text{within}-\text{between})\}$.
+\end{enumerate}
+
+\begin{keyidea}
+Residuals are what is left after the fitted mean has absorbed every design
+effect, including a true gene effect.  A gene whose guides all deplete
+strongly therefore does \emph{not} have correlated residuals; only noise
+shared by its guides does.  That is why the correction does not penalize real
+hits.
+\end{keyidea}
+
+In simulations with $r=0.4$, the corrected gene-level type I error was
+0.018--0.052 versus up to 0.262 uncorrected.  In the real screens analyzed,
+$\hat r$ was 0.008--0.026, so the correction changed little there.
+
+\subsection{Experimental alternatives}
+
+Four other summaries pool effect sizes rather than tests:
+\texttt{bb\_gene\_normal()}, \texttt{bb\_gene\_consistency()},
+\texttt{bb\_gene\_partial\_pool()}, and
+\texttt{bb\_gene\_eb\_moderate()}.  They ranked genes worse than Stouffer in
+the simulated FACS benchmarks and are kept as sensitivity analyses.
+
+%=====================================================================
+\section{How the benchmarks measure success}
+%=====================================================================
+
+\begin{center}
+\begin{tabular}{lp{0.62\textwidth}}
+\toprule
+Metric & Meaning\\
+\midrule
+AUROC & Probability a random positive outranks a random negative.\\
+Average precision (AP) & Mean precision at each true positive's rank;
+sensitive to the top of the list.\\
+Recall at 5\% null FPR & Fraction of positives above the score that only
+5\% of null genes exceed; threshold-free with respect to calibration.\\
+Recall at FDR 0.10 & Fraction of positives called at the method's own
+nominal FDR; depends on calibration.\\
+Realized FDP & Fraction of calls that are false, when truth is known.\\
+Proxy null & Genes assumed null (e.g. unexpressed lncRNAs); imperfect, so
+null rates are diagnostics.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Headline results (BARCS 0.2.0).}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Benchmark & BARCS & Comparison\\
+\midrule
+Cas13 AP & 0.876 & limma 0.876, edgeR 0.874, MAGeCK 0.877\\
+Cas13 recall @ FDR 0.10 & 0.767 & 0.692--0.767\\
+IL2RA validated regulators & 23/26, 61 calls & MAGeCK 17/26, 72 calls\\
+CRISPulator F1 (moderated) & 0.847 & unmoderated 0.811\\
+Null grid, correlated guides & 0.018--0.052 & uncorrected up to 0.262\\
+A375 recall @ FDR 0.05 & 0.883 & MAGeCK 0.710\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%=====================================================================
+\section{Limitations to keep in mind}
+%=====================================================================
+
+\begin{itemize}[itemsep=2pt]
+\item \textbf{Independent libraries.} FACS bins from one donor and repeated
+harvests from one culture are dependent.  Donor indicators adjust means, and
+controls fix the miscalibration, but the dependence itself is not modeled.
+\item \textbf{Plug-in dispersion.} The $t$ reference treats $\hat\rho$ as
+known; moderation reduces, but does not remove, this approximation.
+\item \textbf{Likelihood-compatible counts.} The Cas13 benchmark used
+normalized, batch-corrected values rounded to integers; a raw-count rerun
+would be the stronger test.
+\item \textbf{Denominator choice.} Full-library and control-based
+coefficients answer different questions; choose before looking at results.
+\end{itemize}
+
+%=====================================================================
+\section{Pipeline at a glance}
+%=====================================================================
+
+\begin{enumerate}[itemsep=2pt]
+\item \texttt{barcs\_quant()}: FASTQ $\rightarrow$ \texttt{counts},
+\texttt{totals}.
+\item Optional \texttt{barcs\_control\_totals()}: choose the reference.
+\item \texttt{bb\_screen()}: per-guide beta-binomial regression, $t$ tests,
+dispersion moderation, residual correlation $\hat r$.
+\item Optional \texttt{bb\_calibrate\_controls()}: negative-control scale.
+\item \texttt{bb\_gene\_stouffer()}: correlation-aware gene statistic,
+median effect, BH FDR.
+\end{enumerate}
+
+%=====================================================================
+\newpage
+\section{Quiz}
+%=====================================================================
+
+Choose the single best answer.  The answer key with explanations follows on a
+separate page.
+
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.6em,itemsep=8pt]
+
+\item In BARCS, the total $N_i$ for library $i$ should be
+\begin{choices}
+\item the median count across guides
+\item the sum of counts after removing low-count guides
+\item the full mapped-guide total recorded before any guide filtering
+\item the number of FASTQ reads in the file
+\end{choices}
+
+\item The beta-binomial variance of a guide count is
+$N\mu(1-\mu)\{1+(N-1)\rho\}$.  Setting $\rho=0$ gives
+\begin{choices}
+\item zero variance
+\item a binomial variance
+\item a Poisson variance
+\item a negative-binomial variance
+\end{choices}
+
+\item With $\mu=10^{-4}$ and $\rho=10^{-5}$, increasing depth from $10^6$ to
+$10^7$ reads reduces the variance of the observed proportion by roughly
+\begin{choices}
+\item 8\%
+\item 50\%
+\item 90\%
+\item 0\%
+\end{choices}
+
+\item The residual degrees of freedom of a BARCS guide test are
+\begin{choices}
+\item number of independent libraries minus number of coefficients
+\item number of guides per gene minus one
+\item fixed at 30
+\item total reads minus number of coefficients
+\end{choices}
+
+\item In the model $\logit(\mu_{gi})=\mathbf x_i^\top\boldsymbol\beta_g$, a
+coefficient $\beta_{gd}$ is best interpreted as
+\begin{choices}
+\item the overdispersion of the guide
+\item the probability that the guide is essential
+\item the change in raw read count per unit of $x_d$
+\item approximately the log fold change in guide abundance per unit of
+$x_d$, holding other columns fixed
+\end{choices}
+
+\item As $N_i\to\infty$ with $\rho>0$, the IRLS weight
+$w_i=N_i\mu_i(1-\mu_i)/\{1+(N_i-1)\rho\}$
+\begin{choices}
+\item grows without bound
+\item approaches zero
+\item approaches $\mu_i(1-\mu_i)/\rho$
+\item equals $N_i$
+\end{choices}
+
+\item If a guide's binomial Pearson statistic is already below $m-q$, BARCS
+sets $\hat\rho$ to
+\begin{choices}
+\item 0
+\item the library-wide median
+\item $1/(m-q)$
+\item its upper bound
+\end{choices}
+
+\item A Cas13 cell line has 6 libraries and the model
+\texttt{\textasciitilde{} replicate + time}.  How many residual degrees of
+freedom does each guide have?
+\begin{choices}
+\item 5
+\item 3
+\item 4
+\item 2
+\end{choices}
+
+\item Dispersion moderation changes
+\begin{choices}
+\item the library totals
+\item the standard error and the reference degrees of freedom, but not
+$\hat\beta_g$
+\item the guide-to-gene assignment
+\item the coefficient estimate $\hat\beta_g$
+\end{choices}
+
+\item Moderation shrinks each guide's log variance inflation toward
+\begin{choices}
+\item a lowess trend in log mean CPM across all guides
+\item zero
+\item the inflation of the negative controls only
+\item the largest inflation in the library
+\end{choices}
+
+\item The prior degrees of freedom $d_0$ are estimated by
+\begin{choices}
+\item a fixed constant of 4
+\item maximum likelihood on the counts
+\item cross-validation on essential genes
+\item the scaled-$F$ moment method of Smyth (2004), using digamma and
+trigamma functions
+\end{choices}
+
+\item With $\nu=3$, $s_g^2=4$, $s_{0g}^2=1.5$, $d_0=12$, the moderated
+inflation $\tilde s_g^2$ is
+\begin{choices}
+\item 2.75
+\item 4.0
+\item 2.0
+\item 1.5
+\end{choices}
+
+\item Why is moderation based on $s_g^2=Q_g^{(0)}/\nu$ rather than
+on $\hat\rho_g$?
+\begin{choices}
+\item $\hat\rho_g$ depends on read depth only
+\item $s_g^2$ ignores the design
+\item $\hat\rho_g$ is not stored by \texttt{bb\_screen()}
+\item $\hat\rho_g$ is truncated at zero, so it does not behave like a
+scaled $\chi^2$ quantity
+\end{choices}
+
+\item By default, \texttt{bb\_screen()} moderates dispersions when
+\begin{choices}
+\item the user supplies negative controls
+\item the design has more than two groups
+\item at least 50 guides are usable
+\item always, even with 5 guides
+\end{choices}
+
+\item In a dropout screen with full-library totals, null guides tend to show
+\begin{choices}
+\item negative coefficients, because all guides deplete
+\item undefined coefficients
+\item coefficients centered at zero
+\item positive coefficients, because surviving guides gain library share
+\end{choices}
+
+\item \texttt{barcs\_control\_totals()} produces totals that
+\begin{choices}
+\item are normalized to counts per million
+\item hold a chosen control class at a constant share of every library
+\item exclude the control guides
+\item equal the number of FASTQ reads
+\end{choices}
+
+\item Normalizing on safe-harbor rather than non-targeting guides
+\begin{choices}
+\item absorbs the shared cutting response into the reference
+\item removes all composition shift and all cutting effects
+\item makes the totals non-integer
+\item has no effect
+\end{choices}
+
+\item \texttt{bb\_calibrate\_controls()} with \texttt{min\_scale = 1} can
+\begin{choices}
+\item only make tests more liberal
+\item only make tests more conservative (or leave them unchanged)
+\item change the gene assignment
+\item change coefficient estimates
+\end{choices}
+
+\item Control 95th percentile $|t|=3.5$ with $\nu=4$ ($t_{4,0.975}=2.776$).
+The tail scale is about
+\begin{choices}
+\item 3.50
+\item 1.00
+\item 1.26
+\item 0.79
+\end{choices}
+
+\item Why did the IL2RA analysis use five-fold cross-fitting of control
+calibration?
+\begin{choices}
+\item Because the screen has five donors
+\item To speed up computation
+\item Because estimating the scale and evaluating the null rate on the same
+controls makes a 5\% rate true by construction
+\item To estimate guide correlation
+\end{choices}
+
+\item In directional Stouffer, a guide's signed score is
+\begin{choices}
+\item $-\log_{10}p_{gj}$
+\item $\hat\beta_{gj}/\mathrm{SE}_{gj}$ always
+\item $\operatorname{sign}(\hat\beta_{gj})\,\Phi^{-1}(1-p_{gj}/2)$
+\item $\Phi^{-1}(p_{gj})$
+\end{choices}
+
+\item The reported BARCS gene effect is
+\begin{choices}
+\item the mean guide coefficient
+\item the median guide coefficient
+\item the Stouffer $Z$
+\item the largest guide coefficient
+\end{choices}
+
+\item If $m$ null guide scores each have variance 1 and pairwise correlation
+$r$, the variance of their sum is
+\begin{choices}
+\item $m$
+\item $m+m(m-1)r$
+\item $m^2r$
+\item $m(1-r)$
+\end{choices}
+
+\item With 5 guides and $r=0.4$, the corrected Stouffer denominator is
+$\sqrt{13}$ instead of $\sqrt5$.  A raw $Z=2.5$ ($p=0.012$) becomes about
+\begin{choices}
+\item $Z=4.0$, $p<0.001$
+\item $Z=1.55$, $p=0.12$
+\item $Z=2.5$, $p=0.012$
+\item $Z=0$, $p=1$
+\end{choices}
+
+\item BARCS estimates within-gene correlation from residuals because
+\begin{choices}
+\item a true gene effect is absorbed by the fitted mean, so it does not
+inflate residual correlation, whereas shared noise does
+\item residuals do not depend on the design
+\item residuals are always independent
+\item residuals are smaller than counts
+\end{choices}
+
+\item Why does BARCS subtract the average correlation of guides from
+\emph{different} genes?
+\begin{choices}
+\item To account for guide length
+\item To make $\hat r$ negative
+\item Because different genes are perfectly correlated
+\item To remove correlation shared by the whole library, such as
+normalization artifacts
+\end{choices}
+
+\item In the within-gene average, each gene receives equal weight so that
+\begin{choices}
+\item the estimate is always zero
+\item genes with many guides dominate
+\item essential genes are ignored
+\item a large group of control guides labelled as one ``gene'' cannot
+dominate the estimate
+\end{choices}
+
+\item In the real screens analyzed, the estimated within-gene correlation was
+\begin{choices}
+\item 0.008--0.026, so the correction changed little
+\item larger than 0.5 in every screen
+\item about 0.4
+\item exactly zero by definition
+\end{choices}
+
+\item Recall at a 5\% empirical null false-positive rate differs from recall
+at FDR 0.10 because it
+\begin{choices}
+\item ignores ranking
+\item requires negative controls
+\item uses only essential genes
+\item does not depend on how well the method's $p$-values are calibrated
+\end{choices}
+
+\item In the Cas13 benchmark, the main reason BARCS caught up with limma and
+edgeR in version 0.2.0 was
+\begin{choices}
+\item removing the day-7 libraries
+\item switching to a negative-binomial likelihood
+\item using control-based totals
+\item dispersion moderation borrowing strength across guides
+\end{choices}
+
+\item Which statement about FACS bins from one donor is correct?
+\begin{choices}
+\item They should be summed before analysis
+\item They require a binomial model
+\item They partition the same cells and are dependent; donor indicators
+adjust means but do not model that dependence
+\item They are independent libraries, so BARCS models them exactly
+\end{choices}
+
+\item The experimental gene summaries (\texttt{bb\_gene\_partial\_pool()},
+etc.) are kept because
+\begin{choices}
+\item they are required by \texttt{bb\_screen()}
+\item they replace calibration
+\item they ranked genes best in the benchmarks
+\item they serve as sensitivity analyses; Stouffer ranked genes better in the
+simulated FACS benchmarks
+\end{choices}
+
+\end{enumerate}
+
+%=====================================================================
+\newpage
+\section{Answer key with explanations}
+%=====================================================================
+
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.6em,itemsep=5pt]
+\item \textbf{C.} The denominator must describe the library that was
+sequenced. Recomputing it after filtering silently changes every remaining
+guide's share (Section~1).
+\item \textbf{B.} With $\rho=0$ the bracket is 1, leaving $N\mu(1-\mu)$, the
+binomial variance.
+\item \textbf{A.} The bracket $(1-\rho)/N+\rho$ goes from $1.1\times10^{-5}$
+to $1.01\times10^{-5}$, about an 8\% reduction: biological variation
+dominates.
+\item \textbf{A.} $m-q$. Depth affects precision within a library but adds no
+degrees of freedom.
+\item \textbf{D.} Guide proportions are tiny, so log-odds $\approx$ log
+proportion; the coefficient is a conditional log fold change.
+\item \textbf{C.} The denominator grows like $N\rho$, so the weight saturates
+at $\mu(1-\mu)/\rho$.
+\item \textbf{A.} No overdispersion beyond binomial is detectable, so
+$\hat\rho$ is truncated at 0.
+\item \textbf{B.} $6-3=3$.
+\item \textbf{B.} Moderation rescales the standard error and adds prior
+degrees of freedom; $\hat\beta_g$ is unchanged.
+\item \textbf{A.} The prior follows a lowess trend of log inflation against
+log mean CPM (or a constant with \texttt{trend = FALSE}).
+\item \textbf{D.} The excess variance of the centered log inflations over
+$\psi'(\nu/2)$ is matched to $\psi'(d_0/2)$.
+\item \textbf{C.} $(3\cdot4+12\cdot1.5)/15=30/15=2.0$.
+\item \textbf{D.} Truncation at zero distorts the distribution; the
+untruncated Pearson inflation behaves like a scaled $\chi^2_\nu/\nu$, which
+the scaled-$F$ model assumes.
+\item \textbf{C.} With fewer than 50 usable guides the prior cannot be
+estimated reliably, so moderation is skipped unless forced.
+\item \textbf{D.} Composition shift: as essential guides drop out, survivors
+gain share, so null coefficients shift positive.
+\item \textbf{B.} Control totals keep the control class at a fixed share,
+rescaled to the mean library size and rounded.
+\item \textbf{A.} Safe-harbor guides cut DNA, so normalizing on them removes
+the shared cutting response from targeted effects.
+\item \textbf{B.} The scale is floored at 1, so test statistics can only be
+divided by a number $\ge1$.
+\item \textbf{C.} $3.5/2.776=1.26$.
+\item \textbf{C.} A held-out evaluation avoids the circularity of judging
+calibration on the controls that set it.
+\item \textbf{C.} The two-sided $p$ is mapped back to a normal deviate and
+given the coefficient's sign.
+\item \textbf{B.} The median resists a single extreme guide.
+\item \textbf{B.} $m$ variance terms plus $m(m-1)$ covariance terms of size
+$r$.
+\item \textbf{B.} $Z^{\text c}=2.5\sqrt5/\sqrt{13}=1.55$, $p=0.12$.
+\item \textbf{A.} Residuals exclude fitted design effects, so only shared
+noise produces residual correlation.
+\item \textbf{D.} The between-gene baseline removes library-wide
+correlation that is not specific to a gene.
+\item \textbf{D.} Equal gene weighting prevents a large pseudo-gene from
+dominating the average.
+\item \textbf{A.} Estimated $\hat r$ was 0.008--0.026 (Cas13), 0.011
+(IL2RA), and 0.011 (Evers).
+\item \textbf{D.} It fixes the false-positive rate empirically using proxy
+nulls, so it compares ranking independent of $p$-value calibration.
+\item \textbf{D.} Moderation raised AP from 0.838 to 0.876; without it each
+guide's variance rests on only 3 degrees of freedom.
+\item \textbf{C.} Bins partition one cell pool and are negatively dependent;
+negative-control calibration corrects the resulting miscalibration, and
+Waterbear models the dependence directly.
+\item \textbf{D.} They are retained for sensitivity analysis; Stouffer gave
+higher average precision and F1 in most simulated scenarios.
+\end{enumerate}
+
+\end{document}

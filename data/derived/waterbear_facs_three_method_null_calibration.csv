@@ -1,4 +1,4 @@
 "analysis_protocol","guide_statistic","n_non_targeting_guides","fraction_p_below_0_05","fraction_p_below_0_10","median_p_value"
-"barcs-four-methods-v2-heldout-calibration","raw",593,0.133220910623946,0.204047217537943,0.410036627650409
-"barcs-four-methods-v2-heldout-calibration","control_calibrated_5fold_heldout",593,0.0489038785834739,0.101180438448567,0.54772760320664
-"barcs-four-methods-v2-heldout-calibration","control_calibrated_5fold_permuted",593,0.0522765598650927,0.106239460370995,0.548273886348251
+"barcs-four-methods-v2-heldout-calibration","raw",593,0.138279932546374,0.220910623946037,0.392997122938337
+"barcs-four-methods-v2-heldout-calibration","control_calibrated_5fold_heldout",593,0.0539629005059022,0.111298482293423,0.511731821024871
+"barcs-four-methods-v2-heldout-calibration","control_calibrated_5fold_permuted",593,0.0505902192242833,0.107925801011804,0.522941940558302

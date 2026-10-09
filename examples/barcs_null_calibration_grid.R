@@ -184,6 +184,8 @@ for (row_index in seq_len(nrow(grid))) {
     guide = guide,
     gene = gene,
     min_total_count = 1,
+    # The explicit moderation below needs the unmoderated fit.
+    moderate = FALSE,
     ncores = min(4L, parallel::detectCores(logical = FALSE))
   )
   moderated <- bb_moderate_dispersion(

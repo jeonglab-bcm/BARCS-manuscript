@@ -126,7 +126,9 @@ bb_gene$cnv_corrected_estimate <- bb_cnv_effect$cnv_corrected_estimate[
 bb_gene$cnv_score <- -sign(bb_gene$cnv_corrected_estimate) *
   -log10(pmax(bb_gene$p_value, .Machine$double.xmin))
 
-status <- system2(
+# MAGeCK does not depend on BARCS, so a completed run is reused rather than
+# repeated; delete the gene summaries to force a fresh MAGeCK fit.
+status <- if (file.exists(mageck_gene_path)) 0L else system2(
   mageck_executable,
   c(
     "mle",
@@ -141,7 +143,7 @@ status <- system2(
 if (status != 0 || !file.exists(mageck_gene_path)) {
   stop("Official MAGeCK test analysis failed.", call. = FALSE)
 }
-cnv_status <- system2(
+cnv_status <- if (file.exists(mageck_cnv_gene_path)) 0L else system2(
   mageck_python,
   c(
     mageck_compat,
