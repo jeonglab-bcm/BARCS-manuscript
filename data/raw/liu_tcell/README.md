@@ -20,7 +20,13 @@ The supplementary workbooks are a single archive attached to the article:
 
 - `41586_2026_10906_MOESM3_ESM.zip` — supplementary tables archive
   (`https://media.springernature.com/original/springer-static/esm/art%3A10.1038%2Fs41586-026-10906-9/MediaObjects/41586_2026_10906_MOESM3_ESM.zip`),
-  from which `Supplementary_Table_5.xlsx` is extracted.
+  from which `Supplementary_Table_5.xlsx` (focused sub-library screen) and
+  `Supplementary_Table_2.xlsx` (genome-wide screen, main Fig. 4) are extracted.
+
+Two re-analyses draw from this archive: the focused sub-library
+(`results/liu_tcell/`, from Supplementary Table 5, below) and the genome-wide
+screen (`results/liu_genomewide/`, from Supplementary Table 2, via
+`scripts/prepare_liu_genomewide.R`).
 
 ## What the script derives
 
