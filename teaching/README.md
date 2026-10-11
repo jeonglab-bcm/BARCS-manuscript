@@ -12,7 +12,7 @@ A self-study guide to the BARCS 0.2.0 methodology, with worked examples, a
 The student guide is the introductory version. It follows ASD-STE100
 Simplified Technical English (short sentences, active voice, every symbol
 defined), carries one small data set through every step with all arithmetic
-shown, and ends with a 20-question quiz whose answers show the calculation.
+shown, and ends with a 28-question quiz whose answers show the calculation.
 Its numbers come from BARCS 0.2.1 (`bbreg()` on the four-library example).
 
 The two methods tutorials use the same option order, so the answer keys are identical.
