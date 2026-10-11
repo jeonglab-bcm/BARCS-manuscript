@@ -1,0 +1,20 @@
+% BARCS student guide: both chapters in one book.
+% Build in this folder: pdflatex barcs_student_guide.tex (run twice),
+% or run ./build.sh to build this book and both chapter booklets.
+\documentclass[12pt]{article}
+\input{common/preamble}
+\standalonefalse
+\title{\textbf{How BARCS Finds Important Genes}\\[6pt]
+\large A student guide in two chapters, with worked examples and quizzes}
+\author{\guideauthor}
+\date{\guidedate}
+
+\begin{document}
+\maketitle
+\aboutbox
+\tableofcontents
+\chapterpart{1}{The ideas}{Counts, proportions, noise and the design matrix}
+\input{chapter1/chapter1}
+\chapterpart{2}{The calculations}{How BARCS fits the model and decides if an effect is real}
+\input{chapter2/chapter2}
+\end{document}

@@ -1,0 +1,61 @@
+% Shared preamble for the BARCS student guide (both chapters and the combined book).
+% Written to the rules of ASD-STE100 Simplified Technical English:
+% short sentences, active voice, present tense, one idea per sentence,
+% one meaning per word, and every symbol defined before use.
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{barcsblue}{HTML}{0072B2}
+\definecolor{barcsgreen}{HTML}{009E73}
+\definecolor{barcsorange}{HTML}{D55E00}
+
+\newtcolorbox{symbols}{colback=barcsblue!5,colframe=barcsblue,
+  fonttitle=\bfseries,title=What the symbols mean,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{worked}[1][]{colback=barcsgreen!5,colframe=barcsgreen!80!black,
+  fonttitle=\bfseries,title=Worked example#1,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{remember}{colback=barcsorange!5,colframe=barcsorange,
+  fonttitle=\bfseries,title=Remember,boxrule=0.6pt,arc=2pt}
+
+\newlist{choices}{enumerate}{1}
+\setlist[choices]{label=(\Alph*),leftmargin=2.2em,itemsep=1pt,topsep=2pt}
+\setlist{itemsep=2pt}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\setcounter{secnumdepth}{0}  % the steps carry their own numbers
+\setcounter{tocdepth}{2}
+\newif\ifstandalone
+\newcommand{\guideauthor}{Prepared for Hyun-Hwan Jeong and Kyu-Won Lee}
+\newcommand{\guidedate}{BARCS version 0.2.1 \quad$\cdot$\quad Reading level: grades 7 to 9}
+\newcommand{\aboutbox}{%
+\begin{center}
+\begin{minipage}{0.85\textwidth}
+\small
+\textbf{About this guide.} This guide explains how the BARCS computer
+program works. You need only arithmetic, fractions, percents, powers and
+square roots. The guide teaches logarithms when it uses them. Both chapters
+use the same small set of numbers, so you can follow every step. The guide
+uses the writing rules of ASD-STE100 Simplified Technical English.
+\end{minipage}
+\end{center}}
+% Divider page that opens a chapter in the combined book.
+\newcommand{\chapterpart}[3]{%
+  \clearpage
+  \addcontentsline{toc}{part}{Chapter #1: #2}%
+  \vspace*{0.25\textheight}
+  \begin{center}
+  {\Huge\bfseries Chapter #1\par}\vspace{8pt}
+  {\LARGE #2\par}\vspace{6pt}
+  {\large #3\par}
+  \end{center}
+  \clearpage}
