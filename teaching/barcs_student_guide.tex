@@ -1,0 +1,915 @@
+% BARCS student guide for grades 7-9.
+% Written to the rules of ASD-STE100 Simplified Technical English:
+% short sentences, active voice, present tense, one idea per sentence,
+% one meaning per word, and every symbol defined before use.
+% Build: pdflatex barcs_student_guide.tex (run twice for the contents list).
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{barcsblue}{HTML}{0072B2}
+\definecolor{barcsgreen}{HTML}{009E73}
+\definecolor{barcsorange}{HTML}{D55E00}
+
+\newtcolorbox{symbols}{colback=barcsblue!5,colframe=barcsblue,
+  fonttitle=\bfseries,title=What the symbols mean,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{worked}[1][]{colback=barcsgreen!5,colframe=barcsgreen!80!black,
+  fonttitle=\bfseries,title=Worked example#1,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{remember}{colback=barcsorange!5,colframe=barcsorange,
+  fonttitle=\bfseries,title=Remember,boxrule=0.6pt,arc=2pt}
+
+\newlist{choices}{enumerate}{1}
+\setlist[choices]{label=(\Alph*),leftmargin=2.2em,itemsep=1pt,topsep=2pt}
+\setlist{itemsep=2pt}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+\title{\textbf{How BARCS Finds Important Genes}\\[6pt]
+\large A student guide with worked examples and a quiz}
+\author{Prepared for Hyun-Hwan Jeong and Kyu-Won Lee}
+\date{BARCS version 0.2.1 \quad$\cdot$\quad Reading level: grades 7 to 9}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\begin{minipage}{0.85\textwidth}
+\small
+\textbf{About this guide.} This guide explains how the BARCS computer
+program works. You need only arithmetic, fractions, percents, powers and
+square roots. The guide teaches logarithms when it uses them. Each section
+uses the same small set of numbers, so you can follow every step. The guide
+uses the writing rules of ASD-STE100 Simplified Technical English.
+\end{minipage}
+\end{center}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{The experiment: a CRISPR screen}
+%=====================================================================
+
+Each cell in your body has about 20{,}000 genes. A gene is a set of
+instructions. Scientists want to know which genes a cell needs, for example
+to survive a cancer drug.
+
+A \textbf{CRISPR screen} tests thousands of genes at the same time. It works
+in four steps:
+
+\begin{enumerate}
+\item Scientists make a \textbf{library} of short pieces of RNA, called
+  \textbf{guides}. Each guide switches off one gene.
+\item They put one guide into each cell. Now each cell has one gene switched
+  off.
+\item They grow the cells. Some cells grow under normal conditions
+  (\textbf{control}). Other cells grow with a drug (\textbf{drug}).
+\item A sequencing machine reads the guides in each group. The machine
+  counts how many times it reads each guide. This number is a
+  \textbf{read count}.
+\end{enumerate}
+
+If cells need a gene to survive the drug, the cells that lose that gene die.
+Their guide becomes rare in the drug group. So the guide count goes down.
+
+\begin{remember}
+BARCS does not look at cells directly. It looks at read counts. A guide that
+becomes rare tells us that its gene is important.
+\end{remember}
+
+Scientists repeat each group more than one time. Each repeat is a
+\textbf{replicate}. Each sample that the machine reads is a \textbf{library}.
+In this guide, we use four libraries: two control replicates and two drug
+replicates.
+
+%=====================================================================
+\section{The data}
+%=====================================================================
+
+The machine gives two numbers for each library:
+
+\begin{itemize}
+\item the read count of our guide, and
+\item the total read count of all guides in that library.
+\end{itemize}
+
+Table~\ref{tab:data} shows the data for one guide. We use these numbers in
+all sections of this guide.
+
+\begin{table}[h]
+\centering
+\caption{Read counts for one guide in four libraries.}
+\label{tab:data}
+\begin{tabular}{lcrr}
+\toprule
+Library & Group & Guide count $K$ & Total count $N$\\
+\midrule
+1 & control & 180 & 1{,}000{,}000\\
+2 & control & 240 & 1{,}200{,}000\\
+3 & drug    & 120 & 1{,}000{,}000\\
+4 & drug    &  80 &   800{,}000\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{symbols}
+\begin{tabular}{@{}l p{0.78\linewidth}@{}}
+$K$ & The read count of one guide in one library. Library~1 has $K=180$.\\
+$N$ & The total read count of all guides in one library. Library~1 has
+      $N=1{,}000{,}000$.\\
+$i$ & The library number (1, 2, 3 or 4). We write $K_i$ for the count in
+      library $i$. So $K_2=240$.\\
+\end{tabular}
+\end{symbols}
+
+\begin{remember}
+Always record $N$ before you remove any guides from the table. If you remove
+guides first, the totals become wrong. Then all the later numbers become
+wrong too.
+\end{remember}
+
+%=====================================================================
+\section{Step 1: Turn counts into proportions}
+%=====================================================================
+
+Library~2 has more reads than library~1 because the machine read it more.
+So we cannot compare raw counts. We divide each count by its library total.
+The result is a \textbf{proportion}:
+\[
+p = \frac{K}{N}.
+\]
+
+Proportions are very small numbers. So we multiply by one million. The
+result is the count \textbf{per million} reads.
+
+\begin{worked}[ 1: proportions]
+\begin{tabular}{@{}lll@{}}
+Library 1: & $p = 180 \div 1{,}000{,}000 = 0.000180$ & $= 180$ per million\\
+Library 2: & $p = 240 \div 1{,}200{,}000 = 0.000200$ & $= 200$ per million\\
+Library 3: & $p = 120 \div 1{,}000{,}000 = 0.000120$ & $= 120$ per million\\
+Library 4: & $p = \phantom{0}80 \div \phantom{0,}800{,}000 = 0.000100$ & $= 100$ per million\\
+\end{tabular}
+
+\smallskip
+The two control libraries give 180 and 200 per million. The two drug
+libraries give 120 and 100 per million. The guide is less common with the
+drug.
+\end{worked}
+
+\begin{symbols}
+\begin{tabular}{@{}l p{0.78\linewidth}@{}}
+$p$ & The proportion of all reads that belong to the guide. It is always
+      between 0 and 1.\\
+\end{tabular}
+\end{symbols}
+
+%=====================================================================
+\section{Step 2: Compare the groups with a fold change}
+%=====================================================================
+
+We want one number that tells how much the guide changes. First, we combine
+the replicates of each group. We add their counts and add their totals:
+
+\[
+p_{\text{control}} = \frac{180+240}{1{,}000{,}000+1{,}200{,}000}
+ = \frac{420}{2{,}200{,}000} = 0.000191 \;(191 \text{ per million}),
+\]
+\[
+p_{\text{drug}} = \frac{120+80}{1{,}000{,}000+800{,}000}
+ = \frac{200}{1{,}800{,}000} = 0.000111 \;(111 \text{ per million}).
+\]
+
+The \textbf{fold change} is the drug proportion divided by the control
+proportion:
+\[
+\text{fold change} = \frac{p_{\text{drug}}}{p_{\text{control}}}
+ = \frac{0.000111}{0.000191} = 0.58.
+\]
+
+A fold change of 0.58 means that the guide keeps only 58\% of its control
+level. It loses 42\%.
+
+\begin{remember}
+\begin{itemize}[leftmargin=1.2em]
+\item Fold change $= 1$: no change.
+\item Fold change $< 1$: the guide becomes rarer. Cells may need this gene.
+\item Fold change $> 1$: the guide becomes more common. Losing this gene
+  may help the cells.
+\end{itemize}
+\end{remember}
+
+\subsection{Logarithms make changes symmetric}
+
+A fold change of 2 means ``double''. A fold change of 0.5 means ``half''.
+These changes have the same size, but the numbers 2 and 0.5 do not look
+equal. A \textbf{logarithm} fixes this problem.
+
+The \textbf{base-2 logarithm}, $\log_2$, tells how many times you double.
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Fold change & 0.25 & 0.5 & 1 & 2 & 4\\
+$\log_2$(fold change) & $-2$ & $-1$ & 0 & 1 & 2\\
+\bottomrule
+\end{tabular}
+\end{center}
+Now ``double'' is $+1$ and ``half'' is $-1$. The sizes look equal.
+
+\begin{worked}[ 2: log fold change]
+Our fold change is 0.58. It is between 0.5 and 1. So $\log_2(0.58)$ is
+between $-1$ and 0. A calculator gives $\log_2(0.58) = -0.78$.
+
+The guide drops by 0.78 ``halvings''.
+\end{worked}
+
+BARCS uses the \textbf{natural logarithm}, $\ln$. It counts powers of the
+number $e = 2.718\ldots$ instead of powers of 2. The idea is the same. To
+change back from $\ln$, you raise $e$ to that power: if $\ln(x) = b$, then
+$x = e^{b}$. For our guide, $\ln(0.58) = -0.54$.
+
+%=====================================================================
+\section{Step 3: Odds and log-odds}
+%=====================================================================
+
+BARCS works with \textbf{odds} instead of proportions. The odds compare the
+reads that belong to the guide with the reads that do not:
+\[
+\text{odds} = \frac{p}{1-p}.
+\]
+The \textbf{log-odds} is the natural logarithm of the odds:
+\[
+\text{log-odds} = \ln\!\left(\frac{p}{1-p}\right).
+\]
+
+\begin{worked}[ 3: odds and log-odds]
+Control: $p = 0.000191$. So
+$\text{odds} = 0.000191 \div 0.999809 = 0.000191$.
+
+The odds and the proportion are almost equal. This is true for all small
+proportions, because $1-p$ is almost 1.
+
+Log-odds for control: $\ln(0.000191) = -8.56$.\\
+Log-odds for drug: $\ln(0.000111) = -9.10$.\\
+Difference: $-9.10 - (-8.56) = -0.54$.
+
+The difference of the log-odds is $-0.54$. This is the same as
+$\ln(\text{fold change})$ from Step~2.
+\end{worked}
+
+\begin{remember}
+For guides, a difference in log-odds is almost exactly the natural log of
+the fold change. So you can read BARCS results as log fold changes.
+\end{remember}
+
+Why use log-odds at all? A proportion must stay between 0 and 1. A log-odds
+can be any number, positive or negative. This property lets BARCS add
+effects together safely, as Step~5 shows.
+
+%=====================================================================
+\section{Step 4: Two kinds of noise}
+%=====================================================================
+
+The two control libraries gave 180 and 200 per million. They are not equal.
+Replicates always differ a little. We call this difference
+\textbf{noise}. BARCS must know how big the noise is. Then it can tell a
+real change from a chance change.
+
+Guide counts have two kinds of noise:
+
+\begin{enumerate}
+\item \textbf{Counting noise.} The machine reads a random sample of all
+  the guides. Think of a bag with a million marbles. You take out a handful.
+  You do not get exactly the same number of red marbles each time.
+\item \textbf{Biological noise.} Each replicate is a different group of
+  living cells. The cells grow a little differently each time.
+\end{enumerate}
+
+BARCS measures the size of the noise with the \textbf{variance}. The
+variance is the average squared distance of a value from its expected
+value. The \textbf{standard deviation} is the square root of the variance.
+It is the typical distance in the same units as the counts.
+
+BARCS uses this formula for the variance of a guide count:
+\[
+\text{variance} = \underbrace{N\,\mu\,(1-\mu)}_{\text{counting noise}}
+ \times \underbrace{\bigl(1 + (N-1)\,\rho\bigr)}_{\text{extra biological noise}}.
+\]
+
+\begin{symbols}
+\begin{tabular}{@{}l p{0.78\linewidth}@{}}
+$\mu$ & ``mu''. The true proportion of the guide that we expect. For the
+        control group, our best value is $\mu = 0.000191$.\\
+$N$ & The library total, as before.\\
+$\rho$ & ``rho''. A number that measures the biological noise. If
+         $\rho = 0$, only counting noise exists. A bigger $\rho$ means more
+         biological noise.\\
+\end{tabular}
+\end{symbols}
+
+\begin{worked}[ 4: variance]
+Use $N = 1{,}000{,}000$ and $\mu = 0.000191$. For our guide, BARCS
+estimates $\rho = 0.000000386$.
+
+\textbf{Counting noise:}
+$N\mu(1-\mu) = 1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$.
+
+\textbf{Extra factor:}
+$1 + (N-1)\rho = 1 + 999{,}999 \times 0.000000386 = 1.39$.
+
+\textbf{Total variance:} $191 \times 1.39 = 265$.
+
+\textbf{Standard deviation:} $\sqrt{265} = 16.3$ reads.
+
+So a count of about 191 normally moves up or down by about 16. Biological
+noise adds 39\% to the counting noise.
+\end{worked}
+
+\begin{remember}
+Look at the extra factor $1 + (N-1)\rho$. It contains $N$. When the machine
+reads more, $N$ grows, and the factor grows too. So more reading does not
+remove biological noise. Only more replicates help with biological noise.
+\end{remember}
+
+%=====================================================================
+\section{Step 5: The model}
+%=====================================================================
+
+A \textbf{model} is a rule that predicts a value. BARCS predicts the
+log-odds of a guide in each library. For our two groups, the rule is:
+\[
+\text{log-odds} = \beta_0 + \beta_1 \times x.
+\]
+
+\begin{symbols}
+\begin{tabular}{@{}l p{0.78\linewidth}@{}}
+$x$ & A label for the group. $x = 0$ for control. $x = 1$ for drug.\\
+$\beta_0$ & ``beta zero''. The log-odds of the guide in the control group.
+            It is the starting level.\\
+$\beta_1$ & ``beta one''. The change in log-odds when you go from control
+            to drug. This is the \textbf{effect}. It is the most important
+            number.\\
+\end{tabular}
+\end{symbols}
+
+This rule is like the equation of a line, $y = b + m x$. The value
+$\beta_0$ is the starting point. The value $\beta_1$ is the slope.
+
+BARCS finds the values of $\beta_0$ and $\beta_1$ that fit the four
+libraries best. It also uses the noise from Step~4. Libraries with less
+noise get more weight.
+
+\begin{worked}[ 5: the model for our guide]
+BARCS gives these values:
+
+\begin{tabular}{@{}ll@{}}
+$\beta_0 = -8.565$ & (control log-odds)\\
+$\beta_1 = -0.542$ & (effect of the drug)\\
+\end{tabular}
+
+\textbf{Check the control level.} Change $-8.565$ back to a proportion.
+$e^{-8.565} = 0.000191$, which is 191 per million. This agrees with Step~2.
+
+\textbf{Read the effect.} Change $\beta_1$ back to a fold change:
+$e^{-0.542} = 0.58$. The drug keeps 58\% of the guide. This agrees with
+Step~2.
+\end{worked}
+
+BARCS can use more than one label. For example, it can include the
+replicate number, the day, or the drug dose. It adds one $\beta$ for each
+label. This is the main advantage of BARCS. Older methods compare only two
+groups.
+
+%=====================================================================
+\section{Step 6: Is the effect real?}
+%=====================================================================
+
+The effect is $\beta_1 = -0.542$. But replicates are noisy. Maybe the true
+effect is 0 and the noise made the drop. BARCS tests this question in three
+parts.
+
+\subsection{The standard error}
+
+The \textbf{standard error} (SE) tells how much the estimate of $\beta_1$
+can change because of noise. A small SE means a precise estimate. For our
+guide, BARCS gives $\text{SE} = 0.101$.
+
+\subsection{The t value}
+
+The \textbf{t value} compares the effect with its standard error:
+\[
+t = \frac{\beta_1}{\text{SE}}.
+\]
+A $t$ value far from 0 means that the effect is large compared with the
+noise.
+
+\subsection{Degrees of freedom}
+
+The \textbf{degrees of freedom} (df) tell how much information we have
+about the noise:
+\[
+\text{df} = (\text{number of libraries}) - (\text{number of } \beta \text{ values}).
+\]
+Fewer degrees of freedom mean less information. Then BARCS needs a bigger
+$t$ value before it accepts an effect as real.
+
+\subsection{The p-value}
+
+The \textbf{p-value} answers this question: ``If the true effect is 0, how
+often does noise alone give a $t$ value this far from 0?'' A small p-value
+means that noise alone seldom gives such a result. Scientists often use 0.05
+as a limit.
+
+\begin{worked}[ 6: testing the effect]
+\begin{enumerate}[leftmargin=1.4em]
+\item $t = -0.542 \div 0.101 = -5.38$.
+\item We have 4 libraries and 2 $\beta$ values. So
+  $\text{df} = 4 - 2 = 2$.
+\item With 2 degrees of freedom, a $t$ value must be farther from 0 than
+  4.30 to give $p < 0.05$. Our $t$ is $-5.38$. It is farther from 0 than
+  4.30.
+\item A computer gives the exact p-value: $p = 0.033$.
+\end{enumerate}
+The p-value is less than 0.05. So the drop is probably not only noise.
+\end{worked}
+
+\begin{remember}
+The degrees of freedom come from the number of libraries, not from the
+number of reads. A library with 100 million reads still counts as one
+library.
+\end{remember}
+
+%=====================================================================
+\section{Step 7: Borrow information from other guides}
+%=====================================================================
+
+With only 2 degrees of freedom, the noise estimate of one guide is not
+reliable. But a screen has thousands of guides. Most guides have a similar
+amount of noise. So BARCS combines two estimates:
+
+\begin{itemize}
+\item the noise of this guide, and
+\item the typical noise of guides with similar counts.
+\end{itemize}
+
+This method is \textbf{moderation}. BARCS takes a weighted average. Each
+estimate gets a number of ``votes''. The guide's own estimate gets its
+degrees of freedom as votes. The typical estimate gets the \textbf{prior
+degrees of freedom}, $d_0$. BARCS calculates $d_0$ from all the guides.
+
+\[
+\text{moderated noise} =
+\frac{\text{df} \times \text{own noise} + d_0 \times \text{typical noise}}
+     {\text{df} + d_0}.
+\]
+
+\begin{worked}[ 7: moderation]
+A guide has 3 degrees of freedom. Its own noise value is 4.0. The typical
+noise value is 1.5, with $d_0 = 12$ votes.
+\[
+\text{moderated noise} = \frac{3 \times 4.0 + 12 \times 1.5}{3 + 12}
+ = \frac{12 + 18}{15} = \frac{30}{15} = 2.0.
+\]
+The guide's noise moves from 4.0 toward 1.5. It stops at 2.0.
+\end{worked}
+
+BARCS uses moderation when it has 50 or more usable guides. Moderation
+also adds the $d_0$ votes to the degrees of freedom. So the test in Step~6
+becomes more powerful.
+
+%=====================================================================
+\section{Step 8: Check the results with control guides}
+%=====================================================================
+
+A good screen contains \textbf{non-targeting control guides}. These guides
+switch off no gene. So their true effect is 0.
+
+If the noise model is correct, about 5\% of control guides get
+$p < 0.05$ by chance. If many more control guides get $p < 0.05$, the noise
+model is too small. Then BARCS makes all the tests wider.
+
+\begin{worked}[ 8: calibration with control guides]
+A screen has 100 control guides. We expect about 5 of them to get
+$p < 0.05$. But 15 of them get $p < 0.05$. The noise is too small.
+
+BARCS finds a \textbf{scale factor} that makes the control guides behave
+correctly. Suppose that the scale factor is 1.26. BARCS divides every
+$t$ value by 1.26.
+
+A gene with $t = 3.5$ now gets $t = 3.5 \div 1.26 = 2.78$. Its p-value
+becomes larger. This change protects you from false results.
+\end{worked}
+
+The scale factor is never less than 1. So calibration can only make the
+results more careful.
+
+%=====================================================================
+\section{Step 9: From guides to genes}
+%=====================================================================
+
+Each gene usually has several guides, often 3 to 6. Each guide gives its
+own result. BARCS combines them into one result for the gene. It uses the
+\textbf{Stouffer method} in three parts.
+
+\begin{enumerate}
+\item Change each guide's p-value into a \textbf{z score}. A z score tells
+  how many standard deviations a result is from 0. The sign of the z score
+  follows the sign of the effect.
+\item Add the z scores.
+\item Divide the sum by the square root of the number of guides, $m$.
+\end{enumerate}
+\[
+Z_{\text{gene}} = \frac{z_1 + z_2 + \cdots + z_m}{\sqrt{m}}.
+\]
+
+\begin{worked}[ 9: combining three guides]
+A gene has $m = 3$ guides. Their p-values are 0.046, 0.134 and 0.012. Their
+z scores are 2.0, 1.5 and 2.5.
+\[
+Z_{\text{gene}} = \frac{2.0 + 1.5 + 2.5}{\sqrt{3}} = \frac{6.0}{1.732}
+ = 3.46.
+\]
+This $Z$ gives $p = 0.00053$ for the gene. No single guide is that strong.
+Together, the three guides give strong evidence.
+\end{worked}
+
+\subsection{When guides share noise}
+
+Sometimes the guides of one gene share noise. Then they agree more than
+they should by chance. BARCS measures this sharing with the
+\textbf{guide correlation}, $r$. It makes the bottom of the fraction bigger:
+\[
+Z_{\text{gene}} = \frac{z_1 + z_2 + \cdots + z_m}{\sqrt{m + m(m-1)\,r}}.
+\]
+
+\begin{worked}[ 10: shared noise]
+Use the same three guides and $r = 0.1$.
+The bottom becomes $\sqrt{3 + 3 \times 2 \times 0.1} = \sqrt{3.6} = 1.897$.
+So $Z_{\text{gene}} = 6.0 \div 1.897 = 3.16$, and $p = 0.0016$.
+The evidence is still strong, but less strong than before.
+\end{worked}
+
+%=====================================================================
+\section{Step 10: Many genes and false discoveries}
+%=====================================================================
+
+A screen tests about 20{,}000 genes. Suppose that no gene has an effect. If
+we use the limit $p < 0.05$, about 5\% of the genes still pass by chance.
+That is about 1{,}000 false results.
+
+So BARCS uses the \textbf{false discovery rate} (FDR). The FDR is the
+expected fraction of false results in your list of hits. BARCS calculates it
+with the \textbf{Benjamini--Hochberg method}:
+
+\begin{enumerate}
+\item Sort the genes from the smallest p-value to the largest.
+\item Give each gene a rank: 1, 2, 3, and so on.
+\item For each gene, calculate $p \times (\text{number of genes}) \div
+  \text{rank}$.
+\item Go from the bottom of the list to the top. If a value is larger than
+  the value below it, replace it with the value below it.
+\end{enumerate}
+
+\begin{worked}[ 11: false discovery rate for five genes]
+\begin{tabular}{@{}cccll@{}}
+\toprule
+Gene & Rank & $p$ & $p \times 5 \div \text{rank}$ & FDR (after part 4)\\
+\midrule
+A & 1 & 0.001 & $0.001 \times 5 \div 1 = 0.005$ & 0.005\\
+B & 2 & 0.008 & $0.008 \times 5 \div 2 = 0.020$ & 0.020\\
+C & 3 & 0.039 & $0.039 \times 5 \div 3 = 0.065$ & 0.051 (from D)\\
+D & 4 & 0.041 & $0.041 \times 5 \div 4 = 0.051$ & 0.051\\
+E & 5 & 0.600 & $0.600 \times 5 \div 5 = 0.600$ & 0.600\\
+\bottomrule
+\end{tabular}
+
+\smallskip
+With the limit $\text{FDR} < 0.05$, genes A and B are hits. With the limit
+$\text{FDR} < 0.10$, genes A, B, C and D are hits.
+\end{worked}
+
+%=====================================================================
+\section{Two special cases}
+%=====================================================================
+
+\subsection{A guide with zero reads}
+
+Sometimes a guide has 0 reads in all control libraries. Then the log-odds
+of the control group is $\ln(0)$. This value does not exist, because no
+power of $e$ equals 0. Older versions of BARCS could not fit such a guide.
+So they removed it.
+
+BARCS version 0.2.1 adds a very small number to the counts first. This
+number is less than one read. The method is the \textbf{Firth correction}.
+Now the guide gets a value, and BARCS keeps it.
+
+\subsection{A very large change}
+
+Sometimes a guide grows by hundreds of times. The usual test from Step~6
+can then fail. The standard error grows faster than the effect, so the
+$t$ value becomes small. BARCS version 0.2.1 has a second test, the
+\textbf{likelihood-ratio test}. It compares how well the model fits with
+the effect and without the effect. The option \texttt{test = "auto"} uses
+this test only for guides with very large changes.
+
+%=====================================================================
+\section{Summary: the full path}
+%=====================================================================
+
+\begin{center}
+\begin{tikzpicture}[node distance=5mm and 4mm,
+  box/.style={draw=barcsblue,fill=barcsblue!6,rounded corners=2pt,
+              align=center,minimum height=9mm,text width=3.6cm,font=\small},
+  arr/.style={-{Stealth},thick,barcsblue}]
+\node[box] (a) {Read counts $K$\\and totals $N$};
+\node[box,right=of a] (b) {Proportions\\$p = K/N$};
+\node[box,right=of b] (c) {Model:\\log-odds $= \beta_0 + \beta_1 x$};
+\node[box,below=of c] (d) {Noise: $\mu$, $\rho$\\moderation};
+\node[box,left=of d] (e) {Test: $t$, df,\\p-value};
+\node[box,left=of e] (f) {Check with\\control guides};
+\node[box,below=of f] (g) {Combine guides\\into genes ($Z$)};
+\node[box,right=of g] (h) {False discovery\\rate (FDR)};
+\node[box,right=of h] (i) {List of\\important genes};
+\draw[arr] (a)--(b); \draw[arr] (b)--(c); \draw[arr] (c)--(d);
+\draw[arr] (d)--(e); \draw[arr] (e)--(f); \draw[arr] (f)--(g);
+\draw[arr] (g)--(h); \draw[arr] (h)--(i);
+\end{tikzpicture}
+\end{center}
+
+\subsection*{All symbols in one table}
+
+\begin{center}
+\small
+\begin{tabular}{@{}l p{6.3cm} l@{}}
+\toprule
+Symbol & Meaning & Value in our example\\
+\midrule
+$K$ & read count of the guide in one library & 180, 240, 120, 80\\
+$N$ & total read count of one library & 1.0, 1.2, 1.0, 0.8 million\\
+$p$ & proportion, $K/N$ & 191 and 111 per million\\
+fold change & $p_{\text{drug}} \div p_{\text{control}}$ & 0.58\\
+$\log_2$ & number of doublings & $\log_2(0.58) = -0.78$\\
+$\ln$ & natural logarithm (powers of $e = 2.718$) & $\ln(0.58) = -0.54$\\
+log-odds & $\ln\bigl(p/(1-p)\bigr)$ & $-8.56$ (control)\\
+$\mu$ & expected proportion & 0.000191 (control)\\
+$\rho$ & biological noise & 0.000000386\\
+$x$ & group label (0 = control, 1 = drug) & 0 or 1\\
+$\beta_0$ & control log-odds in the model & $-8.565$\\
+$\beta_1$ & effect of the drug & $-0.542$\\
+SE & standard error of the effect & 0.101\\
+$t$ & effect divided by SE & $-5.38$\\
+df & libraries minus $\beta$ values & $4 - 2 = 2$\\
+$p$-value & chance of this result if the effect is 0 & 0.033\\
+$d_0$ & prior degrees of freedom (votes) & 12 (Example 7)\\
+$z$, $Z$ & z score of a guide, of a gene & 3.46 (Example 9)\\
+$m$ & number of guides for a gene & 3\\
+$r$ & guide correlation (shared noise) & 0.1 (Example 10)\\
+FDR & expected fraction of false hits & 0.005 for gene A\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Note: the letter $p$ has two uses in this guide. Alone, $p$ is a proportion.
+In the word ``p-value'', it is a probability. The text always tells you
+which one it is.
+
+\newpage
+%=====================================================================
+\section{Quiz}
+%=====================================================================
+
+Choose the best answer. The answers and calculations are in the next
+section.
+
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.6em,itemsep=6pt]
+
+\item What does one guide do in a CRISPR screen?
+\begin{choices}
+\item It counts the cells.
+\item It adds a drug to the cells.
+\item It reads the DNA.
+\item It switches off one gene.
+\end{choices}
+
+\item A library has $K = 300$ and $N = 1{,}500{,}000$. What is the count per
+million?
+\begin{choices}
+\item 200
+\item 300
+\item 450
+\item 500
+\end{choices}
+
+\item Why do we divide each count by its library total $N$?
+\begin{choices}
+\item To make the numbers bigger.
+\item Because the machine reads some libraries more than others.
+\item To remove the biological noise.
+\item Because BARCS cannot use whole numbers.
+\end{choices}
+
+\item A guide has 400 per million in control and 100 per million with a
+drug. What is the fold change?
+\begin{choices}
+\item 4
+\item 0.4
+\item 0.25
+\item 300
+\end{choices}
+
+\item What is $\log_2(8)$?
+\begin{choices}
+\item 2
+\item 3
+\item 4
+\item 8
+\end{choices}
+
+\item A gene has $\log_2(\text{fold change}) = -1$. What happened to its
+guide?
+\begin{choices}
+\item It doubled.
+\item It did not change.
+\item It dropped to half.
+\item It dropped to zero.
+\end{choices}
+
+\item For a very small proportion $p$, which statement is true?
+\begin{choices}
+\item The odds are almost equal to $p$.
+\item The odds are almost equal to 1.
+\item The odds are twice $p$.
+\item The odds are always 0.
+\end{choices}
+
+\item In the variance formula, what does $\rho = 0$ mean?
+\begin{choices}
+\item There is no noise at all.
+\item There is only counting noise.
+\item There is only biological noise.
+\item The guide has zero reads.
+\end{choices}
+
+\item Use $N\mu(1-\mu)$ with $N = 100$ and $\mu = 0.5$. What is the counting
+variance?
+\begin{choices}
+\item 25
+\item 50
+\item 0.25
+\item 100
+\end{choices}
+
+\item The machine reads each library ten times more deeply. What happens to
+the biological noise?
+\begin{choices}
+\item It disappears.
+\item It becomes ten times smaller.
+\item It does not go away. Only more replicates help.
+\item It becomes zero for control guides.
+\end{choices}
+
+\item In the model $\text{log-odds} = \beta_0 + \beta_1 x$, which value is
+the effect of the drug?
+\begin{choices}
+\item $x$
+\item $\beta_0$
+\item $\beta_1$
+\item the log-odds
+\end{choices}
+
+\item BARCS gives $\beta_1 = 0.69$ for a guide. Use $e^{0.69} = 2.0$. What
+does this mean?
+\begin{choices}
+\item The guide halves with the drug.
+\item The guide does not change.
+\item The guide disappears.
+\item The guide doubles with the drug.
+\end{choices}
+
+\item An experiment has 6 libraries. The model has 3 $\beta$ values. How many
+degrees of freedom does it have?
+\begin{choices}
+\item 3
+\item 2
+\item 6
+\item 9
+\end{choices}
+
+\item An effect is $\beta_1 = -0.8$ with $\text{SE} = 0.2$. What is the $t$
+value?
+\begin{choices}
+\item $-0.16$
+\item $-1.0$
+\item $-0.6$
+\item $-4.0$
+\end{choices}
+
+\item A guide has df $= 2$ and its own noise 5.0. The typical noise is 2.0
+with $d_0 = 8$. What is the moderated noise?
+\begin{choices}
+\item 2.0
+\item 3.5
+\item 5.0
+\item 2.6
+\end{choices}
+
+\item A screen has 200 control guides. About how many should get $p < 0.05$
+by chance?
+\begin{choices}
+\item 0
+\item 5
+\item 10
+\item 50
+\end{choices}
+
+\item A gene has 4 guides, each with $z = 1.0$. What is $Z_{\text{gene}}$
+(no shared noise)?
+\begin{choices}
+\item 1.0
+\item 2.0
+\item 4.0
+\item 0.5
+\end{choices}
+
+\item Three genes have p-values 0.01, 0.02 and 0.30. What is the
+Benjamini--Hochberg value $p \times 3 \div \text{rank}$ for the second gene?
+\begin{choices}
+\item 0.02
+\item 0.06
+\item 0.30
+\item 0.03
+\end{choices}
+
+\item Why does BARCS 0.2.1 add a very small number to the counts of some
+guides?
+\begin{choices}
+\item Because $\ln(0)$ does not exist when a group has zero reads.
+\item To make all guides look important.
+\item To increase the library totals.
+\item To remove control guides.
+\end{choices}
+
+\item Which action gives BARCS more information about biological noise?
+\begin{choices}
+\item Read each library more deeply.
+\item Use fewer guides.
+\item Add more replicate libraries.
+\item Use a larger p-value limit.
+\end{choices}
+
+\end{enumerate}
+
+\newpage
+%=====================================================================
+\section{Answers and calculations}
+%=====================================================================
+
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.6em,itemsep=6pt]
+\item \textbf{D.} Each guide switches off one gene (Section~1).
+\item \textbf{A.} $300 \div 1{,}500{,}000 = 0.0002$. Then
+  $0.0002 \times 1{,}000{,}000 = 200$ per million.
+\item \textbf{B.} Libraries get different numbers of reads. Division by $N$
+  makes them comparable (Step~1).
+\item \textbf{C.} $100 \div 400 = 0.25$. The guide keeps one quarter of its
+  control level.
+\item \textbf{B.} $2 \times 2 \times 2 = 8$. You double three times, so
+  $\log_2(8) = 3$.
+\item \textbf{C.} $-1$ means one halving (Step~2).
+\item \textbf{A.} $1 - p$ is almost 1, so $p/(1-p)$ is almost $p$
+  (Step~3).
+\item \textbf{B.} The extra factor becomes $1 + (N-1) \times 0 = 1$. Only
+  counting noise stays (Step~4).
+\item \textbf{A.} $100 \times 0.5 \times (1 - 0.5) = 100 \times 0.5 \times
+  0.5 = 25$.
+\item \textbf{C.} The factor $1 + (N-1)\rho$ grows with $N$. Deeper reading
+  does not remove biological noise (Step~4).
+\item \textbf{C.} $\beta_1$ is the change from control ($x = 0$) to drug
+  ($x = 1$) (Step~5).
+\item \textbf{D.} The fold change is $e^{0.69} = 2.0$. The guide doubles.
+\item \textbf{A.} $\text{df} = 6 - 3 = 3$ (Step~6).
+\item \textbf{D.} $t = -0.8 \div 0.2 = -4.0$.
+\item \textbf{D.} $(2 \times 5.0 + 8 \times 2.0) \div (2 + 8) = (10 + 16)
+  \div 10 = 26 \div 10 = 2.6$ (Step~7).
+\item \textbf{C.} $5\% \text{ of } 200 = 0.05 \times 200 = 10$ (Step~8).
+\item \textbf{B.} $(1.0+1.0+1.0+1.0) \div \sqrt{4} = 4.0 \div 2 = 2.0$
+  (Step~9).
+\item \textbf{D.} The second gene has rank 2. So
+  $0.02 \times 3 \div 2 = 0.03$ (Step~10).
+\item \textbf{A.} With zero reads, the log-odds is $\ln(0)$, which does not
+  exist. The Firth correction fixes this problem.
+\item \textbf{C.} Degrees of freedom come from libraries. Only more
+  replicates add information about biological noise (Steps~4 and~6).
+\end{enumerate}
+
+\end{document}
