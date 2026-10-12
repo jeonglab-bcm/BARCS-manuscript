@@ -1,0 +1,647 @@
+% Slides for Chapter 1 of the BARCS student guide: the ideas.
+% Build in this folder: pdflatex barcs_slides_ch1.tex (run twice).
+\documentclass[aspectratio=169,11pt]{beamer}
+\input{slides_preamble}
+\title{How BARCS Finds Important Genes}
+\subtitle{Chapter 1: The ideas}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{The plan for Chapter 1}
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+\begin{enumerate}
+\item The experiment: a CRISPR screen
+\item The data
+\item Step 1: Turn counts into proportions
+\item Step 2: Compare the groups with a fold change
+\item Step 3: Odds and log-odds
+\item Step 4: Two kinds of noise
+\item Step 5: The design matrix
+\end{enumerate}
+\end{column}
+\begin{column}{0.4\textwidth}
+\begin{remember}
+Each section of these slides has the same title as a section of the
+textbook. The examples use the same numbers.
+\end{remember}
+\end{column}
+\end{columns}
+\end{frame}
+
+%=====================================================================
+\section{The experiment: a CRISPR screen}
+%=====================================================================
+
+\begin{frame}{What scientists want to know}
+\begin{itemize}
+\item Each cell has about 20{,}000 genes.
+\item A gene is a set of instructions.
+\item Question: which genes does a cell need, for example to survive a
+  cancer drug?
+\end{itemize}
+\bigskip
+A \alert{CRISPR screen} tests thousands of genes at the same time.
+\end{frame}
+
+\begin{frame}{A CRISPR screen in four steps}
+\begin{enumerate}
+\item Make a \alert{library} of short pieces of RNA, called \alert{guides}.
+  Each guide switches off one gene.
+\item Put one guide into each cell. Now each cell has one gene switched off.
+\item Grow the cells: some in normal conditions (\alert{control}), some
+  with a drug (\alert{drug}).
+\item A sequencing machine counts each guide. This number is a
+  \alert{read count}.
+\end{enumerate}
+\medskip
+\begin{center}
+\begin{tikzpicture}[node distance=6mm,
+  st/.style={draw=barcsblue,fill=barcsblue!8,rounded corners=2pt,align=center,
+             minimum height=8mm,text width=2.6cm,font=\small},
+  ar/.style={-{Stealth},thick,barcsblue}]
+\node[st] (a) {Library of guides};
+\node[st,right=of a] (b) {One guide per cell};
+\node[st,right=of b] (c) {Grow: control and drug};
+\node[st,right=of c] (d) {Count the guides};
+\draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d);
+\end{tikzpicture}
+\end{center}
+\end{frame}
+
+\begin{frame}{Why a count tells us about a gene}
+\begin{itemize}
+\item Suppose cells need a gene to survive the drug.
+\item Cells that lose that gene die.
+\item So their guide becomes \alert{rare} in the drug group.
+\end{itemize}
+\bigskip
+\begin{remember}
+BARCS does not look at cells directly. It looks at read counts. A guide
+that becomes rare tells us that its gene is important.
+\end{remember}
+\end{frame}
+
+\begin{frame}{Replicates and libraries}
+\begin{itemize}
+\item Scientists repeat each group more than one time.
+  Each repeat is a \alert{replicate}.
+\item Each sample that the machine reads is a \alert{library}.
+\item Our example has \alert{four libraries}:
+  \begin{itemize}
+  \item two control replicates
+  \item two drug replicates
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+%=====================================================================
+\section{The data}
+%=====================================================================
+
+\begin{frame}{Read counts for one guide}
+\centering
+\datatable
+
+\smallskip
+\small We use these numbers on every slide.
+\medskip
+
+\begin{symbols}
+\small
+$K$: the read count of one guide in one library (library~1: $K = 180$).\quad
+$N$: the total read count of one library (library~1: $N = 1{,}000{,}000$).\quad
+$i$: the library number ($K_2 = 240$).
+\end{symbols}
+\end{frame}
+
+\begin{frame}{Record the totals first}
+\begin{remember}
+Always record $N$ \emph{before} you remove any guides from the table.
+
+If you remove guides first, the totals become wrong. Then all the later
+numbers become wrong too.
+\end{remember}
+\end{frame}
+
+%=====================================================================
+\section{Step 1: Turn counts into proportions}
+%=====================================================================
+
+\begin{frame}{Divide each count by its library total}
+\begin{itemize}
+\item Library 2 has more reads only because the machine read it more.
+\item So we cannot compare raw counts.
+\item Divide each count by its total. The result is a \alert{proportion}:
+\end{itemize}
+\[
+p = \frac{K}{N}
+\]
+\begin{itemize}
+\item Proportions are tiny. Multiply by one million: \alert{per million}
+  reads.
+\end{itemize}
+\begin{symbols}
+\small $p$: the proportion of all reads that belong to the guide. Always
+between 0 and 1.
+\end{symbols}
+\end{frame}
+
+\begin{frame}{Worked example: proportions}
+\begin{worked}[ 1]
+\small
+\begin{tabular}{@{}lll@{}}
+Library 1: & $180 \div 1{,}000{,}000 = 0.000180$ & $= 180$ per million\\
+Library 2: & $240 \div 1{,}200{,}000 = 0.000200$ & $= 200$ per million\\
+Library 3: & $120 \div 1{,}000{,}000 = 0.000120$ & $= 120$ per million\\
+Library 4: & $\phantom{0}80 \div \phantom{0,}800{,}000 = 0.000100$ & $= 100$ per million\\
+\end{tabular}
+\end{worked}
+\begin{itemize}
+\item Control: 180 and 200 per million.
+\item Drug: 120 and 100 per million.
+\item The guide is \alert{less common} with the drug.
+\end{itemize}
+\end{frame}
+
+%=====================================================================
+\section{Step 2: Compare the groups with a fold change}
+%=====================================================================
+
+\begin{frame}{Combine the replicates of each group}
+Add the counts and add the totals of each group:
+\[
+p_{\text{control}} = \frac{180+240}{1{,}000{,}000+1{,}200{,}000}
+ = \frac{420}{2{,}200{,}000} = 0.000191 \quad (191 \text{ per million})
+\]
+\[
+p_{\text{drug}} = \frac{120+80}{1{,}000{,}000+800{,}000}
+ = \frac{200}{1{,}800{,}000} = 0.000111 \quad (111 \text{ per million})
+\]
+\end{frame}
+
+\begin{frame}{The fold change}
+\[
+\text{fold change} = \frac{p_{\text{drug}}}{p_{\text{control}}}
+ = \frac{0.000111}{0.000191} = 0.58
+\]
+The guide keeps only 58\% of its control level. It loses 42\%.
+\medskip
+\begin{remember}
+\begin{itemize}
+\item Fold change $= 1$: no change.
+\item Fold change $< 1$: the guide becomes rarer. Cells may need this gene.
+\item Fold change $> 1$: the guide becomes more common. Losing this gene may
+  help the cells.
+\end{itemize}
+\end{remember}
+\end{frame}
+
+\begin{frame}{Logarithms make changes symmetric}
+\begin{itemize}
+\item ``Double'' is a fold change of 2. ``Half'' is 0.5.
+\item Same size of change, but 2 and 0.5 do not look equal.
+\item The \alert{base-2 logarithm}, $\log_2$, counts how many times you
+  double.
+\end{itemize}
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Fold change & 0.25 & 0.5 & 1 & 2 & 4\\
+$\log_2$(fold change) & $-2$ & $-1$ & 0 & 1 & 2\\
+\bottomrule
+\end{tabular}
+\end{center}
+Now ``double'' is $+1$ and ``half'' is $-1$.
+\end{frame}
+
+\begin{frame}{Worked example: log fold change}
+\begin{worked}[ 2]
+Our fold change is 0.58, between 0.5 and 1.
+So $\log_2(0.58)$ is between $-1$ and 0.
+
+A calculator gives $\log_2(0.58) = -0.78$: the guide drops by 0.78
+``halvings''.
+\end{worked}
+\begin{itemize}
+\item BARCS uses the \alert{natural logarithm}, $\ln$: powers of
+  $e = 2.718\ldots$ instead of powers of 2.
+\item To go back: if $\ln(x) = b$, then $x = e^{b}$.
+\item For our guide: $\ln(0.58) = -0.54$.
+\end{itemize}
+\end{frame}
+
+%=====================================================================
+\section{Step 3: Odds and log-odds}
+%=====================================================================
+
+\begin{frame}{Odds and log-odds}
+The \alert{odds} compare the reads of the guide with all other reads:
+\[
+\text{odds} = \frac{p}{1-p}
+\]
+The \alert{log-odds} is the natural logarithm of the odds:
+\[
+\text{log-odds} = \ln\!\left(\frac{p}{1-p}\right)
+\]
+\end{frame}
+
+\begin{frame}{Worked example: odds and log-odds}
+\begin{worked}[ 3]
+Control: $p = 0.000191$, so odds $= 0.000191 \div 0.999809 = 0.000191$.
+
+For small $p$, the odds and the proportion are almost equal, because $1-p$
+is almost 1.
+
+\begin{tabular}{@{}ll@{}}
+Log-odds, control: & $\ln(0.000191) = -8.56$\\
+Log-odds, drug:    & $\ln(0.000111) = -9.10$\\
+Difference:        & $-9.10 - (-8.56) = -0.54$\\
+\end{tabular}
+
+The difference is the same as $\ln(\text{fold change})$ from Step~2.
+\end{worked}
+\end{frame}
+
+\begin{frame}{Why use log-odds?}
+\begin{remember}
+For guides, a difference in log-odds is almost exactly the natural log of
+the fold change. So you can read BARCS results as log fold changes.
+\end{remember}
+\medskip
+\begin{itemize}
+\item A proportion must stay between 0 and 1.
+\item A log-odds can be any number, positive or negative.
+\item So BARCS can add effects together safely (Step 5).
+\end{itemize}
+\end{frame}
+
+%=====================================================================
+\section{Step 4: Two kinds of noise}
+%=====================================================================
+
+\begin{frame}{Replicates are never equal}
+\begin{itemize}
+\item The two control libraries gave 180 and 200 per million.
+\item This difference is \alert{noise}.
+\item BARCS must know the size of the noise to tell a real change from a
+  chance change.
+\end{itemize}
+\medskip
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\begin{block}{1. Counting noise}
+The machine reads a random sample. Like a handful from a bag of a million
+marbles: the number of red marbles changes each time.
+\end{block}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{2. Biological noise}
+Each replicate is a different group of living cells. The cells grow a
+little differently each time.
+\end{block}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{The variance of a guide count}
+\begin{itemize}
+\item \alert{Variance}: the average squared distance from the expected
+  value.
+\item \alert{Standard deviation}: the square root of the variance, in the
+  units of the counts.
+\end{itemize}
+\[
+\text{variance} = \underbrace{N\,\mu\,(1-\mu)}_{\text{counting noise}}
+ \times \underbrace{\bigl(1 + (N-1)\,\rho\bigr)}_{\text{extra biological noise}}
+\]
+\begin{symbols}
+\small
+$\mu$ (``mu''): the expected proportion. Control: $\mu = 0.000191$.\quad
+$\rho$ (``rho''): the biological noise. $\rho = 0$ means counting noise only.
+\end{symbols}
+\end{frame}
+
+\begin{frame}{Worked example: variance}
+\begin{worked}[ 4]
+Use $N = 1{,}000{,}000$ and $\mu = 0.000191$. BARCS estimates
+$\rho = 0.000000386$.
+
+\begin{tabular}{@{}ll@{}}
+Counting noise: & $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$\\
+Extra factor: & $1 + 999{,}999 \times 0.000000386 = 1.39$\\
+Total variance: & $191 \times 1.39 = 265$\\
+Standard deviation: & $\sqrt{265} = 16.3$ reads\\
+\end{tabular}
+
+A count near 191 normally moves up or down by about 16. Biological noise
+adds 39\%.
+\end{worked}
+\end{frame}
+
+\begin{frame}{More reads do not remove biological noise}
+\begin{remember}
+The extra factor $1 + (N-1)\rho$ contains $N$.
+
+When the machine reads more, $N$ grows, and the factor grows too.
+
+So more reading does not remove biological noise. Only \alert{more
+replicates} help.
+\end{remember}
+\end{frame}
+
+%=====================================================================
+\section{Step 5: The design matrix}
+%=====================================================================
+
+\begin{frame}{What a design matrix is}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+A \alert{design matrix} $X$ is a table of numbers:
+\begin{itemize}
+\item one \alert{row} for each library
+\item one \alert{column} for each $\beta$ value
+\end{itemize}
+\medskip
+\centering
+\begin{tabular}{lc|cc}
+\toprule
+Lib. & Group & Intercept & Drug\\
+\midrule
+1 & control & 1 & 0\\
+2 & control & 1 & 0\\
+3 & drug    & 1 & 1\\
+4 & drug    & 1 & 1\\
+\bottomrule
+\end{tabular}
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{symbols}
+\small
+\textbf{Intercept}: a column of 1s. It belongs to $\beta_0$, the starting
+level.
+
+\textbf{Drug}: 1 for a drug library, 0 for control. It belongs to
+$\beta_1$.
+
+$\beta_0$: the control log-odds.
+
+$\beta_1$: the change from control to drug. This is the \alert{effect}.
+\end{symbols}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{From the design matrix to a prediction}
+Take the row of a library. Multiply each number by its $\beta$. Add:
+\[
+\eta = (\text{column 1}) \times \beta_0 + (\text{column 2}) \times \beta_1
+\]
+\begin{worked}[ 5: predictions]
+BARCS finds $\beta_0 = -8.565$ and $\beta_1 = -0.542$ (Step 6 in
+Chapter~2).
+
+\begin{tabular}{@{}lll@{}}
+Libraries 1, 2 (row 1, 0): & $1 \times (-8.565) + 0 \times (-0.542)$ & $= -8.565$\\
+Libraries 3, 4 (row 1, 1): & $1 \times (-8.565) + 1 \times (-0.542)$ & $= -9.107$\\
+\end{tabular}
+
+Control gets $\beta_0$. Drug gets $\beta_0 + \beta_1$. So $\beta_1$ is the
+difference.
+\end{worked}
+\end{frame}
+
+\begin{frame}{From log-odds back to counts}
+\[
+\mu = \frac{e^{\eta}}{1 + e^{\eta}}, \qquad \text{expected count} = N \times \mu
+\]
+\begin{worked}[ 6: expected counts]
+\small
+Control: $e^{-8.565} = 0.000190676$, so $\mu = 0.000190640$ (190.6 per
+million). Drug: $\mu = 0.000110827$ (110.8 per million).
+
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Library & $N$ & $\mu$ (per million) & Expected $N\mu$ & Real $K$\\
+\midrule
+1 & 1{,}000{,}000 & 190.6 & 190.6 & 180\\
+2 & 1{,}200{,}000 & 190.6 & 228.8 & 240\\
+3 & 1{,}000{,}000 & 110.8 & 110.8 & 120\\
+4 &   800{,}000 & 110.8 &  88.7 &  80\\
+\bottomrule
+\end{tabular}
+
+The differences ($-10.6$, $+11.2$, $+9.2$, $-8.7$) are the noise.
+\end{worked}
+\end{frame}
+
+\begin{frame}{The reference group}
+\begin{itemize}
+\item Control has 0 in the drug column. So control is the
+  \alert{reference group}.
+\item $\beta_1$ always compares a group with the reference group.
+\item If drug becomes the reference group, $\beta_1$ changes sign:
+  $+0.542$. The meaning stays the same.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Paired replicates: add a column}
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\small
+If replicate 1 of control and drug come from the same batch, add a batch
+column:
+
+\medskip
+\begin{tabular}{lc|ccc}
+\toprule
+Lib. & Rep. & Int. & Rep.\,2 & Drug\\
+\midrule
+1 & 1 & 1 & 0 & 0\\
+2 & 2 & 1 & 1 & 0\\
+3 & 1 & 1 & 0 & 1\\
+4 & 2 & 1 & 1 & 1\\
+\bottomrule
+\end{tabular}
+
+\medskip
+Each new column costs one degree of freedom.
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{worked}[ 7: the paired model]
+\small
+Drug effect: $\beta = -0.544$, SE 0.143.
+
+Degrees of freedom: $4 - 3 = 1$ (was 2).
+
+p-value: 0.164 (was 0.033).
+
+The batch difference is only 0.005. The column costs information and gives
+nothing back.
+\end{worked}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Numbers instead of groups: a time course}
+\begin{columns}[T]
+\begin{column}{0.44\textwidth}
+\centering
+\begin{tabular}{lc|cc}
+\toprule
+Lib. & Day & Int. & Day $\div$ 14\\
+\midrule
+1, 2 & 0  & 1 & 0\\
+3, 4 & 7  & 1 & 0.5\\
+5, 6 & 14 & 1 & 1\\
+\bottomrule
+\end{tabular}
+
+\medskip
+\raggedright\small $\beta_1$ is the change in log-odds over 14 days.
+\end{column}
+\begin{column}{0.52\textwidth}
+\begin{worked}[ 8: a time course]
+\small
+Suppose $\beta_1 = -0.70$.
+
+Day 14: $1 \times (-0.70) = -0.70$; $e^{-0.70} = 0.50$. Half.
+
+Day 7: $0.5 \times (-0.70) = -0.35$; $e^{-0.35} = 0.70$. 70\%.
+
+Degrees of freedom: $6 - 2 = 4$.
+\end{worked}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Two factors and an interaction}
+\begin{center}
+\begin{tabular}{l|cccc}
+\toprule
+Group & Intercept & Knockout & Drug & Knockout $\times$ Drug\\
+\midrule
+normal, no drug   & 1 & 0 & 0 & 0\\
+knockout, no drug & 1 & 1 & 0 & 0\\
+normal, drug      & 1 & 0 & 1 & 0\\
+knockout, drug    & 1 & 1 & 1 & 1\\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{itemize}
+\item The last column is knockout $\times$ drug. It is 1 only when both are
+  1.
+\item Its $\beta$ is the \alert{interaction}: the extra change that happens
+  only when both changes happen together.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Worked example: reading an interaction}
+\begin{worked}[ 9]
+The four $\beta$ values are $-8.5$, $-0.2$, $+0.1$ and $-0.7$.
+
+\begin{tabular}{@{}ll@{}}
+normal, no drug:   & $-8.5$\\
+knockout, no drug: & $-8.5 + (-0.2) = -8.7$\\
+normal, drug:      & $-8.5 + 0.1 = -8.4$\\
+knockout, drug:    & $-8.5 + (-0.2) + 0.1 + (-0.7) = -9.3$\\
+\end{tabular}
+
+If the effects only added up: $-8.5 - 0.2 + 0.1 = -8.6$. The real value
+is $-9.3$. The extra $-0.7$ is the interaction.
+\end{worked}
+\end{frame}
+
+\begin{frame}{Comparing two treatments: a contrast}
+\begin{itemize}
+\item Three groups: control, drug A, drug B.
+\item $\beta_A$ compares drug A with control. $\beta_B$ compares drug B with
+  control.
+\item To compare drug A with drug B, subtract: $\beta_A - \beta_B$. This is
+  a \alert{contrast}.
+\item In BARCS: \texttt{bb\_contrast()}.
+\end{itemize}
+\medskip
+Example: $\beta_A = -0.9$, $\beta_B = -0.4$, so
+$\beta_A - \beta_B = -0.5$. Drug A lowers the guide more.
+\end{frame}
+
+\begin{frame}{Rules for a good design matrix}
+\begin{enumerate}
+\item One row for each library, in the order of the count table.
+\item One column for each $\beta$ that you want.
+\item More rows than columns. The difference is the degrees of freedom.
+  Two or more is better than one.
+\item No two columns with the same information.
+\end{enumerate}
+\medskip
+\begin{remember}
+Suppose all drug libraries come from batch 2 and all control libraries from
+batch 1. Then the batch column equals the drug column. BARCS cannot
+separate the drug effect from the batch effect.
+\end{remember}
+\end{frame}
+
+\begin{frame}[fragile]{The design matrix in R}
+\small A \alert{formula} describes $X$. \texttt{model.matrix()} builds it:
+\footnotesize
+\begin{verbatim}
+> data <- data.frame(group = c("control", "control", "drug", "drug"))
+> model.matrix(~ group, data)
+  (Intercept) groupdrug
+1           1         0
+2           1         0
+3           1         1
+4           1         1
+\end{verbatim}
+\small Then give BARCS the counts, totals, formula and column name:
+\footnotesize
+\begin{verbatim}
+fit <- bb_screen(counts, data, formula = ~ group,
+                 term = "groupdrug", totals = totals)
+\end{verbatim}
+\small Paired: \texttt{\textasciitilde\ replicate + group}.\quad
+Interaction: \texttt{\textasciitilde\ knockout * drug}.
+\end{frame}
+
+%=====================================================================
+\section{Chapter 1 summary}
+%=====================================================================
+
+\begin{frame}{What Chapter 1 showed}
+\begin{enumerate}
+\item BARCS turns read counts into proportions (Step 1).
+\item It compares groups with a fold change and its logarithm (Step 2).
+\item It works on the log-odds scale (Step 3).
+\item It separates counting noise from biological noise (Step 4).
+\item It describes the experiment with a design matrix (Step 5).
+\end{enumerate}
+\medskip
+\alert{Chapter 2} shows how BARCS calculates the effect and decides if it
+is real.
+\end{frame}
+
+\begin{frame}{The symbols of Chapter 1}
+\centering\footnotesize\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Symbol & Meaning & Value in our example\\
+\midrule
+$K$ & read count of the guide in one library & 180, 240, 120, 80\\
+$N$ & total read count of one library & 1.0, 1.2, 1.0, 0.8 million\\
+$p$ & proportion, $K/N$ & 191 and 111 per million\\
+fold change & $p_{\text{drug}} \div p_{\text{control}}$ & 0.58\\
+$\log_2$, $\ln$ & doublings; powers of $e$ & $-0.78$; $-0.54$\\
+log-odds & $\ln\bigl(p/(1-p)\bigr)$ & $-8.56$ (control)\\
+$\mu$ & expected proportion & 0.000191 (control)\\
+$\rho$ & biological noise & 0.000000386\\
+$X$ & design matrix: a row per library, a column per $\beta$ & 4 rows, 2 columns\\
+$\beta_0$, $\beta_1$ & control log-odds; effect of the drug & $-8.565$; $-0.542$\\
+$\eta$ & predicted log-odds (row of $X$ times $\beta$) & $-8.565$, $-9.107$\\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+\end{document}

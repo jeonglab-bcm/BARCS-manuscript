@@ -7,6 +7,7 @@ A self-study guide to the BARCS 0.2.0 methodology, with worked examples, a
 |---|---|---|
 | `student_guide/barcs_student_guide.pdf` | English, grades 7-9 | `student_guide/build.sh`; both chapters in one book; start here |
 | `student_guide/chapter1/barcs_student_guide_ch1.pdf` | English, grades 7-9 | Chapter 1, the ideas: counts, proportions, log-odds, noise, the design matrix (16-question quiz) |
+| `student_guide/slides/barcs_slides_ch1.pdf`, `barcs_slides_ch2.pdf` | English, grades 7-9 | Beamer slides (16:9) that follow the two chapters step by step, with the same examples and numbers; no quiz |
 | `student_guide/chapter2/barcs_student_guide_ch2.pdf` | English, grades 7-9 | Chapter 2, the calculations: fitting, noise, standard error, moderation, calibration, genes, FDR (12-question quiz) |
 | `barcs_methods_tutorial.tex` / `.pdf` | English | `pdflatex` (or `latexmk -pdf`) |
 | `barcs_methods_tutorial_ko.tex` / `.pdf` | Korean | `xelatex` (or `latexmk -xelatex`); needs `kotex` and the Nanum fonts |

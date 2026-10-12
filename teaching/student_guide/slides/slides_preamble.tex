@@ -1,0 +1,47 @@
+% Shared preamble for the BARCS student-guide slides (Beamer, metropolis).
+% The slides follow the two-chapter textbook in ../chapter1 and ../chapter2:
+% each section is one textbook step with the same title, and the worked
+% examples use the same numbers. Short sentences, as in the textbook
+% (ASD-STE100 style). No quiz: the quizzes stay in the textbook.
+\usetheme[progressbar=frametitle,sectionpage=progressbar,numbering=fraction]{metropolis}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+
+\definecolor{barcsblue}{HTML}{0072B2}
+\definecolor{barcsgreen}{HTML}{009E73}
+\definecolor{barcsorange}{HTML}{D55E00}
+\definecolor{barcsdark}{HTML}{1F3B4D}
+\setbeamercolor{frametitle}{bg=barcsdark,fg=white}
+\setbeamercolor{progress bar}{fg=barcsorange,bg=barcsdark!30}
+\setbeamercolor{title separator}{fg=barcsorange}
+\setbeamercolor{alerted text}{fg=barcsorange}
+\setbeamercolor{normal text}{fg=black!85}
+
+% The same three boxes as the textbook.
+\newtcolorbox{symbols}[1][What the symbols mean]{colback=barcsblue!5,colframe=barcsblue,
+  fonttitle=\bfseries\small,title=#1,boxrule=0.6pt,arc=2pt,left=4pt,right=4pt,top=2pt,bottom=2pt}
+\newtcolorbox{worked}[1][]{colback=barcsgreen!6,colframe=barcsgreen!80!black,
+  fonttitle=\bfseries\small,title=Worked example#1,boxrule=0.6pt,arc=2pt,left=4pt,right=4pt,top=2pt,bottom=2pt}
+\newtcolorbox{remember}{colback=barcsorange!6,colframe=barcsorange,
+  fonttitle=\bfseries\small,title=Remember,boxrule=0.6pt,arc=2pt,left=4pt,right=4pt,top=2pt,bottom=2pt}
+
+\author{Prepared for Hyun-Hwan Jeong and Kyu-Won Lee}
+\date{Companion slides to the student guide \quad$\cdot$\quad BARCS 0.2.1 \quad$\cdot$\quad Grades 7 to 9}
+
+% The four-library example used in both chapters.
+\newcommand{\datatable}{%
+\begin{tabular}{lcrr}
+\toprule
+Library & Group & Guide count $K$ & Total count $N$\\
+\midrule
+1 & control & 180 & 1{,}000{,}000\\
+2 & control & 240 & 1{,}200{,}000\\
+3 & drug    & 120 & 1{,}000{,}000\\
+4 & drug    &  80 &   800{,}000\\
+\bottomrule
+\end{tabular}}
