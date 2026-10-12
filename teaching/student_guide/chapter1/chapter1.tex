@@ -515,10 +515,20 @@ of the Royal Statistical Society B} 10: 257--261.}
 
 Now we calculate it. We do it in three steps.
 
-\textbf{Step 1: the chance that both reads are our guide.} In a replicate
-with the true proportion $p$, the chance is $p \times p$. Over all
-replicates, the chance is the average of $p \times p$. Table~\ref{tab:both}
-shows the three cases of Figure~\ref{fig:rho}.
+\textbf{Step 1: the chance that both reads are our guide.} First look
+inside \emph{one} replicate, with the true proportion $p$. Each read is our
+guide with the chance $p$. When $p$ is fixed, the two reads do not affect
+each other, like two throws of a coin. So the chance that both are our
+guide is $p \times p$. For example, with $p = 0.3$ it is
+$0.3 \times 0.3 = 0.09$.
+
+Now look at \emph{all} replicates. Each replicate has its own $p$. So the
+chance that both reads are our guide is the average of $p \times p$ over the
+replicates. In case B, half of the replicates give $0.1 \times 0.1 = 0.01$
+and half give $0.3 \times 0.3 = 0.09$. The average is
+$(0.01 + 0.09)/2 = 0.05$. Without a wobble, it would be
+$0.2 \times 0.2 = 0.04$. Table~\ref{tab:both} shows the three cases of
+Figure~\ref{fig:rho}.
 
 \begin{table}[ht]
 \centering
@@ -552,8 +562,25 @@ and $X_2$ (each is 1 or 0). Open the brackets:
 &= \text{(chance that both are our guide)} - \mu \times \mu .
 \end{align*}
 The third line uses that the average of each read is $\mu$. The last line
-uses that $X_1 \times X_2$ is 1 only when both reads are 1, and 0
-otherwise. So its average is the chance that both are our guide.
+needs one more fact. The product $X_1 \times X_2$ has only four possible
+results:
+
+\begin{center}
+\small
+\begin{tabular}{@{}cccl@{}}
+\toprule
+$X_1$ & $X_2$ & $X_1 \times X_2$ & \\
+\midrule
+1 & 1 & 1 & both reads are our guide\\
+1 & 0 & 0 & \\
+0 & 1 & 0 & \\
+0 & 0 & 0 & \\
+\bottomrule
+\end{tabular}
+\end{center}
+So the average of $X_1 \times X_2$ is $1 \times$ (chance both are our guide)
+$+\; 0 \times$ (the other chances) $=$ the chance that both are our guide.
+In case B: $0.05 - 0.04 - 0.04 + 0.04 = 0.05 - 0.04 = 0.01$.
 The chance that both are our guide is the average of $p^2$ (Step~1). And
 line~a of the table below shows that the average of $p^2$ minus
 $\mu \times \mu$ is the wobble $V$. So

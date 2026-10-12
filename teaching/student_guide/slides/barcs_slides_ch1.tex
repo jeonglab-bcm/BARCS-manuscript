@@ -570,28 +570,117 @@ C. $p = 0$ or $1$ & $0.8 \times 0 + 0.2 \times 1 = 0.2$ & 0.04 & 0.16 & 1\\
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Steps 2--3: covariance $= V$, correlation $= \rho$}
+\begin{frame}{Step 2a: the chance that both reads are our guide}
+\begin{columns}[T]
+\begin{column}{0.44\textwidth}
+\textbf{Inside one replicate} (true proportion $p$):
+\begin{itemize}\small
+\item Each read is our guide with chance $p$.
+\item Given $p$, the two reads do not affect each other (like two coin
+  throws).
+\item So: chance both $= p \times p$.
+\end{itemize}
+{\small Example: $p = 0.3 \Rightarrow 0.3 \times 0.3 = 0.09$.}
+\end{column}
+\begin{column}{0.52\textwidth}
+\textbf{Over all replicates} (case B):
+\medskip
+
 \small
-Reads $X_1$, $X_2$ (1 or 0). Average of each read $= \mu$.
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Replicates & $p$ & Both our guide\\
+\midrule
+half & 0.1 & $0.1 \times 0.1 = 0.01$\\
+half & 0.3 & $0.3 \times 0.3 = 0.09$\\
+\midrule
+average & $\mu = 0.2$ & $(0.01 + 0.09)/2 = \mathbf{0.05}$\\
+\bottomrule
+\end{tabular}
+\end{column}
+\end{columns}
+\[
+\text{chance both reads are our guide} = \text{average of } p \times p = \text{average of } p^2
+\]
+{\small Without wobble it would be $0.2 \times 0.2 = 0.04$. The wobble makes
+it bigger: $0.05$.}
+\end{frame}
+
+\begin{frame}{Step 2b: average of $X_1 \times X_2$ $=$ chance both are our guide}
+Each read $X$ is 1 (our guide) or 0. The four results:
+\medskip
+
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\small
+\begin{tabular}{@{}ccc@{}}
+\toprule
+$X_1$ & $X_2$ & $X_1 \times X_2$\\
+\midrule
+1 & 1 & \alert{1}\\
+1 & 0 & 0\\
+0 & 1 & 0\\
+0 & 0 & 0\\
+\bottomrule
+\end{tabular}
+\end{column}
+\begin{column}{0.46\textwidth}
+\begin{itemize}\small
+\item $X_1 \times X_2 = 1$ only when \alert{both} reads are 1.
+\item In all other cases it is 0.
+\end{itemize}
+\end{column}
+\end{columns}
+\[
+\text{avg.\ of } X_1 \times X_2
+ = 1 \times (\text{chance both}) + 0 \times (\text{other chances})
+ = \text{chance both}
+\]
+\begin{worked}[ case B]
+avg.\ of $X_1 \times X_2 = 0.05$ (Step 2a).
+\end{worked}
+\end{frame}
+
+\begin{frame}{Step 2c: covariance $= V$}
+\small
+Covariance $=$ average of (distance of read 1) $\times$ (distance of read 2).
 \vspace{-0.3em}
 \begin{align*}
 \text{covariance} &= \text{avg.\ of } (X_1 - \mu) \times (X_2 - \mu)\\
-&= \text{avg.\ of } X_1 \times X_2 - \mu \times \mu - \mu \times \mu + \mu \times \mu\\
-&= \text{(chance both are our guide)} - \mu \times \mu
- = \text{avg.\ of } p^2 - \mu^2 = V
+&= \text{avg.\ of } \bigl(X_1 \times X_2 - \mu \times X_2 - X_1 \times \mu + \mu \times \mu\bigr)
+ && \text{open the brackets}\\
+&= \text{avg.\ of } X_1 \times X_2 - \mu \times \mu - \mu \times \mu + \mu \times \mu
+ && \text{avg.\ of } X_1 = \text{avg.\ of } X_2 = \mu\\
+&= \text{avg.\ of } X_1 \times X_2 - \mu \times \mu
+ && \text{two } \mu \times \mu \text{ cancel}\\
+&= \text{avg.\ of } p^2 - \mu^2
+ && \text{Steps 2a and 2b}\\
+&= V
+ && \text{line a: open } (p-\mu)^2
 \end{align*}
-Correlation (Pearson) $=$ covariance $\div$ (SD of read 1 $\times$ SD of
-read 2). Each SD $= \sqrt{\mu \times (1-\mu)}$ (Part 2):
+\vspace{-0.4em}
+\begin{worked}[ case B]
+$0.05 - 0.04 - 0.04 + 0.04 = 0.05 - 0.04 = 0.01 = V$.
+\end{worked}
+\end{frame}
+
+\begin{frame}{Step 3: correlation $= \rho$}
+\begin{itemize}
+\item Correlation (Pearson) $=$ covariance $\div$ (SD of read 1 $\times$ SD
+  of read 2).
+\item Each read has variance $\mu \times (1-\mu)$ (Part 2), so each SD $=
+  \sqrt{\mu \times (1-\mu)}$.
+\end{itemize}
 \[
 \rho = \frac{V}{\sqrt{\mu \times (1-\mu)} \times \sqrt{\mu \times (1-\mu)}}
  = \frac{V}{\mu \times (1-\mu)}
 \]
-\vspace{-0.3em}
 \begin{worked}[ case B]
-Covariance $0.05 - 0.04 = 0.01 = V$.\quad $\rho = 0.01 \div 0.16 =
-0.0625$.\quad Computer, 100{,}000 pairs: 0.06.
+$\rho = 0.01 \div (0.2 \times 0.8) = 0.01 \div 0.16 = 0.0625$.\\
+A computer drew 100{,}000 pairs of reads: correlation 0.06.
 \end{worked}
 \end{frame}
+
 
 \begin{frame}{$\rho$ on a meter from 0 to 1}
 \begin{center}
