@@ -27,8 +27,13 @@ Library & Group & Guide count $K$ & Total count $N$\\
 \item \textbf{Log-odds} $= \ln\bigl(p/(1-p)\bigr)$: $-8.56$ (control) and
   $-9.10$ (drug).
 \item \textbf{Noise.} The variance of a count is
-  $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \rho\bigr)$. Here $\mu$ is the expected
-  proportion and $\rho$ measures the biological noise.
+  $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \rho\bigr)$.
+  Here $\mu$ is the expected proportion. $\rho$ is the correlation between
+  two reads from the same library; it measures the biological noise. The
+  wobble of the true proportion between replicates is
+  $V = \rho \times \mu \times (1-\mu)$.
+\item \textbf{Two rules.} Variances of independent values add up. Multiplying
+  a value by $c$ multiplies its variance by $c \times c$.
 \item \textbf{Design matrix} $X$: one row for each library, one column for
   each $\beta$. Our $X$ has the rows $(1,0)$, $(1,0)$, $(1,1)$, $(1,1)$.
 \item \textbf{Prediction.} Multiply a row of $X$ by the $\beta$ values and add.
@@ -65,34 +70,138 @@ loop is an \textbf{iteration}.
 \item \textbf{Repeat} from part~2 until the $\beta$ values stop changing.
 \end{enumerate}
 
-\subsection{The formulas}
+\subsection{The working value: a straight-line step}
 
-The weight of library $i$ is
-\[
-w_i = \frac{N_i \times \mu_i \times (1-\mu_i)}{1 + (N_i - 1) \times \rho}.
-\]
-The top is the counting noise turned upside down. The bottom is the extra
-biological noise from Step~4 in Chapter~1. So more noise gives a smaller weight.
+BARCS works on the log-odds scale. The real log-odds of library $i$ is
+$\ln\bigl((K_i/N_i) / (1 - K_i/N_i)\bigr)$. But BARCS does not use this value
+directly. If $K_i = 0$, the value is $\ln(0)$, which does not exist. So BARCS
+uses a straight line instead.
 
-The working value of library $i$ is
-\[
-\text{working value}_i = \eta_i + \frac{K_i/N_i - \mu_i}{\mu_i \times (1-\mu_i)}.
-\]
-It is the current prediction $\eta_i$ plus a correction. The correction is
-large when the real proportion $K_i/N_i$ is far from the expected proportion
-$\mu_i$.
+\paragraph{The slope of the log-odds.} Near a proportion $\mu$, the
+log-odds changes by about $1 \div \bigl(\mu \times (1-\mu)\bigr)$ for each
+unit of change in the proportion. Here is why. The log-odds is
+$\ln(p) - \ln(1-p)$. Look at the two parts one at a time, with $p = 0.2$
+and a small step of 0.001:
 
-For our design matrix, the new $\beta$ values are weighted averages:
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}l l l l@{}}
+\toprule
+Part & At $p = 0.2$ & At $p = 0.201$ & Change $\div$ 0.001\\
+\midrule
+$\ln(p)$ & $-1.60944$ & $-1.60445$ & $4.99 \approx 1 \div 0.2 = 5$\\
+$-\ln(1-p)$ & $+0.22314$ & $+0.22439$ & $1.25 = 1 \div 0.8$\\
+log-odds (sum) & $-1.38629$ & $-1.38006$ & $6.24 \approx 6.25$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+So the slope is $1 \div p + 1 \div (1-p)$. Put the two fractions over one
+bottom:
 \[
-\beta_0 = \frac{w_1\,v_1 + w_2\,v_2}{w_1 + w_2}, \qquad
-\beta_0 + \beta_1 = \frac{w_3\,v_3 + w_4\,v_4}{w_3 + w_4},
+\frac{1}{p} + \frac{1}{1-p} = \frac{(1-p) + p}{p \times (1-p)}
+ = \frac{1}{p \times (1-p)} .
 \]
-where $v_i$ is the working value of library $i$. (For other design matrices,
-BARCS solves a small set of equations instead. The idea is the same.)
+Check: $1 \div (0.2 \times 0.8) = 1 \div 0.16 = 6.25$.
+
+\paragraph{The working value.} Start at the current prediction $\eta_i$
+(the log-odds of $\mu_i$). Move along the straight line by the distance
+$K_i/N_i - \mu_i$:
+\[
+v_i = \eta_i + (K_i/N_i - \mu_i) \times \frac{1}{\mu_i \times (1-\mu_i)} .
+\]
+The letter $v$ stands for ``working value''. It is close to the real
+log-odds, and it exists even when $K_i = 0$.
+
+\begin{worked}[ 10a: working value of library 1]
+Use the first guess $\mu_1 = 0.000190909$, so $\eta_1 = -8.563523$.
+\begin{itemize}[leftmargin=1.2em]
+\item Distance: $K_1/N_1 - \mu_1 = 0.000180 - 0.000190909 = -0.0000109$.
+\item Slope: $1 \div (0.000190909 \times 0.999809) = 1 \div 0.000190873 =
+  5{,}239$.
+\item Step: $-0.0000109 \times 5{,}239 = -0.0572$.
+\item Working value: $v_1 = -8.5635 + (-0.0572) = -8.6207$.
+\end{itemize}
+The real log-odds is $\ln(0.000180 / 0.999820) = -8.6224$. The straight line
+gives $-8.6207$. They are very close.
+\end{worked}
+
+\subsection{The weight: one divided by the variance}
+
+\paragraph{Why weights?} Suppose you have two measurements of the same
+thing. One has the variance 1. The other has the variance 4 (it is noisier).
+\begin{itemize}
+\item With equal weights, the average has the variance
+  $(1 + 4) \div (2 \times 2) = 1.25$.
+\item With the weights $1 \div 1 = 1$ and $1 \div 4 = 0.25$, the average has
+  the variance $1 \div (1 + 0.25) = 0.8$. That is smaller.
+\end{itemize}
+The rule ``weight $= 1 \div$ variance'' gives the average with the smallest
+variance. So BARCS gives each working value the weight
+\[
+w_i = \frac{1}{\text{variance of } v_i} .
+\]
+
+\paragraph{The variance of the working value.} We build it from Chapter~1
+in three steps. The right column uses library 1 in iteration 1
+($N = 1{,}000{,}000$, $\mu = 0.000190909$, $\rho = 0.0000003841$).
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.45}\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}r@{\;}l l l@{}}
+\toprule
+& \textbf{Quantity} & \textbf{Formula} & \textbf{Library 1}\\
+\midrule
+1. & variance of $K_i$ & $N_i \times \mu_i \times (1-\mu_i) \times \bigl(1 + (N_i-1) \times \rho\bigr)$ & $190.87 \times 1.3841 = 264.19$\\
+2. & variance of $K_i / N_i$ & line 1 $\div (N_i \times N_i)$ & $264.19 \div 10^{12}$\\ & & & $= 2.642 \times 10^{-10}$\\
+3. & variance of $v_i$ & line 2 $\div \bigl(\mu_i \times (1-\mu_i)\bigr)^2$ & $2.642 \times 10^{-10} \div 0.000190873^2$\\ & & & $= 0.007251$\\
+4. & weight $w_i$ & $1 \div$ line 3 & $1 \div 0.007251 = 137.90$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+\item \textbf{Line 1} is the variance formula of Chapter~1, Step~4.
+\item \textbf{Line 2:} dividing a value by $N$ divides its variance by
+  $N \times N$ (Chapter~1, Part~4 used the same rule with multiplying).
+\item \textbf{Line 3:} the working value multiplies $K_i/N_i - \mu_i$ by the
+  slope $1 \div \bigl(\mu_i \times (1-\mu_i)\bigr)$. So the variance is
+  multiplied by the slope squared. Adding $\eta_i$ does not change the
+  variance.
+\item \textbf{Line 4:} put lines 1--3 together and simplify. One
+  $N_i$ and one $\mu_i \times (1-\mu_i)$ cancel:
+\end{itemize}
+\[
+w_i = \frac{1}{\text{variance of } v_i}
+ = \frac{N_i \times N_i \times \bigl(\mu_i \times (1-\mu_i)\bigr)^2}
+        {N_i \times \mu_i \times (1-\mu_i) \times \bigl(1 + (N_i-1) \times \rho\bigr)}
+ = \frac{N_i \times \mu_i \times (1-\mu_i)}{1 + (N_i - 1) \times \rho} .
+\]
+Check: $190.87 \div 1.3841 = 137.90$, the same as line 4.
+
+A library with more reads gets a bigger top, so a bigger weight. More
+biological noise ($\rho$) gives a bigger bottom, so a smaller weight.
+
+\subsection{The new \texorpdfstring{$\beta$}{beta} values}
+
+For our design matrix, the new $\beta$ values are weighted averages of the
+working values:
+\[
+\beta_0 = \frac{w_1 \times v_1 + w_2 \times v_2}{w_1 + w_2}, \qquad
+\beta_0 + \beta_1 = \frac{w_3 \times v_3 + w_4 \times v_4}{w_3 + w_4}.
+\]
+(For other design matrices, BARCS solves a small set of equations instead.
+The idea is the same.)
+
+\paragraph{Why a loop?} The weights and the working values use $\mu$. But
+$\mu$ comes from the $\beta$ values, and the $\beta$ values come from the
+weights. So BARCS starts with a guess and repeats until nothing changes.
 
 \subsection{Iteration 1 in full}
 
-\begin{worked}[ 10: iteration 1]
+\begin{worked}[ 10b: iteration 1]
 \textbf{Guess.} From Step~3 in Chapter~1, the control log-odds is $-8.563522$ and the
 drug log-odds is $-9.104869$. So $\beta_0 = -8.563522$ and
 $\beta_1 = -9.104869 - (-8.563522) = -0.541347$.
@@ -108,11 +217,7 @@ Top: $1{,}000{,}000 \times 0.000190909 \times 0.999809 = 190.87$.\\
 Bottom: $1 + 999{,}999 \times 0.0000003841 = 1.3841$.\\
 Weight: $w_1 = 190.87 \div 1.3841 = 137.90$.
 
-\textbf{Correct library 1.}
-$K_1/N_1 - \mu_1 = 0.000180 - 0.000190909 = -0.0000109$.\\
-$\mu_1(1-\mu_1) = 0.000190873$.\\
-Correction: $-0.0000109 \div 0.000190873 = -0.0572$.\\
-Working value: $v_1 = -8.5635 + (-0.0572) = -8.6207$.
+\textbf{Correct library 1.} Example 10a: $v_1 = -8.6207$.
 
 The same calculations for all four libraries give:
 
@@ -184,12 +289,32 @@ prediction.
 
 \subsection{The rule for \texorpdfstring{$\rho$}{rho}}
 
-If the noise model is correct, the squares of the Pearson residuals add up
-to about the degrees of freedom. So BARCS chooses $\rho$ to make this
-statement exactly true:
+\paragraph{Why the sum should be the degrees of freedom.} A Pearson
+residual is a distance measured in standard deviations. If the noise model
+is correct, its square is 1 on average: (squared distance) $\div$ (variance)
+$= $ variance $\div$ variance $= 1$. So with four libraries, the four
+squares add up to about 4.
+
+But BARCS does not know the true $\mu$. It uses the fitted $\mu$, which the
+$\beta$ values pull toward the data. The fit makes the residuals a little
+smaller. Each fitted $\beta$ value takes away 1 from the sum, on average. So
+the expected sum is
+\[
+(\text{number of libraries}) - (\text{number of } \beta \text{ values})
+ = 4 - 2 = 2 = \text{df}.
+\]
+A computer checked this. It made 20{,}000 artificial guides with the true
+$\rho$ and four libraries like ours. With the true $\mu$, the sum of the
+squared Pearson residuals was 4.00 on average. With the fitted $\mu$, it was
+2.00 on average.
+
+\paragraph{The rule.} BARCS turns this around. It chooses $\rho$ so that the
+sum is exactly the degrees of freedom:
 \[
 \text{sum of the squared Pearson residuals} = \text{df}.
 \]
+(Statisticians call this a \emph{method of moments}: make a sum that you can
+calculate equal to the value it should have on average.)
 
 \begin{worked}[ 11: start with \texorpdfstring{$\rho = 0$}{rho = 0}]
 Use the expected counts from Step~5 in Chapter~1. With $\rho = 0$, the bottom of each
@@ -236,8 +361,10 @@ $\rho = 0$, BARCS uses $\rho = 0$.
 \end{worked}
 
 The ratio $2.751 \div 2 = 1.376$ is also useful. It is the
-\textbf{variance inflation}. It tells that the guide has about 1.38 times
-more noise than counting noise alone. Step~9 uses this number.
+\textbf{variance inflation}. At $\rho = 0$, the sum should be about 2; it is
+2.751. So the variance is about 1.38 times bigger than counting noise alone.
+This is close to the extra factor $1 + (N-1) \times \rho = 1.386$ of
+Chapter~1. Step~9 uses the inflation.
 
 %=====================================================================
 \section{Step 8: Is the effect real?}
@@ -262,6 +389,32 @@ Then
 \text{SE}(\beta_1) = \sqrt{\frac{1}{W_{\text{control}}} +
 \frac{1}{W_{\text{drug}}}}.
 \]
+\paragraph{Where this formula comes from.} It uses only three facts:
+the weight is $1 \div$ variance (Step~6); variances of independent values
+add up; and multiplying a value by $c$ multiplies its variance by
+$c \times c$.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.45}\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}r@{\;}l l@{}}
+\toprule
+& \textbf{Step} & \textbf{Why}\\
+\midrule
+1. & variance of $v_i = 1 \div w_i$ & definition of the weight\\
+2. & $\beta_0 = \dfrac{w_1}{W_c} \times v_1 + \dfrac{w_2}{W_c} \times v_2$ \quad ($W_c = w_1 + w_2$) & Step~6\\
+3. & variance of $\beta_0 = \Bigl(\dfrac{w_1}{W_c}\Bigr)^2 \times \dfrac{1}{w_1} + \Bigl(\dfrac{w_2}{W_c}\Bigr)^2 \times \dfrac{1}{w_2}$ & multiply by $c \Rightarrow$ variance $\times\, c \times c$; add\\
+4. & $\phantom{\text{variance of }\beta_0} = \dfrac{w_1 + w_2}{W_c \times W_c} = \dfrac{1}{W_c}$ & one $w$ cancels in each part\\
+5. & variance of $(\beta_0 + \beta_1) = 1 \div W_{\text{drug}}$ & the same for the drug libraries\\
+6. & variance of $\beta_1 = \dfrac{1}{W_c} + \dfrac{1}{W_{\text{drug}}}$ & $\beta_1 = (\beta_0 + \beta_1) - \beta_0$; variances add\\
+7. & $\text{SE}(\beta_1) = \sqrt{\text{line 6}}$ & SE is the standard deviation of the estimate\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Line~6 adds the variances even though it subtracts the values. The reason:
+$-1 \times -1 = +1$, so a minus sign does not change a variance.
+
 More weight means less noise, so the SE becomes smaller. (For other design
 matrices, BARCS uses the inverse of the matrix $X^{\top} W X$. For our design,
 that calculation gives exactly this formula.)
@@ -272,7 +425,7 @@ The final weights are 137.524, 156.322, 79.955 and 67.737.
 $W_{\text{control}} = 137.524 + 156.322 = 293.846$.\\
 $W_{\text{drug}} = 79.955 + 67.737 = 147.692$.
 
-$1 \div 293.846 = 0.003403$.\\
+$1 \div 293.846 = 0.003403$ (line 4: $(137.524 + 156.322) \div 293.846^2$ gives the same).\\
 $1 \div 147.692 = 0.006771$.\\
 Sum: $0.003403 + 0.006771 = 0.010174$.\\
 $\text{SE} = \sqrt{0.010174} = 0.101$.
@@ -299,7 +452,11 @@ about the noise:
  = (\text{number of libraries}) - (\text{number of } \beta \text{ values}).
 \]
 Fewer degrees of freedom mean less information. Then BARCS needs a bigger
-$t$ value before it accepts an effect as real.
+$t$ value before it accepts an effect as real. (The reason is that the SE
+itself is estimated from few libraries, so it can be too small by chance.
+W.\,S. Gosset, who wrote as ``Student'', worked out the table for this case
+in 1908.\footnote{Student (1908). The probable error of a mean.
+\emph{Biometrika} 6: 1--25.})
 
 \begin{center}
 \begin{tabular}{lcccc}
@@ -347,7 +504,11 @@ amount of noise. So BARCS combines two estimates:
 \item the typical variance inflation of guides with similar counts.
 \end{itemize}
 
-This method is \textbf{moderation}. BARCS takes a weighted average. Each
+This method is \textbf{moderation}.\footnote{BARCS uses the
+empirical-Bayes method of G.\,K. Smyth (2004). Linear models and empirical
+Bayes methods for assessing differential expression in microarray
+experiments. \emph{Statistical Applications in Genetics and Molecular
+Biology} 3: Article 3.} BARCS takes a weighted average. Each
 estimate gets a number of ``votes''. The guide's own estimate gets its
 degrees of freedom as votes. The typical estimate gets the \textbf{prior
 degrees of freedom}, $d_0$. BARCS calculates $d_0$ and the typical value
@@ -374,7 +535,13 @@ The guide's value moves from 4.0 toward 1.5. It stops at 2.0.
 BARCS uses the moderated inflation in three places:
 \begin{enumerate}
 \item It multiplies the standard error by
-  $\sqrt{\text{moderated inflation} \div \text{own inflation}}$.
+  $\sqrt{\text{moderated inflation} \div \text{own inflation}}$. Here is
+  why. The variance of $\beta_1$ grows in proportion to the inflation. To
+  swap the own inflation for the moderated one, multiply the variance by
+  (moderated $\div$ own). The SE is the square root of the variance, so it
+  is multiplied by the square root. (If the own inflation is below 1, BARCS
+  uses 1, so moderation never makes a test less careful than counting noise
+  alone.)
 \item It recalculates $t$ with the new standard error.
 \item It adds the $d_0$ votes to the degrees of freedom. So the test uses
   $\text{df} + d_0$.
@@ -448,6 +615,14 @@ own result. BARCS combines them into one result for the gene. It uses the
 \[
 Z_{\text{gene}} = \frac{z_1 + z_2 + \cdots + z_m}{\sqrt{m}}.
 \]
+\paragraph{Why divide by $\sqrt{m}$?} If the gene has no effect, each $z$
+score has the variance 1. The guides are independent, so the variance of the
+sum is $1 + 1 + \cdots + 1 = m$ (Chapter~1, Part~2: variances add).
+Dividing a value by $\sqrt{m}$ divides its variance by
+$\sqrt{m} \times \sqrt{m} = m$. So $Z_{\text{gene}}$ has the variance
+$m \div m = 1$ again, and the same z table works for it.\footnote{S.\,A.
+Stouffer and others (1949). \emph{The American Soldier}, Vol.~1. Princeton
+University Press.}
 
 To change a p-value into a z score, use the table of the normal
 distribution. A two-sided p-value of 0.05 belongs to $z = 1.96$. Some
@@ -479,9 +654,16 @@ Together, the three guides give strong evidence.
 
 Sometimes the guides of one gene share noise. Then they agree more than
 they should by chance. BARCS measures this sharing with the
-\textbf{guide correlation}, $r$. It makes the bottom of the fraction bigger:
+\textbf{guide correlation}, $r$. Then the variance of the sum is not $m$.
+Use the squares-and-pairs rule from Chapter~1, Part~4:
+\begin{itemize}
+\item $m$ squares, each with the variance 1: together $m$;
+\item $m \times (m-1)$ pairs, each with the covariance $r$: together
+  $m \times (m-1) \times r$.
+\end{itemize}
+So BARCS divides by the square root of this larger variance:
 \[
-Z_{\text{gene}} = \frac{z_1 + z_2 + \cdots + z_m}{\sqrt{m + m(m-1)\,r}}.
+Z_{\text{gene}} = \frac{z_1 + z_2 + \cdots + z_m}{\sqrt{m + m \times (m-1) \times r}}.
 \]
 
 \begin{worked}[ 19: shared noise]
@@ -500,8 +682,25 @@ we use the limit $p < 0.05$, about 5\% of the genes still pass by chance.
 That is about 1{,}000 false results.
 
 So BARCS uses the \textbf{false discovery rate} (FDR). The FDR is the
-expected fraction of false results in your list of hits. BARCS calculates it
-with the \textbf{Benjamini--Hochberg method}:
+expected fraction of false results in your list of hits.
+
+\paragraph{The idea.} When a gene has no effect, its p-value is equally
+likely to be anywhere from 0 to 1. So a fraction $p$ of such genes get a
+p-value of $p$ or less by chance. Example: of 20{,}000 genes with no effect,
+about $20{,}000 \times 0.001 = 20$ get $p \le 0.001$. Now suppose that your
+list ``all genes with $p \le 0.001$'' has 100 genes. At most about 20 of them
+are there by chance. So the false fraction is about $20 \div 100 = 0.2$. In
+general:
+\[
+\text{FDR of a list} \approx \frac{p \times (\text{number of genes})}{\text{number of genes in the list}} .
+\]
+If you sort the genes by p-value, the list that ends at a gene has
+``rank'' genes in it. That gives part~3 below.\footnote{Y. Benjamini and Y.
+Hochberg (1995). Controlling the false discovery rate: a practical and
+powerful approach to multiple testing. \emph{Journal of the Royal
+Statistical Society B} 57: 289--300.}
+
+BARCS calculates it with the \textbf{Benjamini--Hochberg method}:
 
 \begin{enumerate}
 \item Sort the genes from the smallest p-value to the largest.
@@ -509,7 +708,9 @@ with the \textbf{Benjamini--Hochberg method}:
 \item For each gene, calculate $p \times (\text{number of genes}) \div
   \text{rank}$.
 \item Go from the bottom of the list to the top. If a value is larger than
-  the value below it, replace it with the value below it.
+  the value below it, replace it with the value below it. (A gene is in
+  every longer list too. If a longer list has a smaller FDR, the gene can
+  use that list.)
 \end{enumerate}
 
 \begin{worked}[ 20: false discovery rate for five genes]
@@ -594,13 +795,13 @@ $\log_2$ & number of doublings & $\log_2(0.58) = -0.78$\\
 $\ln$ & natural logarithm (powers of $e = 2.718$) & $\ln(0.58) = -0.54$\\
 log-odds & $\ln\bigl(p/(1-p)\bigr)$ & $-8.56$ (control)\\
 $\mu$ & expected proportion & 0.000191 (control)\\
-$\rho$ & biological noise & 0.000000386\\
+$\rho$ & correlation of two reads from one library (biological noise) & 0.000000386\\
 $X$ & design matrix: a row per library, a column per $\beta$ & 4 rows, 2 columns\\
 $\beta_0$ & control log-odds in the model & $-8.565$\\
 $\beta_1$ & effect of the drug & $-0.542$\\
 $\eta$ & predicted log-odds of a library (row of $X$ times $\beta$) & $-8.565$, $-9.107$\\
 $w$ & weight of a library in the fit & 137.5 (library 1)\\
-working value & prediction plus correction (Example 10) & $-8.621$ (library 1)\\
+working value & prediction plus a straight-line step (Example 10a) & $-8.621$ (library 1)\\
 Pearson residual & distance from the prediction in SDs & $-0.65$ (library 1)\\
 inflation & noise compared with counting noise & 1.376\\
 SE & standard error of the effect & 0.101\\
