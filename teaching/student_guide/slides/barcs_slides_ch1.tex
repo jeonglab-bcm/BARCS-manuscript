@@ -641,27 +641,48 @@ avg.\ of $X_1 \times X_2 = 0.05$ (Step 2a).
 \end{worked}
 \end{frame}
 
-\begin{frame}{Step 2c: covariance $= V$}
+\begin{frame}{Step 2c: covariance $=$ average of $p^2 - \mu^2$}
 \small
-Covariance $=$ average of (distance of read 1) $\times$ (distance of read 2).
-\vspace{-0.3em}
-\begin{align*}
-\text{covariance} &= \text{avg.\ of } (X_1 - \mu) \times (X_2 - \mu)\\
-&= \text{avg.\ of } \bigl(X_1 \times X_2 - \mu \times X_2 - X_1 \times \mu + \mu \times \mu\bigr)
- && \text{open the brackets}\\
-&= \text{avg.\ of } X_1 \times X_2 - \mu \times \mu - \mu \times \mu + \mu \times \mu
- && \text{avg.\ of } X_1 = \text{avg.\ of } X_2 = \mu\\
-&= \text{avg.\ of } X_1 \times X_2 - \mu \times \mu
- && \text{two } \mu \times \mu \text{ cancel}\\
-&= \text{avg.\ of } p^2 - \mu^2
- && \text{Steps 2a and 2b}\\
-&= V
- && \text{line a: open } (p-\mu)^2
-\end{align*}
-\vspace{-0.4em}
+\renewcommand{\arraystretch}{1.1}\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}l l@{}}
+\toprule
+\textbf{Line} & \textbf{Why}\\
+\midrule
+covariance $=$ avg.\ of $(X_1 - \mu) \times (X_2 - \mu)$ & definition\\
+$=$ avg.\ of $X_1 \times X_2 - \mu \times X_2 - X_1 \times \mu + \mu \times \mu$ & open the brackets\\
+$=$ avg.\ of $X_1 \times X_2 - \mu \times \mu - \mu \times \mu + \mu \times \mu$ & avg.\ of $X_1$ $=$ avg.\ of $X_2$ $= \mu$\\
+$=$ avg.\ of $X_1 \times X_2 - \mu \times \mu$ & $-\mu \times \mu + \mu \times \mu = 0$\\
+$=$ (chance both reads are our guide) $- \mu \times \mu$ & only $1 \times 1 = 1$ (Step 2b)\\
+$=$ (average of $p \times p$) $- \mu \times \mu$ & both $= p \times p$ per replicate (2a)\\
+$=$ average of $p^2 - \mu^2$ & $p \times p$ is written $p^2$\\
+\bottomrule
+\end{tabular}
 \begin{worked}[ case B]
-$0.05 - 0.04 - 0.04 + 0.04 = 0.05 - 0.04 = 0.01 = V$.
+avg.\ of $X_1 \times X_2 = 0.05$, so covariance $= 0.05 - 0.04 = 0.01$.
 \end{worked}
+\end{frame}
+
+\begin{frame}{Step 2d: average of $p^2 - \mu^2$ is the wobble $V$}
+\small
+\renewcommand{\arraystretch}{1.1}\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{Line} & \textbf{Why} & \textbf{Case B}\\
+\midrule
+$V = $ avg.\ of $(p - \mu) \times (p - \mu)$ & definition of $V$ & $0.01$\\
+$\phantom{V} = $ avg.\ of $\bigl(p^2 - 2 \times \mu \times p + \mu^2\bigr)$ & multiply out & \\
+$\phantom{V} = $ avg.\ of $p^2 - 2 \times \mu \times (\text{avg.\ of } p) + \mu^2$ & average each part & $0.05 - 2 \times 0.2 \times 0.2 + 0.04$\\
+$\phantom{V} = $ avg.\ of $p^2 - 2 \times \mu^2 + \mu^2$ & avg.\ of $p$ is $\mu$ & $0.05 - 0.08 + 0.04$\\
+$\phantom{V} = $ avg.\ of $p^2 - \mu^2$ & $-2\times\mu^2 + \mu^2 = -\mu^2$ & $0.05 - 0.04 = 0.01$\\
+\bottomrule
+\end{tabular}
+\medskip
+\begin{remember}
+Step 2c: covariance $=$ avg.\ of $p^2 - \mu^2$.\quad Step 2d: $V = $ avg.\
+of $p^2 - \mu^2$.\\
+Same right side, so \alert{covariance of two reads $= V$} (case B: both
+0.01).
+\end{remember}
 \end{frame}
 
 \begin{frame}{Step 3: correlation $= \rho$}

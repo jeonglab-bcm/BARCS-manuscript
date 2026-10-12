@@ -581,13 +581,33 @@ $X_1$ & $X_2$ & $X_1 \times X_2$ & \\
 So the average of $X_1 \times X_2$ is $1 \times$ (chance both are our guide)
 $+\; 0 \times$ (the other chances) $=$ the chance that both are our guide.
 In case B: $0.05 - 0.04 - 0.04 + 0.04 = 0.05 - 0.04 = 0.01$.
-The chance that both are our guide is the average of $p^2$ (Step~1). And
-line~a of the table below shows that the average of $p^2$ minus
-$\mu \times \mu$ is the wobble $V$. So
+Now put in Step~1. The chance that both reads are our guide is the average
+of $p \times p$, which we write as the average of $p^2$. So
+\[
+\text{covariance} = \text{average of } p^2 - \mu^2 .
+\]
+Case B: $0.05 - 0.04 = 0.01$.
+
+Last, we show that the right side is the wobble $V$. Start from the
+definition of $V$ and open the square:
+\begin{align*}
+V &= \text{average of } (p - \mu) \times (p - \mu)
+ && \text{(definition of } V\text{)}\\
+&= \text{average of } \bigl(p^2 - 2 \times \mu \times p + \mu^2\bigr)
+ && \text{(multiply out)}\\
+&= \text{average of } p^2 - 2 \times \mu \times (\text{average of } p) + \mu^2
+ && \text{(average each part)}\\
+&= \text{average of } p^2 - 2 \times \mu^2 + \mu^2
+ && \text{(the average of } p \text{ is } \mu\text{)}\\
+&= \text{average of } p^2 - \mu^2 .
+\end{align*}
+Case B: $0.05 - 2 \times 0.2 \times 0.2 + 0.04 = 0.05 - 0.08 + 0.04 = 0.01$.
+
+The covariance and $V$ are both equal to the average of $p^2 - \mu^2$. So
 \[
 \text{covariance of two reads} = V .
 \]
-Check with case B: $0.05 - 0.04 = 0.01 = V$. The wobble of the proportion
+In case B both are 0.01. The wobble of the proportion
 \emph{is} the covariance of two reads.
 
 \textbf{Step 3: the correlation.} The correlation is the covariance divided
