@@ -1,0 +1,28 @@
+% The wobble of the true proportion p between replicates (mu = 0.2).
+\begin{tikzpicture}[x=30cm,y=0.75cm,font=\small,
+  dot/.style={circle,fill=barcsblue,inner sep=2.4pt},
+  dist/.style={-{Stealth[length=2.2mm]},thick,barcsorange}]
+  % axis
+  \draw[->] (0.04,0) -- (0.345,0) node[right] {$p$};
+  \foreach \t in {0.1,0.2,0.3} \draw (\t,0.1) -- (\t,-0.1) node[below] {\t};
+  \node[below,align=center,font=\footnotesize] at (0.2,-0.75)
+    {true proportion of the guide in a replicate};
+  % mean line
+  \draw[dashed,barcsgreen!70!black,thick] (0.2,0) -- (0.2,4.8)
+    node[above,font=\footnotesize,align=center] {average $\mu = 0.2$};
+  % header
+  \node[font=\footnotesize\bfseries,anchor=west] at (0.385,4.6) {distance};
+  \node[font=\footnotesize\bfseries,anchor=west] at (0.44,4.6) {squared};
+  % replicates
+  \foreach \y/\p/\d/\s in {4/0.1/{$-0.1$}/0.01, 3/0.3/{$+0.1$}/0.01,
+                         2/0.3/{$+0.1$}/0.01, 1/0.1/{$-0.1$}/0.01} {
+    \node[anchor=east,font=\footnotesize] at (0.05,\y) {Replicate \the\numexpr5-\y\relax};
+    \draw[dist] (0.2,\y) -- (\p,\y);
+    \node[dot] at (\p,\y) {};
+    \node[anchor=west] at (0.385,\y) {\d};
+    \node[anchor=west] at (0.44,\y) {\s};
+  }
+  \draw (0.385,0.5) -- (0.485,0.5);
+  \node[anchor=west,font=\footnotesize] at (0.385,0.05)
+    {average: $V = 0.01$};
+\end{tikzpicture}

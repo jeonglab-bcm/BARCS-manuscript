@@ -461,47 +461,101 @@ For our guide: $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$.
 
 Counting noise assumes that every replicate has exactly the same true
 proportion $\mu$. But each replicate is a different group of living cells.
-So the true proportion itself \textbf{wobbles} a little from replicate to
-replicate.
+Some cells grow a little faster, and some die by chance. So the true
+proportion of the guide is a little different in each replicate.
 
-We write $p$ for the true proportion in one replicate. The average of $p$
-over many replicates is $\mu$. The wobble is measured in the usual way: as
-the average squared distance of $p$ from $\mu$. We call it $V$:
+\paragraph{What is the wobble?} We write $p$ for the true proportion of the
+guide in one replicate. (This is the proportion in the cells, before the
+machine reads anything.) Over many replicates, the average of $p$ is $\mu$.
+The \textbf{wobble} is how far $p$ moves away from $\mu$ from one replicate
+to the next. We measure it with the same rule as every variance: the average
+squared distance. We call it $V$:
 \[
 V = \text{average of } (p - \mu)^2 .
 \]
+Figure~\ref{fig:wobble} shows four replicates. The true proportion is 0.1 in
+two of them and 0.3 in the other two. The average is $\mu = 0.2$. Each
+distance is 0.1, each squared distance is 0.01, so the wobble is $V = 0.01$.
+If every replicate had $p = 0.2$, all the arrows would have length 0, and
+the wobble would be $V = 0$.
 
-BARCS does not report $V$ directly. It reports $\rho$, which is $V$ as a
-fraction of $\mu \times (1-\mu)$:
+\begin{figure}[ht]
+\centering
+\input{\guideroot common/figs/fig_wobble.tex}
+\caption{The wobble. Each dot is the true proportion $p$ in one replicate.
+Each arrow is its distance from the average $\mu$. The wobble $V$ is the
+average of the squared distances.}
+\label{fig:wobble}
+\end{figure}
+
+\paragraph{Put the wobble on a scale from 0 to 1: $\rho$.} A proportion
+cannot go below 0 or above 1. So the wobble cannot be as large as we like.
+Figure~\ref{fig:rho} shows three cases, all with the average $\mu = 0.2$:
+
+\begin{itemize}
+\item \textbf{A. No wobble.} Every replicate has $p = 0.2$. So $V = 0$.
+\item \textbf{B. Some wobble.} Half of the replicates have $p = 0.1$, half
+  have $p = 0.3$. So $V = 0.01$ (as in Figure~\ref{fig:wobble}).
+\item \textbf{C. The largest wobble.} The proportion jumps to the two ends:
+  $p = 0$ in 80\% of the replicates and $p = 1$ in 20\%. The average is
+  still 0.2. This is exactly the one-read case of Part~2, so
+  $V = 0.2 \times 0.8 = 0.16$. No other set of $p$ values with the average
+  0.2 can wobble more.
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\input{\guideroot common/figs/fig_rho.tex}
+\caption{$\rho$ tells how full the ``wobble meter'' is. The meter is full
+when the wobble is the largest possible, $\mu \times (1-\mu)$.}
+\label{fig:rho}
+\end{figure}
+
+So the largest possible wobble is $\mu \times (1-\mu)$. Think of it as a
+meter that is full at $\mu \times (1-\mu)$. The number $\rho$ tells how full
+the meter is:
 \[
-\rho = \frac{V}{\mu \times (1-\mu)}, \qquad\text{so}\qquad
-V = \rho \times \mu \times (1-\mu).
+\rho = \frac{V}{\mu \times (1-\mu)} = \frac{\text{the wobble}}{\text{the largest possible wobble}} .
 \]
-Why divide by $\mu \times (1-\mu)$? It is the largest wobble that is
-possible. A proportion must stay between 0 and 1. The widest wobble happens
-when $p$ jumps between 0 and 1, and Part~2 showed that such a value has the
-variance $\mu \times (1-\mu)$. So $\rho$ is always between 0 and 1, whatever
-the size of $\mu$.\footnote{A model in which the true proportion wobbles in
-this way is the \emph{beta-binomial} model. J.\,G. Skellam described it in
-1948: A probability distribution derived from the binomial distribution by
-regarding the probability of success as variable between the sets of trials.
+In case B: $\rho = 0.01 \div 0.16 = 0.0625$. The meter is 6.25\% full.
+
+\paragraph{Turn the formula around.} Multiply both sides of the formula for
+$\rho$ by $\mu \times (1-\mu)$:
+\[
+\rho = \frac{V}{\mu \times (1-\mu)}
+\quad\Longrightarrow\quad
+\rho \times \mu \times (1-\mu) = V .
+\]
+Check with case B: $0.0625 \times 0.2 \times 0.8 = 0.0625 \times 0.16 =
+0.01$. This is $V$ again.
+
+So $\rho$ is \textbf{not} replaced by $\mu$. The formula
+$V = \rho \times \mu \times (1-\mu)$ says: \emph{the wobble = how full the
+meter is $\times$ the size of the full meter.}
+
+Why does BARCS use $\rho$ and not $V$? Because $\rho$ means the same thing
+for every guide. A rare guide ($\mu$ small) can only wobble a little in
+absolute terms, because its meter is small. $\rho$ removes the size of the
+meter, so a rare guide and a common guide with the same $\rho$ are equally
+noisy.\footnote{A model in which the true proportion wobbles in this way is
+the \emph{beta-binomial} model. J.\,G. Skellam described it in 1948: A
+probability distribution derived from the binomial distribution by regarding
+the probability of success as variable between the sets of trials.
 \emph{Journal of the Royal Statistical Society B} 10: 257--261.}
 
-\begin{worked}[ 4d: a small wobble example]
-Two replicates. The true proportion is $p = 0.1$ in one and $p = 0.3$ in the
-other. Each happens half of the time.
+\begin{worked}[ 4d: the wobble of our guide]
+\textbf{Size of the full meter:} $\mu \times (1-\mu) = 0.000191 \times
+0.999809 = 0.000191$.
 
-\begin{itemize}[leftmargin=1.2em]
-\item Average: $\mu = (0.1 + 0.3) / 2 = 0.2$.
-\item Distances: $-0.1$ and $+0.1$. Squared: $0.01$ and $0.01$.
-\item Wobble: $V = (0.01 + 0.01) / 2 = 0.01$.
-\item $\rho = 0.01 / (0.2 \times 0.8) = 0.01 / 0.16 = 0.0625$.
-\end{itemize}
-\textbf{Our guide:} BARCS estimates $\rho = 0.000000386$ (Step~7 in
-Chapter~2 shows how). So
-$V = 0.000000386 \times 0.000191 \times 0.999809 = 0.0000000000737$.
-Its square root is $0.0000086$: the true proportion moves by about 8.6 per
-million between replicates, for example from 191 to 183 or 199 per million.
+\textbf{How full it is:} BARCS estimates $\rho = 0.000000386$ (Step~7 in
+Chapter~2 shows how). The meter is almost empty.
+
+\textbf{The wobble:} $V = \rho \times \mu \times (1-\mu) = 0.000000386
+\times 0.000191 = 0.0000000000737$.
+
+\textbf{In words:} the square root of $V$ is $0.0000086$, which is 8.6 per
+million. So the true proportion of our guide moves by about 8.6 per million
+between replicates, for example from 191 to 183 or 199 per million.
 \end{worked}
 
 \subsection{Part 4: Put the two noises together --- where $N \times (N-1)$ comes from}
@@ -540,7 +594,7 @@ a little smaller. Here is the full calculation:
 \renewcommand{\arraystretch}{1.35}
 \begin{tabular}{@{}r@{\;}l l@{}}
 \toprule
-& \textbf{With letters} & \textbf{Example 4d ($p = 0.1$ or $0.3$)}\\
+& \textbf{With letters} & \textbf{Case B ($p = 0.1$ or $0.3$)}\\
 \midrule
 1. & average of $p^2$ $= \mu^2 + V$
    & $(0.01 + 0.09)/2 = 0.05 = 0.04 + 0.01$\\
@@ -596,7 +650,7 @@ $a + a \times b = a \times (1+b)$:
 \]
 
 \begin{worked}[ 4e: check with ten reads]
-Use Example 4d ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$
+Use case B of Figure~\ref{fig:rho} ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$
 reads.
 \begin{itemize}[leftmargin=1.2em]
 \item Piece 1: $10 \times 10 \times 0.01 = 1.0$.

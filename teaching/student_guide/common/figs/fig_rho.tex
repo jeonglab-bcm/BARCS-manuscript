@@ -1,0 +1,38 @@
+% rho = how full the "wobble meter" is; full = mu*(1-mu) (mu = 0.2).
+\begin{tikzpicture}[x=6.5cm,y=1cm,font=\small,
+  dot/.style={circle,fill=barcsblue,inner sep=2.4pt}]
+  \def\mx{1.18}   % x start of meter
+  \def\mw{0.42}   % meter width (full = 0.16)
+  \node[font=\footnotesize\bfseries,anchor=south] at (0.5,3.75) {where $p$ lands in the replicates};
+  \node[font=\footnotesize\bfseries,anchor=south] at (\mx+\mw/2,3.75)
+    {wobble meter};
+  \node[font=\footnotesize\bfseries,anchor=south] at (\mx+\mw+0.27,3.75) {$V$ and $\rho$};
+  \foreach \y/\name in {3/{A. No wobble}, 1.6/{B. Some wobble}, 0.2/{C. Largest wobble}} {
+    \draw[->] (0,\y) -- (1.06,\y);
+    \foreach \t in {0,0.2,0.5,1} \draw (\t,\y+0.08) -- (\t,\y-0.08);
+    \node[font=\scriptsize,below] at (0,\y-0.08) {0};
+    \node[font=\scriptsize,below] at (0.2,\y-0.08) {$\mu$};
+    \node[font=\scriptsize,below] at (0.5,\y-0.08) {0.5};
+    \node[font=\scriptsize,below] at (1,\y-0.08) {1};
+    \node[anchor=west,font=\footnotesize\bfseries] at (0,\y+0.62) {\name};
+    \draw (\mx,\y-0.15) rectangle (\mx+\mw,\y+0.15);
+  }
+  % A: all replicates at mu
+  \node[dot] at (0.2,3) {}; \node[font=\scriptsize,above] at (0.2,3.08) {100\%};
+  \node[anchor=west,font=\footnotesize] at (\mx+\mw+0.03,3) {$V = 0$, \ $\rho = 0$};
+  % B: 0.1 or 0.3
+  \node[dot] at (0.1,1.6) {}; \node[font=\scriptsize,above] at (0.1,1.68) {50\%};
+  \node[dot] at (0.3,1.6) {}; \node[font=\scriptsize,above] at (0.3,1.68) {50\%};
+  \fill[barcsorange] (\mx,1.45) rectangle (\mx+\mw*0.0625,1.75);
+  \node[anchor=west,font=\footnotesize] at (\mx+\mw+0.03,1.6) {$V = 0.01$, \ $\rho = 0.0625$};
+  % C: 0 or 1
+  \node[dot] at (0,0.2) {}; \node[font=\scriptsize,above] at (0,0.28) {80\%};
+  \node[dot] at (1,0.2) {}; \node[font=\scriptsize,above] at (1,0.28) {20\%};
+  \fill[barcsorange] (\mx,0.05) rectangle (\mx+\mw,0.35);
+  \node[anchor=west,font=\footnotesize] at (\mx+\mw+0.03,0.2) {$V = 0.16$, \ $\rho = 1$};
+  % meter scale
+  \node[font=\scriptsize,below] at (\mx,-0.15) {0};
+  \node[font=\scriptsize,below] at (\mx+\mw,-0.15) {$0.16 = \mu \times (1-\mu)$};
+  \node[font=\footnotesize,align=center] at (\mx+\mw/2+0.15,-0.95)
+    {$\rho = V \div 0.16$ = the part of the meter that is full};
+\end{tikzpicture}

@@ -502,20 +502,49 @@ away.
 \end{worked}
 \end{frame}
 
-\begin{frame}{Part 3: Biological noise --- the proportion wobbles}
-\begin{itemize}
-\item Each replicate is different living cells. The \alert{true proportion}
-  $p$ moves a little between replicates. Its average is $\mu$.
-\item Wobble: $V = $ average of $(p - \mu)^2$.
-\item BARCS reports $\rho = V \div \bigl(\mu \times (1-\mu)\bigr)$, so
-  $V = \rho \times \mu \times (1-\mu)$.
-\item $\mu \times (1-\mu)$ is the largest possible wobble ($p$ jumping
-  between 0 and 1, Part 2). So $\rho$ is between 0 and 1.
+\begin{frame}{Part 3: What is the wobble?}
+\begin{itemize}\small
+\item Each replicate is different living cells. So the \alert{true
+  proportion} $p$ of the guide is a little different in each replicate.
+\item The \alert{wobble} is how far $p$ moves from its average $\mu$:
+  \quad $V = $ average of $(p - \mu)^2$.
 \end{itemize}
-\begin{worked}[ 4d: a small wobble example]
-$p = 0.1$ or $0.3$, half of the time each. $\mu = 0.2$. Distances $\pm 0.1$,
-so $V = 0.01$ and $\rho = 0.01 / 0.16 = 0.0625$.\\
-\textbf{Our guide:} $V = 0.000000386 \times 0.000191 \times 0.999809$;
+\begin{center}
+\resizebox{!}{0.46\textheight}{\input{../common/figs/fig_wobble.tex}}
+\end{center}
+{\small No wobble: every replicate at $p = 0.2$, all arrows 0, $V = 0$.}
+\end{frame}
+
+\begin{frame}{$\rho$: how full is the wobble meter?}
+\begin{center}
+\resizebox{!}{0.5\textheight}{\input{../common/figs/fig_rho.tex}}
+\end{center}
+\begin{itemize}\small
+\item $p$ must stay between 0 and 1. The widest wobble: $p$ jumps to 0 or 1
+  (case C). That is the one-read case of Part 2: $V = \mu \times (1-\mu)$.
+\item So $\mu \times (1-\mu)$ is the \alert{full meter}, and
+  $\rho = V \div \bigl(\mu \times (1-\mu)\bigr)$ is \alert{how full} it is.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Turn the formula around}
+Multiply both sides by $\mu \times (1-\mu)$:
+\vspace{-0.4em}
+\[
+\rho = \frac{V}{\mu \times (1-\mu)}
+\quad\Longrightarrow\quad
+V = \rho \times \mu \times (1-\mu)
+\]
+\begin{remember}
+$\rho$ is \alert{not} replaced by $\mu$. The wobble $=$ how full the meter
+is $\times$ the size of the full meter. $\rho$ removes the size of the
+meter, so it means the same for a rare and a common guide.
+\end{remember}
+\begin{worked}[ 4d]
+\textbf{Case B:} $0.0625 \times 0.2 \times 0.8 = 0.0625 \times 0.16 = 0.01 = V$.\\
+\textbf{Our guide:} full meter $= 0.000191 \times 0.999809 = 0.000191$;
+$\rho = 0.000000386$ (almost empty);
+$V = 0.000000386 \times 0.000191 = 0.0000000000737$;
 $\sqrt{V} = 8.6$ per million.
 \end{worked}
 \end{frame}
@@ -549,7 +578,7 @@ Counting noise for one replicate is $N \times p \times (1-p)$. Average it:
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{@{}r@{\;}l l@{}}
 \toprule
-& With letters & Example 4d ($p = 0.1$ or $0.3$)\\
+& With letters & Case B ($p = 0.1$ or $0.3$)\\
 \midrule
 1. & avg.\ of $p^2 = \mu^2 + V$ & $(0.01 + 0.09)/2 = 0.05 = 0.04 + 0.01$\\
 2. & avg.\ of $p \times (1-p) = \mu - $ avg.\ of $p^2$ & $(0.09 + 0.21)/2 = 0.15$\\
@@ -588,7 +617,7 @@ $N \times \mu \times (1-\mu)$:}
 
 \begin{frame}{Check with ten reads}
 \begin{worked}[ 4e]
-Example 4d ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$:
+Case B ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$:
 
 \begin{tabular}{@{}ll@{}}
 Piece 1: & $10 \times 10 \times 0.01 = 1.0$\\
