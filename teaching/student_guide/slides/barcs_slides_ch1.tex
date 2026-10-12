@@ -524,9 +524,66 @@ away.
   (case C). That is the one-read case of Part 2: $V = \mu \times (1-\mu)$.
 \item So $\mu \times (1-\mu)$ is the \alert{full meter}, and
   $\rho = V \div \bigl(\mu \times (1-\mu)\bigr)$ is \alert{how full} it is.
-\item Next two slides: turn this around to $V = \rho \times \mu \times
-  (1-\mu)$, then put it into the variance formula.
+\item Next slides: why we divide, why the maximum is $\mu \times (1-\mu)$,
+  and how $\rho$ goes into the variance formula.
 \end{itemize}
+\end{frame}
+
+\begin{frame}{From $V$ to $\rho$: a score out of the maximum}
+\begin{columns}[T]
+\begin{column}{0.46\textwidth}
+\begin{block}{A test}
+45 points out of 50.\\
+Score $= 45 \div 50 = 0.9$.\\[3pt]
+Always between 0 and 1.\\
+Means the same for a 50-point or a 100-point test.
+\end{block}
+\end{column}
+\begin{column}{0.50\textwidth}
+\begin{block}{The wobble}
+Wobble $V = 0.01$ (case B).\\
+Largest possible wobble $= 0.16$.\\[3pt]
+$\rho = 0.01 \div 0.16 = 0.0625$.\\
+Means the same for a rare or a common guide.
+\end{block}
+\end{column}
+\end{columns}
+\vspace{-0.3em}
+\[
+\rho = \frac{\text{the wobble}}{\text{the largest possible wobble}}
+ = \frac{V}{\mu \times (1-\mu)}
+\]
+\vspace{-0.3em}
+{\small This is a \alert{definition}: BARCS chooses to report the wobble as a
+score out of the maximum. Next: why the maximum is $\mu \times (1-\mu)$.}
+\end{frame}
+
+\begin{frame}{Why the largest wobble is $\mu \times (1-\mu)$}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}r@{\;}l l l@{}}
+\toprule
+& Rule & Case B ($p = 0.1, 0.3$) & Case C ($p = 0, 1$)\\
+\midrule
+a. & $V = $ avg.\ of $p^2 - \mu^2$ & $0.05 - 0.04 = 0.01$ & $0.2 - 0.04 = 0.16$\\
+b. & $p \times p \le p$ when $0 \le p \le 1$ & $0.01 \le 0.1$,\ $0.09 \le 0.3$ & $0 = 0$,\ $1 = 1$\\
+c. & so: avg.\ of $p^2 \le \mu$ & $0.05 \le 0.2$ & $0.2 = 0.2$\\
+d. & so: $V \le \mu - \mu^2 = \mu \times (1-\mu)$ & $0.01 \le 0.16$ & $0.16 = 0.16$\\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\begin{itemize}\footnotesize
+\item a: open $(p-\mu)^2 = p^2 - 2\times\mu\times p + \mu^2$ and average;
+  the average of $p$ is $\mu$.
+\item b: a number from 0 to 1 does not grow when multiplied by itself
+  ($0.3 \times 0.3 = 0.09$).
+\item c: every $p^2 \le p$, so the average of $p^2 \le$ the average of $p = \mu$.
+\quad d: put c into a.
+\end{itemize}
+\normalsize
+The wobble can never pass $\mu \times (1-\mu)$. It reaches it only when every
+$p$ is 0 or 1 (case C).
 \end{frame}
 
 \begin{frame}{Turn the formula around}
@@ -555,13 +612,14 @@ $\sqrt{V} = 8.6$ per million.
 \newcommand{\cV}{\textcolor{barcsorange}{V}}
 \newcommand{\cR}{\textcolor{barcsblue}{\rho}}
 \footnotesize
-\renewcommand{\arraystretch}{1.3}\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.12}\setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}l l l@{}}
 \toprule
 \textbf{Step} & \textbf{Formula} & \textbf{Case B, $N = 10$}\\
 \midrule
 1. Wobble & $\cV = $ average of $(p-\mu)^2$ & $\cV = 0.01$\\
-2. Meter & $\cR = \cV \div \bigl(\mu \times (1-\mu)\bigr)$ & $0.01 \div 0.16 = 0.0625$\\
+1b. Maximum & largest possible $\cV = \mu \times (1-\mu)$ & $0.2 \times 0.8 = 0.16$\\
+2. Score & $\cR = \cV \div$ maximum $= \cV \div \bigl(\mu \times (1-\mu)\bigr)$ & $0.01 \div 0.16 = 0.0625$\\
 3. Turn around & $\cV = \cR \times \mu \times (1-\mu)$ & $0.0625 \times 0.16 = 0.01$\\
 4. Part 4 & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cV$ & $1.6 + 90 \times 0.01 = 2.5$\\
 5. Replace $\cV$ & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cR \times \mu \times (1-\mu)$ & $1.6 + 90 \times 0.0625 \times 0.16 = 2.5$\\
@@ -569,7 +627,7 @@ $\sqrt{V} = 8.6$ per million.
 \bottomrule
 \end{tabular}
 
-\medskip
+\smallskip
 {\footnotesize $N \times \mu \times (1-\mu) = 10 \times 0.2 \times 0.8 = 1.6$;\quad
 $N \times (N-1) = 10 \times 9 = 90$;\quad $1 + 9 \times 0.0625 = 1.5625$.}
 

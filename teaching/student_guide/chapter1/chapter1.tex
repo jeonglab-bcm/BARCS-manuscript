@@ -511,13 +511,61 @@ when the wobble is the largest possible, $\mu \times (1-\mu)$.}
 \label{fig:rho}
 \end{figure}
 
-So the largest possible wobble is $\mu \times (1-\mu)$. Think of it as a
-meter that is full at $\mu \times (1-\mu)$. The number $\rho$ tells how full
-the meter is:
+\paragraph{From the wobble $V$ to $\rho$.} This step uses two ideas.
+
+\textbf{Idea 1: a score out of the maximum.} On a test, you get 45 points
+out of 50. Your score is $45 \div 50 = 0.9$. The score is always between 0
+and 1, and it means the same thing on a test with 50 points or 100 points.
+BARCS does the same with the wobble. It divides the wobble by the largest
+wobble that is possible:
 \[
-\rho = \frac{V}{\mu \times (1-\mu)} = \frac{\text{the wobble}}{\text{the largest possible wobble}} .
+\rho = \frac{\text{the wobble}}{\text{the largest possible wobble}}
+     = \frac{V}{\mu \times (1-\mu)} .
 \]
-In case B: $\rho = 0.01 \div 0.16 = 0.0625$. The meter is 6.25\% full.
+This is a \textbf{definition}. Nothing forces it. BARCS chooses to report
+the wobble as a score out of the maximum, because a score is easy to compare
+between guides.
+
+\textbf{Idea 2: why the largest possible wobble is $\mu \times (1-\mu)$.}
+Case~C gave $V = 0.16 = \mu \times (1-\mu)$. The table shows that no other
+set of $p$ values can give more. The right columns check each line with
+case~B and case~C.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}r@{\;}l l l@{}}
+\toprule
+& \textbf{Rule} & \textbf{Case B} ($p = 0.1, 0.3$) & \textbf{Case C} ($p = 0, 1$)\\
+\midrule
+a. & $V = $ average of $p^2 - \mu^2$ & $0.05 - 0.04 = 0.01$ & $0.2 - 0.04 = 0.16$\\
+b. & $p \times p \le p$ for every $p$ from 0 to 1 & $0.01 \le 0.1$, $0.09 \le 0.3$ & $0 = 0$, $1 = 1$\\
+c. & so: average of $p^2 \le \mu$ & $0.05 \le 0.2$ & $0.2 = 0.2$\\
+d. & so: $V \le \mu - \mu^2 = \mu \times (1-\mu)$ & $0.01 \le 0.16$ & $0.16 = 0.16$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+\item \textbf{Line a.} Open the square:
+  $(p-\mu)^2 = p^2 - 2 \times \mu \times p + \mu^2$. Take the average. The
+  average of $p$ is $\mu$, so the middle part becomes
+  $2 \times \mu \times \mu$. The result is: average of
+  $p^2 - 2 \times \mu^2 + \mu^2 = $ average of $p^2 - \mu^2$.
+  (Case B: average of $p^2 = (0.01 + 0.09)/2 = 0.05$.)
+\item \textbf{Line b.} A number from 0 to 1 gets smaller (or stays the same)
+  when you multiply it by itself: $0.3 \times 0.3 = 0.09$. It stays the
+  same only for 0 and 1.
+\item \textbf{Line c.} Each $p^2$ is at most $p$. So the average of $p^2$ is
+  at most the average of $p$, which is $\mu$.
+\item \textbf{Line d.} Put line c into line a.
+\end{itemize}
+So the wobble can never be more than $\mu \times (1-\mu)$. It reaches this
+value only when every $p$ is 0 or 1, as in case~C.
+
+\textbf{Put the two ideas together.} In case B, $\rho = 0.01 \div 0.16 =
+0.0625$: the wobble is 6.25\% of the largest possible wobble. In case C,
+$\rho = 0.16 \div 0.16 = 1$. With no wobble (case A), $\rho = 0$.
 
 \paragraph{Turn the formula around.} Multiply both sides of the formula for
 $\rho$ by $\mu \times (1-\mu)$:
@@ -608,11 +656,7 @@ a little smaller. Here is the full calculation:
 \end{tabular}
 \end{center}
 
-Line 1 needs one explanation. Open the square in the definition of $V$:
-$V = $ average of $(p-\mu)^2 = $ average of $(p^2 - 2\times\mu\times p +
-\mu^2)$. The average of $p$ is $\mu$, so this is average of $p^2 - 2 \times
-\mu \times \mu + \mu^2 = $ average of $p^2 - \mu^2$. Move $\mu^2$ to the other
-side, and you get line~1. Line~2 uses $p \times (1-p) = p - p^2$ and the
+Line~1 is line~a of Part~3, with $\mu^2$ moved to the other side. Line~2 uses $p \times (1-p) = p - p^2$ and the
 fact that the average of $p$ is $\mu$. Lines~3 and~4 put in line~1 and take
 $\mu$ out.
 
@@ -663,7 +707,9 @@ $a + a \times b = a \times (1+b)$:
 \midrule
 1. Measure the wobble & $\cV = $ average of $(p-\mu)^2$\\
  & \textit{$\cV = 0.01$}\\
-2. Put it on the meter & $\cR = \cV \div \bigl(\mu \times (1-\mu)\bigr)$\\
+1b. The largest possible wobble & $\mu \times (1-\mu)$ \quad (Idea 2 of Part 3)\\
+ & \textit{$0.2 \times 0.8 = 0.16$}\\
+2. Score out of the maximum & $\cR = \cV \div \bigl(\mu \times (1-\mu)\bigr)$ \quad (Idea 1)\\
  & \textit{$0.01 \div 0.16 = 0.0625$}\\
 3. Turn it around & $\cV = \cR \times \mu \times (1-\mu)$\\
  & \textit{$0.0625 \times 0.16 = 0.01$}\\
