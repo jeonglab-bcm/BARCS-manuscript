@@ -517,13 +517,15 @@ away.
 
 \begin{frame}{$\rho$: how full is the wobble meter?}
 \begin{center}
-\resizebox{!}{0.5\textheight}{\input{../common/figs/fig_rho.tex}}
+\resizebox{!}{0.44\textheight}{\input{../common/figs/fig_rho.tex}}
 \end{center}
 \begin{itemize}\small
 \item $p$ must stay between 0 and 1. The widest wobble: $p$ jumps to 0 or 1
   (case C). That is the one-read case of Part 2: $V = \mu \times (1-\mu)$.
 \item So $\mu \times (1-\mu)$ is the \alert{full meter}, and
   $\rho = V \div \bigl(\mu \times (1-\mu)\bigr)$ is \alert{how full} it is.
+\item Next two slides: turn this around to $V = \rho \times \mu \times
+  (1-\mu)$, then put it into the variance formula.
 \end{itemize}
 \end{frame}
 
@@ -547,6 +549,35 @@ $\rho = 0.000000386$ (almost empty);
 $V = 0.000000386 \times 0.000191 = 0.0000000000737$;
 $\sqrt{V} = 8.6$ per million.
 \end{worked}
+\end{frame}
+
+\begin{frame}{How $\rho$ gets into the variance formula}
+\newcommand{\cV}{\textcolor{barcsorange}{V}}
+\newcommand{\cR}{\textcolor{barcsblue}{\rho}}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}l l l@{}}
+\toprule
+\textbf{Step} & \textbf{Formula} & \textbf{Case B, $N = 10$}\\
+\midrule
+1. Wobble & $\cV = $ average of $(p-\mu)^2$ & $\cV = 0.01$\\
+2. Meter & $\cR = \cV \div \bigl(\mu \times (1-\mu)\bigr)$ & $0.01 \div 0.16 = 0.0625$\\
+3. Turn around & $\cV = \cR \times \mu \times (1-\mu)$ & $0.0625 \times 0.16 = 0.01$\\
+4. Part 4 & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cV$ & $1.6 + 90 \times 0.01 = 2.5$\\
+5. Replace $\cV$ & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cR \times \mu \times (1-\mu)$ & $1.6 + 90 \times 0.0625 \times 0.16 = 2.5$\\
+6. Take out & $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \cR\bigr)$ & $1.6 \times 1.5625 = 2.5$\\
+\bottomrule
+\end{tabular}
+
+\medskip
+{\footnotesize $N \times \mu \times (1-\mu) = 10 \times 0.2 \times 0.8 = 1.6$;\quad
+$N \times (N-1) = 10 \times 9 = 90$;\quad $1 + 9 \times 0.0625 = 1.5625$.}
+
+\medskip
+\small Step 6 takes out the common part $N \times \mu \times (1-\mu)$. In step 5,
+the orange \textcolor{barcsorange}{$V$} is replaced by
+\textcolor{barcsblue}{$\rho$}$\,\times \mu \times (1-\mu)$ from step 3.
+Every line gives the same number.
 \end{frame}
 
 \begin{frame}{Part 4: Split the distance into two pieces}

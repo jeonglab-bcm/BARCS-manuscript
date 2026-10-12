@@ -637,7 +637,9 @@ smaller. That is why piece~2 shrinks.
 $N \times N \times V$, but it also takes $N \times V$ away from the counting
 noise. What remains is $N \times (N-1) \times V$.
 
-\paragraph{The final form.} Put in $V = \rho \times \mu \times (1-\mu)$:
+\paragraph{The final form.} Figure~\ref{fig:flow} shows the whole path of
+$\rho$ into the formula. Put in $V = \rho \times \mu \times (1-\mu)$ from
+Part~3:
 \[
 \text{variance} = N \times \mu \times (1-\mu)
  + N \times (N-1) \times \rho \times \mu \times (1-\mu).
@@ -648,6 +650,39 @@ $a + a \times b = a \times (1+b)$:
 \boxed{\;\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting noise}}
  \times \underbrace{\bigl(1 + (N-1) \times \rho\bigr)}_{\text{extra factor from biological noise}}\;}
 \]
+
+\begin{figure}[ht]
+\centering
+{\small
+\newcommand{\cV}{\textcolor{barcsorange}{V}}%
+\newcommand{\cR}{\textcolor{barcsblue}{\rho}}%
+\renewcommand{\arraystretch}{1.4}\setlength{\tabcolsep}{4pt}%
+\begin{tabular}{@{}l l@{}}
+\toprule
+\textbf{Step} & \textbf{Formula} \quad / \quad \textit{check with case B, $N = 10$}\\
+\midrule
+1. Measure the wobble & $\cV = $ average of $(p-\mu)^2$\\
+ & \textit{$\cV = 0.01$}\\
+2. Put it on the meter & $\cR = \cV \div \bigl(\mu \times (1-\mu)\bigr)$\\
+ & \textit{$0.01 \div 0.16 = 0.0625$}\\
+3. Turn it around & $\cV = \cR \times \mu \times (1-\mu)$\\
+ & \textit{$0.0625 \times 0.16 = 0.01$}\\
+4. Variance (Part 4) & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cV$\\
+ & \textit{$1.6 + 90 \times 0.01 = 2.5$}\\
+5. Replace $\cV$ by step 3 & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cR \times \mu \times (1-\mu)$\\
+ & \textit{$1.6 + 90 \times 0.0625 \times 0.16 = 2.5$}\\
+6. Take out the common part & $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \cR\bigr)$\\
+ & \textit{$1.6 \times (1 + 9 \times 0.0625) = 1.6 \times 1.5625 = 2.5$}\\
+\bottomrule
+\end{tabular}}
+\caption{How $\rho$ gets into the variance formula. Steps 1--3 come from
+Part~3, and step~4 from Part~4. In step~5, the orange $V$ is replaced by
+$\rho \times \mu \times (1-\mu)$ from step~3. The lines in italics check each
+step with case B of Figure~\ref{fig:rho} and $N = 10$ reads, where
+$N \times \mu \times (1-\mu) = 10 \times 0.2 \times 0.8 = 1.6$ and
+$N \times (N-1) = 90$.}
+\label{fig:flow}
+\end{figure}
 
 \begin{worked}[ 4e: check with ten reads]
 Use case B of Figure~\ref{fig:rho} ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$
