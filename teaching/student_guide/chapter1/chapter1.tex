@@ -488,48 +488,110 @@ average of the squared distances.}
 \label{fig:wobble}
 \end{figure}
 
-\paragraph{Put the wobble on a scale from 0 to 1: $\rho$.} A proportion
-cannot go below 0 or above 1. So the wobble cannot be as large as we like.
-Figure~\ref{fig:rho} shows three cases, all with the average $\mu = 0.2$:
+\paragraph{Where $\rho$ comes from: two reads from the same replicate.}
+The machine reads many reads from one replicate. Take two of them. Ask this
+question: \emph{if the first read is our guide, is the second read more
+likely to be our guide too?}
 
 \begin{itemize}
-\item \textbf{A. No wobble.} Every replicate has $p = 0.2$. So $V = 0$.
-\item \textbf{B. Some wobble.} Half of the replicates have $p = 0.1$, half
-  have $p = 0.3$. So $V = 0.01$ (as in Figure~\ref{fig:wobble}).
-\item \textbf{C. The largest wobble.} The proportion jumps to the two ends:
-  $p = 0$ in 80\% of the replicates and $p = 1$ in 20\%. The average is
-  still 0.2. This is exactly the one-read case of Part~2, so
-  $V = 0.2 \times 0.8 = 0.16$. No other set of $p$ values with the average
-  0.2 can wobble more.
+\item \textbf{Without a wobble: no.} Every replicate has $p = \mu$. Each read
+  is our guide with the chance $\mu$, whatever the other read is. The chance
+  that both reads are our guide is $\mu \times \mu$.
+\item \textbf{With a wobble: yes.} If the first read is our guide, this
+  replicate probably has a high $p$. So the second read is also more likely
+  to be our guide. Reads from the same replicate \textbf{move together}.
 \end{itemize}
+
+Scientists measure how much two values move together with the
+\textbf{correlation}. A correlation of 0 means that the two values are
+unrelated. A correlation of 1 means that they are always the same. The
+number $\rho$ is exactly this: \textbf{the correlation between two reads
+from the same replicate}. That is also why it has the name $\rho$: it is
+the usual letter for a correlation.\footnote{In statistics, $\rho$ is
+called the \emph{intra-class correlation}: the correlation of two trials in
+the same group. The beta-binomial model, in which the true proportion
+wobbles between groups, was described by J.\,G. Skellam (1948), \emph{Journal
+of the Royal Statistical Society B} 10: 257--261.}
+
+Now we calculate it. We do it in three steps.
+
+\textbf{Step 1: the chance that both reads are our guide.} In a replicate
+with the true proportion $p$, the chance is $p \times p$. Over all
+replicates, the chance is the average of $p \times p$. Table~\ref{tab:both}
+shows the three cases of Figure~\ref{fig:rho}.
+
+\begin{table}[ht]
+\centering
+\small
+\renewcommand{\arraystretch}{1.35}\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Case ($\mu = 0.2$) & Both reads are & If there were & Extra & Correlation\\
+& our guide & no wobble ($\mu \times \mu$) & (= covariance) & $\rho$ = extra $\div$ 0.16\\
+\midrule
+A. $p = 0.2$ always & $0.2 \times 0.2 = 0.04$ & 0.04 & 0 & 0\\
+B. $p = 0.1$ or $0.3$ & $(0.01 + 0.09)/2 = 0.05$ & 0.04 & 0.01 & 0.0625\\
+C. $p = 0$ or $1$ & $0.8 \times 0 + 0.2 \times 1 = 0.2$ & 0.04 & 0.16 & 1\\
+\bottomrule
+\end{tabular}
+\caption{Two reads from the same replicate. The wobble makes ``both reads
+are our guide'' more likely than $\mu \times \mu$. The extra is the
+covariance. It is always equal to the wobble $V$.}
+\label{tab:both}
+\end{table}
+
+\textbf{Step 2: the extra is the covariance, and it equals $V$.} The extra
+over $\mu \times \mu$ shows how much the two reads move together. Its name
+is the \textbf{covariance}. It is the average of (distance of read 1 from
+$\mu$) $\times$ (distance of read 2 from $\mu$). Call the two reads $X_1$
+and $X_2$ (each is 1 or 0). Open the brackets:
+\begin{align*}
+\text{covariance} &= \text{average of } (X_1 - \mu) \times (X_2 - \mu)\\
+&= \text{average of } \bigl(X_1 \times X_2 - \mu \times X_2 - X_1 \times \mu + \mu \times \mu\bigr)\\
+&= \text{average of } X_1 \times X_2 - \mu \times \mu - \mu \times \mu + \mu \times \mu\\
+&= \text{(chance that both are our guide)} - \mu \times \mu .
+\end{align*}
+The third line uses that the average of each read is $\mu$. The last line
+uses that $X_1 \times X_2$ is 1 only when both reads are 1, and 0
+otherwise. So its average is the chance that both are our guide.
+The chance that both are our guide is the average of $p^2$ (Step~1). And
+line~a of the table below shows that the average of $p^2$ minus
+$\mu \times \mu$ is the wobble $V$. So
+\[
+\text{covariance of two reads} = V .
+\]
+Check with case B: $0.05 - 0.04 = 0.01 = V$. The wobble of the proportion
+\emph{is} the covariance of two reads.
+
+\textbf{Step 3: the correlation.} The correlation is the covariance divided
+by the standard deviations of the two values.\footnote{This is Pearson's
+correlation coefficient: covariance $\div$ (standard deviation of value 1
+$\times$ standard deviation of value 2).} Each read has the variance
+$\mu \times (1-\mu)$ (Part~2), so each standard deviation is
+$\sqrt{\mu \times (1-\mu)}$. The product of the two standard deviations is
+$\mu \times (1-\mu)$. So
+\[
+\rho = \frac{\text{covariance}}{\text{SD of read 1} \times \text{SD of read 2}}
+ = \frac{V}{\mu \times (1-\mu)} .
+\]
+Check with case B: $\rho = 0.01 \div 0.16 = 0.0625$. A computer drew
+100{,}000 pairs of reads from case-B replicates and found the correlation
+0.06. In case C, the two reads are always the same (both 0 or both 1), and
+the correlation is 1.
 
 \begin{figure}[ht]
 \centering
 \input{\guideroot common/figs/fig_rho.tex}
-\caption{$\rho$ tells how full the ``wobble meter'' is. The meter is full
-when the wobble is the largest possible, $\mu \times (1-\mu)$.}
+\caption{$\rho$, the correlation of two reads from the same replicate. It is
+0 with no wobble and 1 with the largest possible wobble,
+$\mu \times (1-\mu)$. In between, $\rho$ tells how full the ``meter'' is.}
 \label{fig:rho}
 \end{figure}
 
-\paragraph{From the wobble $V$ to $\rho$.} This step uses two ideas.
-
-\textbf{Idea 1: a score out of the maximum.} On a test, you get 45 points
-out of 50. Your score is $45 \div 50 = 0.9$. The score is always between 0
-and 1, and it means the same thing on a test with 50 points or 100 points.
-BARCS does the same with the wobble. It divides the wobble by the largest
-wobble that is possible:
-\[
-\rho = \frac{\text{the wobble}}{\text{the largest possible wobble}}
-     = \frac{V}{\mu \times (1-\mu)} .
-\]
-This is a \textbf{definition}. Nothing forces it. BARCS chooses to report
-the wobble as a score out of the maximum, because a score is easy to compare
-between guides.
-
-\textbf{Idea 2: why the largest possible wobble is $\mu \times (1-\mu)$.}
-Case~C gave $V = 0.16 = \mu \times (1-\mu)$. The table shows that no other
-set of $p$ values can give more. The right columns check each line with
-case~B and case~C.
+\paragraph{Why $\rho$ is never more than 1.} A correlation cannot be more
+than 1. Here this means that the wobble can never be more than
+$\mu \times (1-\mu)$. The table shows why, with checks for case B and case
+C.
 
 \begin{center}
 \small
@@ -552,137 +614,91 @@ d. & so: $V \le \mu - \mu^2 = \mu \times (1-\mu)$ & $0.01 \le 0.16$ & $0.16 = 0.
   average of $p$ is $\mu$, so the middle part becomes
   $2 \times \mu \times \mu$. The result is: average of
   $p^2 - 2 \times \mu^2 + \mu^2 = $ average of $p^2 - \mu^2$.
-  (Case B: average of $p^2 = (0.01 + 0.09)/2 = 0.05$.)
-\item \textbf{Line b.} A number from 0 to 1 gets smaller (or stays the same)
-  when you multiply it by itself: $0.3 \times 0.3 = 0.09$. It stays the
-  same only for 0 and 1.
+\item \textbf{Line b.} A number from 0 to 1 does not grow when you multiply
+  it by itself: $0.3 \times 0.3 = 0.09$. It stays the same only for 0 and 1.
 \item \textbf{Line c.} Each $p^2$ is at most $p$. So the average of $p^2$ is
   at most the average of $p$, which is $\mu$.
 \item \textbf{Line d.} Put line c into line a.
 \end{itemize}
-So the wobble can never be more than $\mu \times (1-\mu)$. It reaches this
-value only when every $p$ is 0 or 1, as in case~C.
-
-\textbf{Put the two ideas together.} In case B, $\rho = 0.01 \div 0.16 =
-0.0625$: the wobble is 6.25\% of the largest possible wobble. In case C,
-$\rho = 0.16 \div 0.16 = 1$. With no wobble (case A), $\rho = 0$.
 
 \paragraph{Turn the formula around.} Multiply both sides of the formula for
 $\rho$ by $\mu \times (1-\mu)$:
 \[
 \rho = \frac{V}{\mu \times (1-\mu)}
 \quad\Longrightarrow\quad
-\rho \times \mu \times (1-\mu) = V .
+\text{covariance of two reads} = V = \rho \times \mu \times (1-\mu).
 \]
-Check with case B: $0.0625 \times 0.2 \times 0.8 = 0.0625 \times 0.16 =
-0.01$. This is $V$ again.
-
-So $\rho$ is \textbf{not} replaced by $\mu$. The formula
-$V = \rho \times \mu \times (1-\mu)$ says: \emph{the wobble = how full the
-meter is $\times$ the size of the full meter.}
-
-Why does BARCS use $\rho$ and not $V$? Because $\rho$ means the same thing
-for every guide. A rare guide ($\mu$ small) can only wobble a little in
-absolute terms, because its meter is small. $\rho$ removes the size of the
-meter, so a rare guide and a common guide with the same $\rho$ are equally
-noisy.\footnote{A model in which the true proportion wobbles in this way is
-the \emph{beta-binomial} model. J.\,G. Skellam described it in 1948: A
-probability distribution derived from the binomial distribution by regarding
-the probability of success as variable between the sets of trials.
-\emph{Journal of the Royal Statistical Society B} 10: 257--261.}
+Check with case B: $0.0625 \times 0.16 = 0.01$. We use this in Part~4.
 
 \begin{worked}[ 4d: the wobble of our guide]
-\textbf{Size of the full meter:} $\mu \times (1-\mu) = 0.000191 \times
+\textbf{Variance of one read:} $\mu \times (1-\mu) = 0.000191 \times
 0.999809 = 0.000191$.
 
-\textbf{How full it is:} BARCS estimates $\rho = 0.000000386$ (Step~7 in
-Chapter~2 shows how). The meter is almost empty.
+\textbf{Correlation of two reads:} BARCS estimates $\rho = 0.000000386$
+(Step~7 in Chapter~2 shows how). Two reads from the same library are almost
+unrelated.
 
-\textbf{The wobble:} $V = \rho \times \mu \times (1-\mu) = 0.000000386
-\times 0.000191 = 0.0000000000737$.
+\textbf{The wobble (= covariance):} $V = \rho \times \mu \times (1-\mu) =
+0.000000386 \times 0.000191 = 0.0000000000737$.
 
 \textbf{In words:} the square root of $V$ is $0.0000086$, which is 8.6 per
 million. So the true proportion of our guide moves by about 8.6 per million
 between replicates, for example from 191 to 183 or 199 per million.
 \end{worked}
 
-\subsection{Part 4: Put the two noises together --- where $N \times (N-1)$ comes from}
+\subsection{Part 4: Add up the reads --- where $N \times (N-1)$ comes from}
 
-In one replicate, the true proportion is $p$. The count $K$ moves away from
-the average count $N \times \mu$ for two reasons. Write the distance in two
-pieces:
+The count $K$ is the number of reads that are our guide. So $K$ is a sum of
+$N$ values, one for each read: $K = X_1 + X_2 + \dots + X_N$, where each
+$X$ is 1 (our guide) or 0 (not our guide).
+
+\paragraph{Two reads first.} Part~2 (Step~B) said that the variances of
+\emph{independent} values add up. But reads from the same replicate are not
+independent: they move together. Look at the distance of the sum from its
+average. It is the sum of the two distances, $d_1 + d_2$. Square it:
 \[
-K - N \times \mu \;=\;
-\underbrace{(N \times p - N \times \mu)}_{\text{piece 1: the wobble}}
-\;+\;
-\underbrace{(K - N \times p)}_{\text{piece 2: counting noise}} .
+(d_1 + d_2)^2 = d_1 \times d_1 + d_2 \times d_2 + 2 \times d_1 \times d_2 .
 \]
-Piece~2 is equally likely to go up or down, whatever the value of $p$. So the
-two pieces are unrelated, and their variances add up, as in Step~B of Part~2.
-We find the variance of each piece.
-
-\paragraph{Piece 1: the wobble, in reads.} The expected count is
-$N \times p$. When you multiply every value by $N$, every distance is
-multiplied by $N$, so every squared distance is multiplied by $N \times N$.
-Example: the values 1, 2, 3 have the variance
-$(1 + 0 + 1)/3 = 0.667$. Multiply by 10: the values 10, 20, 30 have the
-variance $(100 + 0 + 100)/3 = 66.7$. That is $10 \times 10 = 100$ times
-bigger. So
+Take the average of each part. The average of $d_1 \times d_1$ is the
+variance of read 1. The average of $d_1 \times d_2$ is the covariance
+(Part~3, Step~2). So
 \[
-\text{variance of piece 1} = N \times N \times V .
+\text{variance of } (X_1 + X_2) = \text{variance} + \text{variance} + 2 \times \text{covariance}.
 \]
+For independent reads the covariance is 0, and we get Step~B again.
 
-\paragraph{Piece 2: counting noise, when $p$ wobbles.} In a replicate with
-the true proportion $p$, Part~2 gives the counting noise
-$N \times p \times (1-p)$. We need its average over the replicates. The
-average of $p \times (1-p)$ is \emph{not} exactly $\mu \times (1-\mu)$. It is
-a little smaller. Here is the full calculation:
+\begin{worked}[ 4e: two reads from a case-B replicate]
+Variance of one read: $0.2 \times 0.8 = 0.16$. Covariance: $V = 0.01$.
 
-\begin{center}
-\renewcommand{\arraystretch}{1.35}
-\begin{tabular}{@{}r@{\;}l l@{}}
-\toprule
-& \textbf{With letters} & \textbf{Case B ($p = 0.1$ or $0.3$)}\\
-\midrule
-1. & average of $p^2$ $= \mu^2 + V$
-   & $(0.01 + 0.09)/2 = 0.05 = 0.04 + 0.01$\\
-2. & average of $p \times (1-p)$ $=$ $\mu$ $-$ average of $p^2$
-   & $(0.09 + 0.21)/2 = 0.15$\\
-3. & \quad $= \mu - (\mu^2 + V)$
-   & $0.2 - 0.05 = 0.15$\\
-4. & \quad $= \mu \times (1-\mu) - V$
-   & $0.16 - 0.01 = 0.15$\\
-\bottomrule
-\end{tabular}
-\end{center}
+Variance of the sum: $0.16 + 0.16 + 2 \times 0.01 = 0.34$.
 
-Line~1 is line~a of Part~3, with $\mu^2$ moved to the other side. Line~2 uses $p \times (1-p) = p - p^2$ and the
-fact that the average of $p$ is $\mu$. Lines~3 and~4 put in line~1 and take
-$\mu$ out.
+A computer drew 100{,}000 pairs and found 0.340.
+\end{worked}
 
-So the counting noise is smaller by $V$ in each read:
+\paragraph{$N$ reads.} Now square the sum of $N$ distances,
+$(d_1 + d_2 + \dots + d_N)^2$. Multiply every part by every part. You get
+two kinds of products:
+\begin{itemize}
+\item \textbf{Squares} $d_1 \times d_1$, $d_2 \times d_2$, \dots: there are
+  $N$ of them. Each has the average $\mu \times (1-\mu)$.
+\item \textbf{Pairs} $d_1 \times d_2$, $d_2 \times d_1$, \dots: each read
+  pairs with each of the $N-1$ other reads. So there are
+  $N \times (N-1)$ of them. Each has the average covariance $V$.
+\end{itemize}
+Example with $N = 3$ reads: the pairs are 1--2, 1--3, 2--1, 2--3, 3--1,
+3--2. That is $6 = 3 \times 2$ pairs. (With two reads, there are
+$2 \times 1 = 2$ pairs. That is the ``$2 \times$'' above.)
+
+So
 \[
-\text{variance of piece 2} = N \times \bigl(\mu \times (1-\mu) - V\bigr)
- = N \times \mu \times (1-\mu) - N \times V .
+\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{N \text{ squares}}
+ + \underbrace{N \times (N-1) \times V}_{N \times (N-1) \text{ pairs}} .
 \]
-A wobbling proportion spends time near the edges, where counting noise is
-smaller. That is why piece~2 shrinks.
+\textbf{This is where $N \times (N-1)$ comes from: it is the number of pairs
+of reads.} Every pair of reads from the same replicate adds its covariance
+$V$.
 
-\paragraph{Add the two pieces.}
-\begin{align*}
-\text{variance} &= \underbrace{N \times N \times V}_{\text{piece 1}}
- + \underbrace{N \times \mu \times (1-\mu) - N \times V}_{\text{piece 2}}\\
-&= N \times \mu \times (1-\mu) + (N \times N - N) \times V
- && \text{(collect the } V \text{ terms)}\\
-&= N \times \mu \times (1-\mu) + N \times (N-1) \times V
- && \text{(}N \times N - N = N \times (N-1)\text{)}
-\end{align*}
-\textbf{This is where $N \times (N-1)$ comes from.} The wobble adds
-$N \times N \times V$, but it also takes $N \times V$ away from the counting
-noise. What remains is $N \times (N-1) \times V$.
-
-\paragraph{The final form.} Figure~\ref{fig:flow} shows the whole path of
-$\rho$ into the formula. Put in $V = \rho \times \mu \times (1-\mu)$ from
+\paragraph{The final form.} Put in $V = \rho \times \mu \times (1-\mu)$ from
 Part~3:
 \[
 \text{variance} = N \times \mu \times (1-\mu)
@@ -694,6 +710,7 @@ $a + a \times b = a \times (1+b)$:
 \boxed{\;\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting noise}}
  \times \underbrace{\bigl(1 + (N-1) \times \rho\bigr)}_{\text{extra factor from biological noise}}\;}
 \]
+Figure~\ref{fig:flow} shows the whole path.
 
 \begin{figure}[ht]
 \centering
@@ -705,57 +722,54 @@ $a + a \times b = a \times (1+b)$:
 \toprule
 \textbf{Step} & \textbf{Formula} \quad / \quad \textit{check with case B, $N = 10$}\\
 \midrule
-1. Measure the wobble & $\cV = $ average of $(p-\mu)^2$\\
+1. The wobble & $\cV = $ average of $(p-\mu)^2$\\
  & \textit{$\cV = 0.01$}\\
-1b. The largest possible wobble & $\mu \times (1-\mu)$ \quad (Idea 2 of Part 3)\\
- & \textit{$0.2 \times 0.8 = 0.16$}\\
-2. Score out of the maximum & $\cR = \cV \div \bigl(\mu \times (1-\mu)\bigr)$ \quad (Idea 1)\\
+2. Covariance of two reads & covariance $=$ (both are our guide) $- \mu \times \mu = \cV$\\
+ & \textit{$0.05 - 0.04 = 0.01$}\\
+3. Correlation of two reads & $\cR = $ covariance $\div$ (SD $\times$ SD) $= \cV \div \bigl(\mu \times (1-\mu)\bigr)$\\
  & \textit{$0.01 \div 0.16 = 0.0625$}\\
-3. Turn it around & $\cV = \cR \times \mu \times (1-\mu)$\\
+4. Turn it around & $\cV = \cR \times \mu \times (1-\mu)$\\
  & \textit{$0.0625 \times 0.16 = 0.01$}\\
-4. Variance (Part 4) & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cV$\\
+5. Add up $N$ reads & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cV$\\
  & \textit{$1.6 + 90 \times 0.01 = 2.5$}\\
-5. Replace $\cV$ by step 3 & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cR \times \mu \times (1-\mu)$\\
+6. Replace $\cV$ by step 4 & $N \times \mu \times (1-\mu) + N \times (N-1) \times \cR \times \mu \times (1-\mu)$\\
  & \textit{$1.6 + 90 \times 0.0625 \times 0.16 = 2.5$}\\
-6. Take out the common part & $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \cR\bigr)$\\
+7. Take out the common part & $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \cR\bigr)$\\
  & \textit{$1.6 \times (1 + 9 \times 0.0625) = 1.6 \times 1.5625 = 2.5$}\\
 \bottomrule
 \end{tabular}}
-\caption{How $\rho$ gets into the variance formula. Steps 1--3 come from
-Part~3, and step~4 from Part~4. In step~5, the orange $V$ is replaced by
-$\rho \times \mu \times (1-\mu)$ from step~3. The lines in italics check each
-step with case B of Figure~\ref{fig:rho} and $N = 10$ reads, where
+\caption{How $\rho$ gets into the variance formula. Steps 1--4 come from
+Part~3, and step~5 from Part~4. In step~6, the orange $V$ is replaced by
+$\rho \times \mu \times (1-\mu)$ from step~4. The lines in italics check each
+step with case B and $N = 10$ reads, where
 $N \times \mu \times (1-\mu) = 10 \times 0.2 \times 0.8 = 1.6$ and
 $N \times (N-1) = 90$.}
 \label{fig:flow}
 \end{figure}
 
-\begin{worked}[ 4e: check with ten reads]
-Use case B of Figure~\ref{fig:rho} ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$
-reads.
+\begin{worked}[ 4f: check with ten reads]
+Case B ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$ reads.
 \begin{itemize}[leftmargin=1.2em]
-\item Piece 1: $10 \times 10 \times 0.01 = 1.0$.
-\item Piece 2: $10 \times (0.16 - 0.01) = 1.5$.
-\item Total: $1.0 + 1.5 = 2.5$.
-\item Boxed formula: $10 \times 0.2 \times 0.8 \times (1 + 9 \times 0.0625)
-  = 1.6 \times 1.5625 = 2.5$.
+\item Squares: $10 \times 0.16 = 1.6$.
+\item Pairs: $10 \times 9 = 90$ pairs, each $0.01$: $90 \times 0.01 = 0.9$.
+\item Total: $1.6 + 0.9 = 2.5$.
+\item Boxed formula: $1.6 \times (1 + 9 \times 0.0625) = 1.6 \times 1.5625
+  = 2.5$.
 \end{itemize}
-Same answer. A computer that drew 100{,}000 such replicates found the
-variance 2.498. With $N \times N$ in place of $N \times (N-1)$, the formula
-would give 2.6, which is wrong.
+A computer that drew 100{,}000 such replicates found the variance 2.498.
+With $N \times N$ in place of $N \times (N-1)$, the formula would give 2.6,
+which is wrong: a read does not form a pair with itself.
 \end{worked}
 
-\begin{worked}[ 4f: the total variance of our guide]
+\begin{worked}[ 4g: the total variance of our guide]
 \begin{itemize}[leftmargin=1.2em]
-\item Piece 1: $1{,}000{,}000 \times 1{,}000{,}000 \times 0.0000000000737 = 73.7$.
-\item Piece 2: $1{,}000{,}000 \times 0.000191 \times 0.999809 -
-  1{,}000{,}000 \times 0.0000000000737 = 190.96 - 0.00007 = 190.96$.
-\item Total: $73.7 + 191.0 = 264.7$.
+\item Squares: $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191.0$.
+\item Pairs: $1{,}000{,}000 \times 999{,}999 \times 0.0000000000737 = 73.7$.
+\item Total: $191.0 + 73.7 = 264.7$.
 \item Boxed formula: $191 \times (1 + 999{,}999 \times 0.000000386) = 191
   \times 1.386 = 264.7$.
 \end{itemize}
-For a million reads, the $-1$ changes almost nothing. It matters only when
-$N$ is small, as in Example 4e.
+Each pair adds very little, but there are almost a million million pairs.
 
 \textbf{Standard deviation:} $\sqrt{264.7} = 16.3$ reads. Counting noise
 alone gives $\sqrt{191} = 13.8$ reads. Biological noise adds 39\% to the
