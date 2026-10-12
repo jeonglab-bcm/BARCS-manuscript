@@ -278,31 +278,171 @@ far they normally are from 191.
 \subsection{Part 2: Counting noise}
 
 Start with \textbf{one read}. It belongs to our guide (value 1) or it does
-not (value 0). The chance of 1 is $\mu$. The chance of 0 is $1 - \mu$. The
-average of this value is $\mu$.
+not (value 0). We need the variance of this one value. We do it in three
+steps: first with five marbles, then the reason for the squares, then the
+general formula.
 
-The variance of one read is the average squared distance from $\mu$:
-\begin{itemize}
-\item With the chance $\mu$, the value is 1. Its distance from $\mu$ is
-  $1 - \mu$.
-\item With the chance $1 - \mu$, the value is 0. Its distance from $\mu$ is
-  $\mu$.
+\paragraph{Step A: Five marbles.} Put five marbles in a bag: one red and
+four blue. Give the red marble the value 1 and each blue marble the value 0.
+So the chance of red is $\mu = 1/5 = 0.2$. The average value is
+$(1 + 0 + 0 + 0 + 0) / 5 = 0.2$. This average is $\mu$.
+
+Now find the distance of each marble from the average:
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Marble & Value & Distance (value $-$ 0.2) & Squared distance\\
+\midrule
+red & 1 & $+0.8$ & 0.64\\
+blue & 0 & $-0.2$ & 0.04\\
+blue & 0 & $-0.2$ & 0.04\\
+blue & 0 & $-0.2$ & 0.04\\
+blue & 0 & $-0.2$ & 0.04\\
+\midrule
+Sum & & $0.8 - 0.8 = 0$ & 0.80\\
+Average (sum $\div$ 5) & & 0 & \textbf{0.16}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Look at the distance column. The positive and the negative distances cancel.
+Their sum is 0. This is always true: the distances from an average always
+add up to 0. So the plain average distance cannot measure the spread. It is
+0 for every bag.
+
+To stop the cancelling, we square each distance. A square is never negative.
+The average squared distance is $0.80 / 5 = 0.16$. This is the
+\textbf{variance} of one marble.
+
+\paragraph{Step B: Why squares, and not only the size of the distance?}
+We could also drop the minus signs and use the size of each distance. But
+BARCS needs a measure that \textbf{adds up}: the spread of a sum of
+independent values must be the sum of their spreads. Part~2 adds up a
+million reads, and Part~4 adds two kinds of noise. Squares have this
+property. Sizes do not.
+
+\begin{worked}[ 4b: two coins]
+Throw two fair coins. Heads $= 1$, tails $= 0$. Each coin has $\mu = 0.5$.
+The four results are equally likely.
+
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Coins & Total & Distance from 1 & Squared distance\\
+\midrule
+tails, tails & 0 & $-1$ & 1\\
+tails, heads & 1 & 0 & 0\\
+heads, tails & 1 & 0 & 0\\
+heads, heads & 2 & $+1$ & 1\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}[leftmargin=1.2em]
+\item \textbf{Variance of the total:} $(1 + 0 + 0 + 1) / 4 = 0.5$.
+\item \textbf{Variance of one coin:} distances are $\pm 0.5$, squared
+  0.25. Two coins: $0.25 + 0.25 = 0.5$. \textbf{The same.} Squares add up.
+\item \textbf{Size of distance, total:} $(1 + 0 + 0 + 1) / 4 = 0.5$.
+\item \textbf{Size of distance, one coin:} 0.5. Two coins: $0.5 + 0.5 = 1$.
+  \textbf{Not the same} as 0.5. Sizes do not add up.
 \end{itemize}
+\end{worked}
+
+The statistician Ronald Fisher gave the name \emph{variance} to the average
+squared distance in 1918. He chose it because the variances of independent
+values add up.\footnote{R.\,A. Fisher (1918). The correlation between relatives on the supposition of Mendelian inheritance. \emph{Transactions of the Royal Society of Edinburgh} 52: 399--433.} The idea of squared distances is older. In
+1805 Adrien-Marie Legendre fitted lines by making the sum of squared
+distances as small as possible (``least squares''), and Carl Friedrich Gauss
+used the same idea.\footnote{S.\,M. Stigler (1986). \emph{The History of Statistics}. Harvard University Press, chapter~1.} BARCS still uses least squares in
+Chapter~2.
+
+\paragraph{Step C: The general formula.} Now replace ``one marble in five''
+by any chance $\mu$. The table has only two kinds of rows:
+
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Value & How often (chance) & Distance from $\mu$ & Squared distance\\
+\midrule
+1 & $\mu$ & $1-\mu$ & $(1-\mu)^2$\\
+0 & $1-\mu$ & $-\mu$ & $\mu^2$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The average squared distance is each squared distance multiplied by how
+often it happens, then added:
 \[
-\text{variance of one read} = \mu \times (1-\mu)^2 + (1-\mu) \times \mu^2
- = \mu \times (1-\mu).
+\text{variance of one read} = \mu \times (1-\mu)^2 + (1-\mu) \times \mu^2 .
 \]
-The last part follows because $(1-\mu) + \mu = 1$.
+In the five-marble bag: $0.2 \times 0.8^2 + 0.8 \times 0.2^2 = 0.128 +
+0.032 = 0.16$. This is the same 0.16 as in the table. (The table gave
+$0.64 \times \frac{1}{5} + 0.04 \times \frac{4}{5}$.)
 
-\begin{worked}[ 4b: one read and 100 reads]
-Use an easy chance first: $\mu = 0.2$ (one marble in five is red).
+\paragraph{Step D: From the long formula to $\mu \times (1-\mu)$.}
+We now open every bracket, one step at a time. The right column does the
+same step with $\mu = 0.2$, so you can check each line.
 
-\textbf{One read:} $0.2 \times 0.8^2 + 0.8 \times 0.2^2 = 0.128 + 0.032 =
-0.16$. The short formula gives the same value: $0.2 \times 0.8 = 0.16$.
+\textbf{First, open the square.} A square means ``multiply by itself'':
+$(1-\mu)^2 = (1-\mu) \times (1-\mu)$. Multiply each part of the first
+bracket by each part of the second bracket:
+\[
+(1-\mu) \times (1-\mu) = 1 \times 1 \;-\; 1 \times \mu \;-\; \mu \times 1
+ \;+\; \mu \times \mu = 1 - 2 \times \mu + \mu^2 .
+\]
+Check: $0.8 \times 0.8 = 0.64$, and $1 - 2 \times 0.2 + 0.04 = 0.64$.
 
-\textbf{100 reads:} The reads are independent. The variances of independent
-values add up. So 100 reads have the variance $100 \times 0.16 = 16$. The
-expected count is $100 \times 0.2 = 20$. The standard deviation is
+\needspace{16\baselineskip}
+\textbf{Then, expand everything.}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}r@{\;}l l@{}}
+\toprule
+& \textbf{With letters} & \textbf{With $\mu = 0.2$}\\
+\midrule
+1. & $\mu \times (1-\mu)^2 + (1-\mu) \times \mu^2$
+   & $0.2 \times 0.64 + 0.8 \times 0.04$\\
+   & \multicolumn{2}{@{}l@{}}{\footnotesize\quad The formula from Step C.}\\
+2. & $\mu \times (1 - 2 \times \mu + \mu^2) + (1-\mu) \times \mu^2$
+   & $0.2 \times 0.64 + 0.8 \times 0.04$\\
+   & \multicolumn{2}{@{}l@{}}{\footnotesize\quad Put in the opened square.}\\
+3. & $(\mu - 2 \times \mu^2 + \mu^3) + (\mu^2 - \mu^3)$
+   & $(0.2 - 0.08 + 0.008) + (0.04 - 0.008)$\\
+   & \multicolumn{2}{@{}l@{}}{\footnotesize\quad Multiply $\mu$ into the first bracket and $\mu^2$ into the second.}\\
+4. & $\mu - 2 \times \mu^2 + \mu^2 + \mu^3 - \mu^3$
+   & $0.2 - 0.08 + 0.04 + 0.008 - 0.008$\\
+   & \multicolumn{2}{@{}l@{}}{\footnotesize\quad Put the same powers next to each other.}\\
+5. & $\mu - \mu^2$
+   & $0.2 - 0.04 = 0.16$\\
+   & \multicolumn{2}{@{}l@{}}{\footnotesize\quad $-2 \times \mu^2 + \mu^2 = -\mu^2$, and $+\mu^3 - \mu^3 = 0$.}\\
+6. & $\mu \times (1-\mu)$
+   & $0.2 \times 0.8 = 0.16$\\
+   & \multicolumn{2}{@{}l@{}}{\footnotesize\quad Take $\mu$ out: $\mu - \mu \times \mu = \mu \times (1 - \mu)$.}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every line gives 0.16. So the long formula and the short formula are always
+equal:
+\[
+\mu \times (1-\mu)^2 + (1-\mu) \times \mu^2 = \mu \times (1-\mu).
+\]
+
+\textbf{A shorter way.} Both parts of the long formula contain
+$\mu \times (1-\mu)$. Take this common part out:
+\[
+\mu \times (1-\mu) \times \bigl[(1-\mu) + \mu\bigr] = \mu \times (1-\mu)
+\times 1 = \mu \times (1-\mu).
+\]
+The bracket is 1 because $(1-\mu) + \mu = 1$. Check: $0.2 \times 0.8 \times
+(0.8 + 0.2) = 0.16$.
+
+\begin{worked}[ 4c: 100 reads]
+\textbf{100 reads:} The reads are independent. So their variances add up
+(Step~B). 100 reads with $\mu = 0.2$ have the variance $100 \times 0.16 =
+16$. The expected count is $100 \times 0.2 = 20$. The standard deviation is
 $\sqrt{16} = 4$.
 
 \textbf{Check by repeating.} We took 100 marbles ten times. The red counts
@@ -343,7 +483,7 @@ the two numbers are almost equal.
 \text{biological noise} = N \times (N-1) \times \rho \times \mu \times (1-\mu).
 \]
 
-\begin{worked}[ 4c: the wobble of our guide]
+\begin{worked}[ 4d: the wobble of our guide]
 For our guide, BARCS estimates $\rho = 0.000000386$ (Step~7 in Chapter~2
 shows how).
 
@@ -376,7 +516,7 @@ the formula that BARCS uses:
 The second bracket tells how many times bigger the variance is than
 counting noise alone.
 
-\begin{worked}[ 4d: the total variance of our guide]
+\begin{worked}[ 4e: the total variance of our guide]
 \textbf{Add the parts:} $191 + 73.7 = 264.7$.
 
 \textbf{Or use the boxed formula:}

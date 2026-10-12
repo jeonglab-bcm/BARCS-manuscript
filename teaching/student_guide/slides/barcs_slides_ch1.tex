@@ -343,26 +343,144 @@ far they normally are.
 \end{worked}
 \end{frame}
 
-\begin{frame}{Part 2: Counting noise for one read}
-One read is our guide (value 1) or not (value 0).
+\begin{frame}{Part 2: One read --- five marbles}
+One red marble (value 1), four blue (value 0). Chance of red $\mu = 0.2$.
+Average $= 0.2$.
 \medskip
 
-\begin{tabular}{@{}llll@{}}
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+\small
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Value & Chance & Distance from $\mu$ & Squared distance\\
+Marble & Value & Distance & Squared\\
 \midrule
-1 & $\mu$ & $1-\mu$ & $(1-\mu)^2$\\
-0 & $1-\mu$ & $\mu$ & $\mu^2$\\
+red & 1 & $+0.8$ & 0.64\\
+blue & 0 & $-0.2$ & 0.04\\
+blue & 0 & $-0.2$ & 0.04\\
+blue & 0 & $-0.2$ & 0.04\\
+blue & 0 & $-0.2$ & 0.04\\
+\midrule
+Sum & & \alert{0} & 0.80\\
+Average & & 0 & \textbf{0.16}\\
 \bottomrule
 \end{tabular}
+\end{column}
+\begin{column}{0.42\textwidth}
+\begin{itemize}
+\item Plain distances \alert{cancel}: the sum is always 0.
+\item Squares are never negative, so they do not cancel.
+\item Average squared distance $= 0.80 / 5 = 0.16$.
+\item This is the \alert{variance}.
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Why squares? Because squared spreads add up}
+Two fair coins (heads $= 1$, $\mu = 0.5$). Four equally likely results:
+\medskip
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Coins & Total & Dist.\ from 1 & Squared\\
+\midrule
+T, T & 0 & $-1$ & 1\\
+T, H & 1 & 0 & 0\\
+H, T & 1 & 0 & 0\\
+H, H & 2 & $+1$ & 1\\
+\bottomrule
+\end{tabular}
+\end{column}
+\begin{column}{0.50\textwidth}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+& Squared & Size only\\
+\midrule
+One coin & 0.25 & 0.5\\
+One + one & 0.5 & 1.0\\
+Total of two & 0.5 & 0.5\\
+\midrule
+Adds up? & \alert{yes} & no\\
+\bottomrule
+\end{tabular}
+\end{column}
+\end{columns}
+\medskip
+\begin{itemize}\small
+\item We add a million reads (Part 2) and two kinds of noise (Part 4). We
+  need a spread that adds up.
+\item R.\,A. Fisher named this the \emph{variance} in 1918 for this reason.
+  Squared distances go back to Legendre's ``least squares'' (1805).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The general formula for one read}
+Replace ``one in five'' by any chance $\mu$:
+\medskip
+
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Value & How often & Distance from $\mu$ & Squared distance\\
+\midrule
+1 & $\mu$ & $1-\mu$ & $(1-\mu)^2$\\
+0 & $1-\mu$ & $-\mu$ & $\mu^2$\\
+\bottomrule
+\end{tabular}
+\medskip
+
+Average squared distance $=$ (squared distance $\times$ how often), added:
 \[
 \text{variance of one read} = \mu \times (1-\mu)^2 + (1-\mu) \times \mu^2
- = \mu \times (1-\mu)
 \]
-\begin{worked}[ 4b: one read]
-With $\mu = 0.2$: $0.2 \times 0.8^2 + 0.8 \times 0.2^2 = 0.128 + 0.032 = 0.16$.\quad
-Short formula: $0.2 \times 0.8 = 0.16$. Same.
+\begin{worked}[ 4b: five marbles again]
+$0.2 \times 0.8^2 + 0.8 \times 0.2^2 = 0.128 + 0.032 = 0.16$ --- the same as
+the table.
 \end{worked}
+\end{frame}
+
+\begin{frame}{Open the square}
+A square means ``multiply by itself'':
+\[
+(1-\mu)^2 = (1-\mu) \times (1-\mu)
+\]
+Multiply each part of the first bracket by each part of the second:
+\[
+(1-\mu) \times (1-\mu) = 1 \times 1 \;-\; 1 \times \mu \;-\; \mu \times 1
+ \;+\; \mu \times \mu = 1 - 2 \times \mu + \mu^2
+\]
+\begin{worked}[ 4b: check with numbers]
+With $\mu = 0.2$: $0.8 \times 0.8 = 0.64$\qquad and\qquad $1 - 2 \times 0.2 + 0.04 = 0.64$.
+\end{worked}
+\end{frame}
+
+\begin{frame}{From the long formula to $\mu \times (1-\mu)$}
+\footnotesize
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}r@{\;}l l l@{}}
+\toprule
+& With letters & With $\mu = 0.2$ & What we did\\
+\midrule
+1. & $\mu \times (1-\mu)^2 + (1-\mu) \times \mu^2$ & $0.128 + 0.032$ & start\\
+2. & $\mu \times (1 - 2\times\mu + \mu^2) + (1-\mu) \times \mu^2$ & $0.128 + 0.032$ & open the square\\
+3. & $(\mu - 2\times\mu^2 + \mu^3) + (\mu^2 - \mu^3)$ & $(0.2 - 0.08 + 0.008) + (0.04 - 0.008)$ & multiply in\\
+4. & $\mu - 2\times\mu^2 + \mu^2 + \mu^3 - \mu^3$ & $0.2 - 0.08 + 0.04 + 0.008 - 0.008$ & sort the powers\\
+5. & $\mu - \mu^2$ & $0.2 - 0.04 = 0.16$ & combine\\
+6. & $\mu \times (1-\mu)$ & $0.2 \times 0.8 = 0.16$ & take $\mu$ out\\
+\bottomrule
+\end{tabular}
+\medskip
+
+\normalsize
+Every line gives \alert{0.16}. Shorter way: take out the common part
+$\mu \times (1-\mu)$:
+\[
+\mu \times (1-\mu) \times \bigl[(1-\mu) + \mu\bigr] = \mu \times (1-\mu) \times 1
+\]
 \end{frame}
 
 \begin{frame}{Part 2: Counting noise for $N$ reads}
@@ -374,7 +492,7 @@ Short formula: $0.2 \times 0.8 = 0.16$. Same.
 \[
 \text{counting noise} = N \times \mu \times (1-\mu)
 \]
-\begin{worked}[ 4b continued]
+\begin{worked}[ 4c: many reads]
 \textbf{100 reads, $\mu = 0.2$:} expected $100 \times 0.2 = 20$; variance
 $100 \times 0.16 = 16$; SD $\sqrt{16} = 4$.\\
 Ten repeats gave 17, 19, 21, 25, 17, 25, 27, 22, 21, 14: near 20, about 4
@@ -397,7 +515,7 @@ away.
 \[
 \text{biological noise} = N \times (N-1) \times \rho \times \mu \times (1-\mu)
 \]
-\begin{worked}[ 4c: the wobble of our guide]
+\begin{worked}[ 4d: the wobble of our guide]
 Wobble SD of the proportion: $\sqrt{0.000000386 \times 0.000191 \times
 0.999809} = 8.6$ per million.\\
 In counts: $1{,}000{,}000 \times 999{,}999 \times 0.000000386 \times
@@ -420,7 +538,7 @@ $a + a \times b = a \times (1+b)$:
 \end{frame}
 
 \begin{frame}{Worked example: total variance}
-\begin{worked}[ 4d]
+\begin{worked}[ 4e]
 \begin{tabular}{@{}ll@{}}
 Add the parts: & $191 + 73.7 = 264.7$\\[2pt]
 Counting noise: & $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$\\
