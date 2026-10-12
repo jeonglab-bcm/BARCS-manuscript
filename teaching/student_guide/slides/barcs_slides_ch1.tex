@@ -503,54 +503,117 @@ away.
 \end{frame}
 
 \begin{frame}{Part 3: Biological noise --- the proportion wobbles}
-\begin{itemize}\small
-\item Each replicate is different living cells. The \alert{true
-  proportion} moves a little between replicates.
-\item Variance of the true proportion: $\rho \times \mu \times (1-\mu)$.
-\item $\mu \times (1-\mu)$ is the largest possible wobble. So $\rho$ is a
-  fraction between 0 and 1.
-\item Count $= N \times$ proportion. Multiply a value by $N$ $\Rightarrow$
-  its variance is multiplied by $N \times N$ (exactly: $N \times (N-1)$).
+\begin{itemize}
+\item Each replicate is different living cells. The \alert{true proportion}
+  $p$ moves a little between replicates. Its average is $\mu$.
+\item Wobble: $V = $ average of $(p - \mu)^2$.
+\item BARCS reports $\rho = V \div \bigl(\mu \times (1-\mu)\bigr)$, so
+  $V = \rho \times \mu \times (1-\mu)$.
+\item $\mu \times (1-\mu)$ is the largest possible wobble ($p$ jumping
+  between 0 and 1, Part 2). So $\rho$ is between 0 and 1.
 \end{itemize}
-\[
-\text{biological noise} = N \times (N-1) \times \rho \times \mu \times (1-\mu)
-\]
-\begin{worked}[ 4d: the wobble of our guide]
-Wobble SD of the proportion: $\sqrt{0.000000386 \times 0.000191 \times
-0.999809} = 8.6$ per million.\\
-In counts: $1{,}000{,}000 \times 999{,}999 \times 0.000000386 \times
-0.000191 \times 0.999809 = 73.7$.
+\begin{worked}[ 4d: a small wobble example]
+$p = 0.1$ or $0.3$, half of the time each. $\mu = 0.2$. Distances $\pm 0.1$,
+so $V = 0.01$ and $\rho = 0.01 / 0.16 = 0.0625$.\\
+\textbf{Our guide:} $V = 0.000000386 \times 0.000191 \times 0.999809$;
+$\sqrt{V} = 8.6$ per million.
 \end{worked}
 \end{frame}
 
-\begin{frame}{Part 4: Add the two parts}
-The two noises are independent, so their variances add:
+\begin{frame}{Part 4: Split the distance into two pieces}
+In a replicate with true proportion $p$:
 \[
-\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting}}
- + \underbrace{N \times (N-1) \times \rho \times \mu \times (1-\mu)}_{\text{biological}}
+K - N \times \mu \;=\;
+\underbrace{(N \times p - N \times \mu)}_{\text{piece 1: the wobble}}
+\;+\;
+\underbrace{(K - N \times p)}_{\text{piece 2: counting noise}}
 \]
-Both parts contain $N \times \mu \times (1-\mu)$. Take it out, as in
-$a + a \times b = a \times (1+b)$:
+\begin{itemize}
+\item Piece 2 goes up or down equally, whatever $p$ is. The pieces are
+  unrelated, so their \alert{variances add} (Part 2, Step B).
+\item \textbf{Piece 1:} multiply a value by $N$ $\Rightarrow$ distances
+  $\times N$ $\Rightarrow$ squared distances $\times N \times N$.\\
+  {\small Example: 1, 2, 3 have variance 0.667; 10, 20, 30 have variance
+  66.7 ($\times 100$).}
+\end{itemize}
+\[
+\text{variance of piece 1} = N \times N \times V
+\]
+\end{frame}
+
+\begin{frame}{Piece 2: counting noise is a little smaller}
+Counting noise for one replicate is $N \times p \times (1-p)$. Average it:
+\medskip
+
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}r@{\;}l l@{}}
+\toprule
+& With letters & Example 4d ($p = 0.1$ or $0.3$)\\
+\midrule
+1. & avg.\ of $p^2 = \mu^2 + V$ & $(0.01 + 0.09)/2 = 0.05 = 0.04 + 0.01$\\
+2. & avg.\ of $p \times (1-p) = \mu - $ avg.\ of $p^2$ & $(0.09 + 0.21)/2 = 0.15$\\
+3. & \quad $= \mu - (\mu^2 + V)$ & $0.2 - 0.05 = 0.15$\\
+4. & \quad $= \mu \times (1-\mu) - V$ & $0.16 - 0.01 = 0.15$\\
+\bottomrule
+\end{tabular}
+\normalsize
+\[
+\text{variance of piece 2} = N \times \mu \times (1-\mu) - N \times V
+\]
+{\small Line 1: open $(p-\mu)^2$; the average of $p$ is $\mu$. A wobbling $p$
+spends time near the edges, where counting noise is smaller.}
+\end{frame}
+
+\begin{frame}{Where $N \times (N-1)$ comes from}
+\vspace{-0.5em}
+\begin{align*}
+\text{variance} &= N \times N \times V
+ + N \times \mu \times (1-\mu) - N \times V\\
+&= N \times \mu \times (1-\mu) + (N \times N - N) \times V\\
+&= N \times \mu \times (1-\mu) + \alert{N \times (N-1)} \times V
+\end{align*}
+\begin{remember}
+The wobble \alert{adds} $N \times N \times V$ but \alert{takes away}
+$N \times V$ from counting noise. What remains is $N \times (N-1) \times V$.
+\end{remember}
+{\small Put in $V = \rho \times \mu \times (1-\mu)$ and take out
+$N \times \mu \times (1-\mu)$:}
+\vspace{-0.6em}
 \[
 \boxed{\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting noise}}
  \times \underbrace{\bigl(1 + (N-1) \times \rho\bigr)}_{\text{extra factor}}}
 \]
 \end{frame}
 
-\begin{frame}{Worked example: total variance}
+\begin{frame}{Check with ten reads}
 \begin{worked}[ 4e]
+Example 4d ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$:
+
 \begin{tabular}{@{}ll@{}}
-Add the parts: & $191 + 73.7 = 264.7$\\[2pt]
-Counting noise: & $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$\\
-Extra factor: & $1 + 999{,}999 \times 0.000000386 = 1.386$\\
-Boxed formula: & $191 \times 1.386 = 264.7$ \quad (same answer)\\[2pt]
+Piece 1: & $10 \times 10 \times 0.01 = 1.0$\\
+Piece 2: & $10 \times (0.16 - 0.01) = 1.5$\\
+Total: & $1.0 + 1.5 = \mathbf{2.5}$\\
+Boxed formula: & $1.6 \times (1 + 9 \times 0.0625) = 1.6 \times 1.5625 = \mathbf{2.5}$\\
+Computer, 100{,}000 replicates: & 2.498\\
+With $N \times N$ instead: & $1.6 + 100 \times 0.01 = 2.6$ \quad (wrong)\\
+\end{tabular}
+\end{worked}
+\end{frame}
+
+\begin{frame}{Worked example: total variance of our guide}
+\begin{worked}[ 4f]
+\begin{tabular}{@{}ll@{}}
+Piece 1: & $1{,}000{,}000 \times 1{,}000{,}000 \times 0.0000000000737 = 73.7$\\
+Piece 2: & $191.0 - 0.00007 = 191.0$\\
+Total: & $73.7 + 191.0 = 264.7$\\
+Boxed formula: & $191 \times (1 + 999{,}999 \times 0.000000386) = 191 \times 1.386 = 264.7$\\
 Standard deviation: & $\sqrt{264.7} = 16.3$ reads\\
 \end{tabular}
 
 \medskip
-A count near 191 normally moves up or down by about 16. Counting noise
-alone gives $\sqrt{191} = 13.8$. Biological noise adds 39\% to the
-variance.
+For a million reads the $-1$ changes almost nothing. Counting noise alone
+gives $\sqrt{191} = 13.8$. Biological noise adds 39\% to the variance.
 \end{worked}
 \end{frame}
 

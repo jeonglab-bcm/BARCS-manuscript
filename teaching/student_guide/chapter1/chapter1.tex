@@ -464,74 +464,167 @@ proportion $\mu$. But each replicate is a different group of living cells.
 So the true proportion itself \textbf{wobbles} a little from replicate to
 replicate.
 
-BARCS describes the size of this wobble with $\rho$. The variance of the true
-proportion between replicates is
+We write $p$ for the true proportion in one replicate. The average of $p$
+over many replicates is $\mu$. The wobble is measured in the usual way: as
+the average squared distance of $p$ from $\mu$. We call it $V$:
 \[
-\text{wobble of the proportion} = \rho \times \mu \times (1-\mu).
-\]
-The number $\mu \times (1-\mu)$ is the largest wobble that is possible. So
-$\rho$ is the wobble as a fraction of the largest possible wobble. It is
-always between 0 and 1.
-
-A wobble in the proportion becomes a wobble in the count, because the count
-is $N$ times the proportion. When you multiply a value by $N$, its variance
-is multiplied by $N \times N$. So the biological part of the count variance
-is about $N \times N \times \rho \times \mu \times (1-\mu)$. The exact
-formula uses $N \times (N-1)$ instead of $N \times N$. For a million reads,
-the two numbers are almost equal.
-\[
-\text{biological noise} = N \times (N-1) \times \rho \times \mu \times (1-\mu).
+V = \text{average of } (p - \mu)^2 .
 \]
 
-\begin{worked}[ 4d: the wobble of our guide]
-For our guide, BARCS estimates $\rho = 0.000000386$ (Step~7 in Chapter~2
-shows how).
+BARCS does not report $V$ directly. It reports $\rho$, which is $V$ as a
+fraction of $\mu \times (1-\mu)$:
+\[
+\rho = \frac{V}{\mu \times (1-\mu)}, \qquad\text{so}\qquad
+V = \rho \times \mu \times (1-\mu).
+\]
+Why divide by $\mu \times (1-\mu)$? It is the largest wobble that is
+possible. A proportion must stay between 0 and 1. The widest wobble happens
+when $p$ jumps between 0 and 1, and Part~2 showed that such a value has the
+variance $\mu \times (1-\mu)$. So $\rho$ is always between 0 and 1, whatever
+the size of $\mu$.\footnote{A model in which the true proportion wobbles in
+this way is the \emph{beta-binomial} model. J.\,G. Skellam described it in
+1948: A probability distribution derived from the binomial distribution by
+regarding the probability of success as variable between the sets of trials.
+\emph{Journal of the Royal Statistical Society B} 10: 257--261.}
 
-\textbf{Wobble of the proportion:}
-$\rho \times \mu \times (1-\mu) = 0.000000386 \times 0.000191 \times
-0.999809 = 0.0000000000737$.
-Its square root is $0.0000086$, which is 8.6 per million. So the true
-proportion moves by about 8.6 per million between replicates, for example
-from 191 to 183 or 199 per million.
+\begin{worked}[ 4d: a small wobble example]
+Two replicates. The true proportion is $p = 0.1$ in one and $p = 0.3$ in the
+other. Each happens half of the time.
 
-\textbf{Biological noise in the count:}
-$1{,}000{,}000 \times 999{,}999 \times 0.000000386 \times 0.000191 \times
-0.999809 = 73.7$.
+\begin{itemize}[leftmargin=1.2em]
+\item Average: $\mu = (0.1 + 0.3) / 2 = 0.2$.
+\item Distances: $-0.1$ and $+0.1$. Squared: $0.01$ and $0.01$.
+\item Wobble: $V = (0.01 + 0.01) / 2 = 0.01$.
+\item $\rho = 0.01 / (0.2 \times 0.8) = 0.01 / 0.16 = 0.0625$.
+\end{itemize}
+\textbf{Our guide:} BARCS estimates $\rho = 0.000000386$ (Step~7 in
+Chapter~2 shows how). So
+$V = 0.000000386 \times 0.000191 \times 0.999809 = 0.0000000000737$.
+Its square root is $0.0000086$: the true proportion moves by about 8.6 per
+million between replicates, for example from 191 to 183 or 199 per million.
 \end{worked}
 
-\subsection{Part 4: Add the two parts}
+\subsection{Part 4: Put the two noises together --- where $N \times (N-1)$ comes from}
 
-The two kinds of noise are independent. So their variances add up:
+In one replicate, the true proportion is $p$. The count $K$ moves away from
+the average count $N \times \mu$ for two reasons. Write the distance in two
+pieces:
 \[
-\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting}}
- + \underbrace{N \times (N-1) \times \rho \times \mu \times (1-\mu)}_{\text{biological}}.
+K - N \times \mu \;=\;
+\underbrace{(N \times p - N \times \mu)}_{\text{piece 1: the wobble}}
+\;+\;
+\underbrace{(K - N \times p)}_{\text{piece 2: counting noise}} .
 \]
-Both parts contain $N \times \mu \times (1-\mu)$. Take this common part out
-of the brackets, as in $a + a \times b = a \times (1 + b)$. The result is
-the formula that BARCS uses:
+Piece~2 is equally likely to go up or down, whatever the value of $p$. So the
+two pieces are unrelated, and their variances add up, as in Step~B of Part~2.
+We find the variance of each piece.
+
+\paragraph{Piece 1: the wobble, in reads.} The expected count is
+$N \times p$. When you multiply every value by $N$, every distance is
+multiplied by $N$, so every squared distance is multiplied by $N \times N$.
+Example: the values 1, 2, 3 have the variance
+$(1 + 0 + 1)/3 = 0.667$. Multiply by 10: the values 10, 20, 30 have the
+variance $(100 + 0 + 100)/3 = 66.7$. That is $10 \times 10 = 100$ times
+bigger. So
+\[
+\text{variance of piece 1} = N \times N \times V .
+\]
+
+\paragraph{Piece 2: counting noise, when $p$ wobbles.} In a replicate with
+the true proportion $p$, Part~2 gives the counting noise
+$N \times p \times (1-p)$. We need its average over the replicates. The
+average of $p \times (1-p)$ is \emph{not} exactly $\mu \times (1-\mu)$. It is
+a little smaller. Here is the full calculation:
+
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}r@{\;}l l@{}}
+\toprule
+& \textbf{With letters} & \textbf{Example 4d ($p = 0.1$ or $0.3$)}\\
+\midrule
+1. & average of $p^2$ $= \mu^2 + V$
+   & $(0.01 + 0.09)/2 = 0.05 = 0.04 + 0.01$\\
+2. & average of $p \times (1-p)$ $=$ $\mu$ $-$ average of $p^2$
+   & $(0.09 + 0.21)/2 = 0.15$\\
+3. & \quad $= \mu - (\mu^2 + V)$
+   & $0.2 - 0.05 = 0.15$\\
+4. & \quad $= \mu \times (1-\mu) - V$
+   & $0.16 - 0.01 = 0.15$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Line 1 needs one explanation. Open the square in the definition of $V$:
+$V = $ average of $(p-\mu)^2 = $ average of $(p^2 - 2\times\mu\times p +
+\mu^2)$. The average of $p$ is $\mu$, so this is average of $p^2 - 2 \times
+\mu \times \mu + \mu^2 = $ average of $p^2 - \mu^2$. Move $\mu^2$ to the other
+side, and you get line~1. Line~2 uses $p \times (1-p) = p - p^2$ and the
+fact that the average of $p$ is $\mu$. Lines~3 and~4 put in line~1 and take
+$\mu$ out.
+
+So the counting noise is smaller by $V$ in each read:
+\[
+\text{variance of piece 2} = N \times \bigl(\mu \times (1-\mu) - V\bigr)
+ = N \times \mu \times (1-\mu) - N \times V .
+\]
+A wobbling proportion spends time near the edges, where counting noise is
+smaller. That is why piece~2 shrinks.
+
+\paragraph{Add the two pieces.}
+\begin{align*}
+\text{variance} &= \underbrace{N \times N \times V}_{\text{piece 1}}
+ + \underbrace{N \times \mu \times (1-\mu) - N \times V}_{\text{piece 2}}\\
+&= N \times \mu \times (1-\mu) + (N \times N - N) \times V
+ && \text{(collect the } V \text{ terms)}\\
+&= N \times \mu \times (1-\mu) + N \times (N-1) \times V
+ && \text{(}N \times N - N = N \times (N-1)\text{)}
+\end{align*}
+\textbf{This is where $N \times (N-1)$ comes from.} The wobble adds
+$N \times N \times V$, but it also takes $N \times V$ away from the counting
+noise. What remains is $N \times (N-1) \times V$.
+
+\paragraph{The final form.} Put in $V = \rho \times \mu \times (1-\mu)$:
+\[
+\text{variance} = N \times \mu \times (1-\mu)
+ + N \times (N-1) \times \rho \times \mu \times (1-\mu).
+\]
+Both parts contain $N \times \mu \times (1-\mu)$. Take it out, as in
+$a + a \times b = a \times (1+b)$:
 \[
 \boxed{\;\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting noise}}
  \times \underbrace{\bigl(1 + (N-1) \times \rho\bigr)}_{\text{extra factor from biological noise}}\;}
 \]
-The second bracket tells how many times bigger the variance is than
-counting noise alone.
 
-\begin{worked}[ 4e: the total variance of our guide]
-\textbf{Add the parts:} $191 + 73.7 = 264.7$.
-
-\textbf{Or use the boxed formula:}
+\begin{worked}[ 4e: check with ten reads]
+Use Example 4d ($\mu = 0.2$, $V = 0.01$, $\rho = 0.0625$) with $N = 10$
+reads.
 \begin{itemize}[leftmargin=1.2em]
-\item Counting noise: $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$.
-\item Extra factor: $1 + 999{,}999 \times 0.000000386 = 1 + 0.386 = 1.386$.
-\item Variance: $191 \times 1.386 = 264.7$.
+\item Piece 1: $10 \times 10 \times 0.01 = 1.0$.
+\item Piece 2: $10 \times (0.16 - 0.01) = 1.5$.
+\item Total: $1.0 + 1.5 = 2.5$.
+\item Boxed formula: $10 \times 0.2 \times 0.8 \times (1 + 9 \times 0.0625)
+  = 1.6 \times 1.5625 = 2.5$.
 \end{itemize}
-Both ways give the same answer, as they must.
+Same answer. A computer that drew 100{,}000 such replicates found the
+variance 2.498. With $N \times N$ in place of $N \times (N-1)$, the formula
+would give 2.6, which is wrong.
+\end{worked}
 
-\textbf{Standard deviation:} $\sqrt{264.7} = 16.3$ reads.
+\begin{worked}[ 4f: the total variance of our guide]
+\begin{itemize}[leftmargin=1.2em]
+\item Piece 1: $1{,}000{,}000 \times 1{,}000{,}000 \times 0.0000000000737 = 73.7$.
+\item Piece 2: $1{,}000{,}000 \times 0.000191 \times 0.999809 -
+  1{,}000{,}000 \times 0.0000000000737 = 190.96 - 0.00007 = 190.96$.
+\item Total: $73.7 + 191.0 = 264.7$.
+\item Boxed formula: $191 \times (1 + 999{,}999 \times 0.000000386) = 191
+  \times 1.386 = 264.7$.
+\end{itemize}
+For a million reads, the $-1$ changes almost nothing. It matters only when
+$N$ is small, as in Example 4e.
 
-So a count of about 191 normally moves up or down by about 16 reads.
-Counting noise alone gives $\sqrt{191} = 13.8$ reads. Biological noise adds
-39\% to the variance.
+\textbf{Standard deviation:} $\sqrt{264.7} = 16.3$ reads. Counting noise
+alone gives $\sqrt{191} = 13.8$ reads. Biological noise adds 39\% to the
+variance.
 \end{worked}
 
 \begin{remember}
