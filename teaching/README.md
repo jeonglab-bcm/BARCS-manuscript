@@ -6,16 +6,17 @@ A self-study guide to the BARCS 0.2.0 methodology, with worked examples, a
 | File | Language | Build |
 |---|---|---|
 | `student_guide/barcs_student_guide.pdf` | English, grades 7-9 | `student_guide/build.sh`; both chapters in one book; start here |
-| `student_guide/chapter1/barcs_student_guide_ch1.pdf` | English, grades 7-9 | Chapter 1, the ideas: counts, proportions, log-odds, noise, the design matrix (16-question quiz) |
+| `student_guide/chapter1/barcs_student_guide_ch1.pdf` | English, grades 7-9 | Chapter 1, the ideas: counts, proportions, log-odds, noise, the design matrix (12 practical exercises) |
+| `student_guide/answers/barcs_answers_ch1.pdf`, `barcs_answers_ch2.pdf` | English, grades 7-9 | Separate answer sheets: worked solutions and "why this matters" for every exercise |
 | `student_guide/slides/barcs_slides_ch1.pdf`, `barcs_slides_ch2.pdf` | English, grades 7-9 | Beamer slides (16:9) that follow the two chapters step by step, with the same examples and numbers; no quiz |
-| `student_guide/chapter2/barcs_student_guide_ch2.pdf` | English, grades 7-9 | Chapter 2, the calculations: fitting, noise, standard error, moderation, calibration, genes, FDR (12-question quiz) |
+| `student_guide/chapter2/barcs_student_guide_ch2.pdf` | English, grades 7-9 | Chapter 2, the calculations: fitting, noise, standard error, moderation, calibration, genes, FDR (10 practical exercises) |
 | `barcs_methods_tutorial.tex` / `.pdf` | English | `pdflatex` (or `latexmk -pdf`) |
 | `barcs_methods_tutorial_ko.tex` / `.pdf` | Korean | `xelatex` (or `latexmk -xelatex`); needs `kotex` and the Nanum fonts |
 
 The student guide is the introductory version. It follows ASD-STE100
 Simplified Technical English (short sentences, active voice, every symbol
 defined), carries one small data set through every step with all arithmetic
-shown, and has a quiz at the end of each chapter whose answers show the calculation.
+shown, and ends each chapter with practical exercises (calculate, explain, decide); the worked answers are in separate answer sheets.
 Each chapter builds as its own booklet; Chapter 2 opens with a one-page
 recap of Chapter 1 so it can be handed out alone. The chapter text lives in
 `chapter1/chapter1.tex` and `chapter2/chapter2.tex`; edit those, then run

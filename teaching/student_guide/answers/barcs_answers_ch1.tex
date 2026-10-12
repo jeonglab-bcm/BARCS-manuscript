@@ -1,0 +1,197 @@
+% Answer sheet for the Chapter 1 exercises. Build here: pdflatex (run twice).
+\documentclass[12pt]{article}
+\newcommand{\guideroot}{../}
+\input{../common/preamble}
+\standalonetrue
+\title{\textbf{How BARCS Finds Important Genes}\\[6pt]
+\Large Answer sheet: Chapter 1 exercises}
+\author{\guideauthor}
+\date{\guidedate}
+\newcommand{\why}[1]{\par\smallskip\noindent\textcolor{barcsgreen!70!black}{\textbf{Why this matters.}} #1}
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+Each answer shows the calculation first. ``Why this matters'' explains the
+idea behind the question. Small differences in the last digit come from
+rounding.
+
+\begin{center}
+\small
+\begin{tabular}{lcrr}
+\toprule
+Library & Group & $K$ & $N$\\
+\midrule
+1 & control & 150 & 1{,}000{,}000\\
+2 & control & 210 & 1{,}400{,}000\\
+3 & drug    &  60 &   800{,}000\\
+4 & drug    &  45 &   600{,}000\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Part A: From counts to a change}
+\begin{exlist}
+\item
+\begin{parts}
+\item Library 1: $150 \div 1{,}000{,}000 = 0.000150 = 150$ per million.
+  Library 2: $210 \div 1{,}400{,}000 = 150$ per million. Library 3:
+  $60 \div 800{,}000 = 75$ per million. Library 4: $45 \div 600{,}000 = 75$
+  per million.
+\item Control: $(150 + 210) \div (1{,}000{,}000 + 1{,}400{,}000) = 360 \div
+  2{,}400{,}000 = 150$ per million. Drug: $(60 + 45) \div 1{,}400{,}000 =
+  105 \div 1{,}400{,}000 = 75$ per million.
+\item Fold change: $75 \div 150 = 0.5$. $\log_2(0.5) = -1$: one halving.
+\end{parts}
+\why{The proportion removes the size of the library. Then libraries of
+different sizes can be compared.}
+
+\item The libraries have different sizes. Library~2 has 1.4 million reads
+and library~3 has 0.8 million. A bigger library gives bigger counts for
+every guide, even with no biology at all. Per million reads, library~2 has
+150 and library~3 has 75. So the drop is $150 \div 75 = 2$ times, not 3.5
+times. The extra $3.5 \div 2 = 1.75$ is just the difference in library size
+($1.4 \div 0.8 = 1.75$).
+\why{Raw counts mix two things: the biology and the depth of reading.
+Dividing by $N$ takes the depth out.}
+
+\item
+\begin{parts}
+\item $0.00015 \div 0.99985 = 0.000150023$. $\ln(0.000150023) = -8.8047$.
+\item Reason 1: a proportion must stay between 0 and 1, but a log-odds can be
+  any number. So BARCS can add effects ($\beta_0 + \beta_1 + \dots$) without
+  ever giving an impossible proportion. Reason 2: on a log scale, ``half''
+  and ``double'' are the same size with opposite signs:
+  $\ln(0.5) = -0.693$ and $\ln(2) = +0.693$. Changes that multiply become
+  changes that add, which is what the design matrix does.
+\end{parts}
+\why{The design matrix adds up $\beta$ values. That only makes sense on a
+scale where effects add and no value is forbidden.}
+\end{exlist}
+
+\section*{Part B: Noise}
+\begin{exlist}[resume]
+\item
+\begin{parts}
+\item Distances: $-10$, $0$, $+10$, $0$. Sum: $-10 + 0 + 10 + 0 = 0$.
+\item Squares: 100, 0, 100, 0. Average: $200 \div 4 = 50$. Standard
+  deviation: $\sqrt{50} = 7.07$.
+\item The plain distances always add up to 0, because the values above the
+  average balance the values below it. So they cannot measure the spread.
+  Squares are never negative, so they do not cancel. A second reason:
+  squared spreads of independent values add up, and BARCS needs that.
+\end{parts}
+\why{Every noise formula in BARCS is a variance. This is the reason the
+variance uses squares.}
+
+\item
+\begin{parts}
+\item $1{,}000{,}000 \times 0.00015 \times 0.99985 = 149.98 \approx 150$.
+  Standard deviation: $\sqrt{150} = 12.2$ reads.
+\item Extra factor: $1 + 999{,}999 \times 0.000001 = 1.999999 \approx 2.0$.
+  Total variance: $150 \times 2.0 = 300$. Standard deviation:
+  $\sqrt{300} = 17.3$ reads.
+\item $1{,}000{,}000 \times 999{,}999 \times 0.000001 \times 0.00015 \times
+  0.99985 = 149.98 \approx 150$. Check: $150 + 150 = 300$. Correct.
+\end{parts}
+\why{Here the biological noise is as large as the counting noise. A model
+with counting noise only would make the noise look half as big as it is,
+and too many guides would look significant.}
+
+\item
+\begin{parts}
+\item Two reads from the same library have the correlation 0.000001. If one
+  read is guide g7, the next read is very slightly more likely to be g7 too.
+  The correlation of one pair is tiny. But a library of a million reads has
+  almost a million million pairs, so together they double the variance
+  (Exercise~5).
+\item $\rho = 0$. If every flask has exactly the same true proportion, there
+  is no wobble, and the reads are unrelated.
+\end{parts}
+\why{$\rho$ is not a free knob. It is a correlation that you can measure,
+and it comes from flasks that are truly different.}
+
+\item
+\begin{parts}
+\item A--B, A--C, A--D, B--A, B--C, B--D, C--A, C--B, C--D, D--A, D--B,
+  D--C. That is 12 pairs.
+\item $4 \times 3 = 12$. Correct.
+\item $N \times N = 16$ would also count A--A, B--B, C--C and D--D. A read
+  does not form a pair with itself. Those four ``self'' terms are the
+  squares, and they are the counting noise. They are already counted in
+  $N \times \mu \times (1-\mu)$.
+\end{parts}
+\why{The variance of a count is ``$N$ squares $+$ $N \times (N-1)$ pairs''.
+The squares give counting noise, the pairs give biological noise.}
+
+\item
+\begin{parts}
+\item $N = 4$ million: variance $= 599.9 \times (1 + 3{,}999{,}999 \times
+  0.000001) = 599.9 \times 5.0 = 2{,}999.5$; SD $= 54.8$ reads; $54.8 \div 4
+  = 13.7$ per million.\\
+  $N = 2$ million: variance $= 299.96 \times 3.0 = 899.9$; SD $= 30.0$
+  reads; $30.0 \div 2 = 15.0$ per million.\\
+  $N = 1$ million: variance $= 300$; SD $= 17.3$ reads; 17.3 per million.
+\item A: $13.7 \div \sqrt{2} = 9.7$. B: $15.0 \div \sqrt{4} = 7.5$. C:
+  $17.3 \div \sqrt{8} = 6.1$ per million.
+\item Option C is the most precise. The extra factor grows with $N$ (2, 3
+  and 5 for 1, 2 and 4 million reads). Deeper reading shrinks the counting
+  noise, but not the biological noise. One library can never be more precise
+  than $\sqrt{\rho \times \mu \times (1-\mu)} = 12.2$ per million, however
+  deep you read. Only more replicates average the biological noise away.
+  More replicates also give more degrees of freedom for the test.
+\end{parts}
+\why{This is the most practical lesson of Chapter~1: when biological noise
+is present, spend money on replicates, not on depth.}
+\end{exlist}
+
+\section*{Part C: The design matrix}
+\begin{exlist}[resume]
+\item
+\[
+X = \begin{pmatrix} 1 & 0\\ 1 & 0\\ 1 & 0\\ 1 & 1\\ 1 & 1\\ 1 & 1 \end{pmatrix}
+\qquad \text{df} = 6 - 2 = 4.
+\]
+\why{Each extra replicate adds a row but no column, so it adds one degree of
+freedom.}
+
+\item
+\begin{parts}
+\item
+\[
+X = \begin{pmatrix} 1 & 0 & 0\\ 1 & 0 & 1\\ 1 & 1 & 0\\ 1 & 1 & 1 \end{pmatrix}
+\quad \begin{array}{l} \text{donor 1 control}\\ \text{donor 1 drug}\\
+\text{donor 2 control}\\ \text{donor 2 drug} \end{array}
+\]
+\item The ``donor 2'' column takes away the difference between the two
+  donors. Then the drug effect is measured inside each donor. Without it,
+  the donor difference counts as noise. The SE becomes bigger, and the test
+  can miss a real effect. If the donors were not balanced, the donor
+  difference could even look like a drug effect.
+\item $\text{df} = 4 - 3 = 1$. One degree of freedom gives very little
+  information about the noise. The test needs $|t| > 12.71$ for
+  $p < 0.05$. More donors would help.
+\end{parts}
+\why{Every column must have a reason. A column for a known difference
+removes noise, but it also costs one degree of freedom.}
+
+\item
+\begin{parts}
+\item $\eta = 1 \times (-8.8048) + 1 \times (-0.6931) = -9.4979$.
+\item $e^{-9.4979} = 0.0000750$. $\mu = 0.0000750 \div 1.0000750 =
+  0.0000750 = 75$ per million.
+\item $800{,}000 \times 0.0000750 = 60$ reads. The real count is 60. They
+  agree.
+\end{parts}
+\why{A row of $X$ times the $\beta$ values gives a prediction for any
+library. This is how BARCS compares the model with the data.}
+
+\item $e^{-0.6931} = 0.50$. The drug halves the odds of guide g7. For small
+proportions the odds and the proportion are almost equal, so the proportion
+also halves (150 to 75 per million). On the log-odds scale the effect is the
+same number for any starting level, and it adds to $\beta_0$ in the design
+matrix.
+\why{$\beta_1$ is the answer to the biological question: by how much does
+the drug change this guide?}
+\end{exlist}
+\end{document}

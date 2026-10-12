@@ -1,0 +1,130 @@
+% Chapter 2 exercises. The answers are in answers/barcs_answers_ch2.pdf.
+\section{Exercises for Chapter 2}
+
+These exercises continue the screen of the Chapter~1 exercises (guide g7).
+Work on paper and show each calculation. The answers are in a separate
+answer sheet.
+
+The tags tell you what to do: \tagcalc{} work out a number,
+\tagexplain{} say why in your own words, \tagdecide{} choose and give a
+reason.
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\linewidth}
+\textbf{Values to use.} Expected proportions: $\mu = 0.00015$ (control) and
+$\mu = 0.000075$ (drug). Biological noise: $\rho = 0.000001$. Effect:
+$\beta_1 = -0.69$. Use $\ln$ for the natural logarithm.
+\end{minipage}}
+\end{center}
+
+\subsection*{Part A: Fitting}
+\begin{exlist}[series=ex2]
+\item \tagcalc{} \tagexplain{} A control library has $K/N = 0.00018$. The
+current prediction is $\mu = 0.00015$, so $\eta = \ln(0.00015/0.99985) =
+-8.8047$.
+\begin{parts}
+\item Calculate the slope $1 \div \bigl(\mu \times (1-\mu)\bigr)$.
+\item Calculate the step $(K/N - \mu) \times \text{slope}$ and the working
+  value $v = \eta + \text{step}$.
+\item Calculate the real log-odds $\ln(0.00018/0.99982)$ and compare.
+\item Why does BARCS use the straight-line working value and not the real
+  log-odds? Think of a guide with $K = 0$.
+\end{parts}
+
+\item \tagcalc{} \tagexplain{} Two control libraries have $N = 1{,}000{,}000$
+and $N = 2{,}000{,}000$. Use $\mu = 0.00015$.
+\begin{parts}
+\item Calculate the weight
+  $w = N \times \mu \times (1-\mu) \div \bigl(1 + (N-1) \times \rho\bigr)$
+  of each library.
+\item The second library has twice the reads. Does it have twice the weight?
+  Explain why not.
+\item What would the two weights be if $\rho = 0$?
+\end{parts}
+
+\item \tagcalc{} \tagexplain{} Two libraries have the working values
+$-8.60$ (weight 75) and $-8.90$ (weight 100).
+\begin{parts}
+\item Calculate the weighted average.
+\item Calculate its standard error, $\sqrt{1 \div (75 + 100)}$.
+\item The weighted average is closer to $-8.90$ than to $-8.60$. Why is
+  that the right thing to do?
+\end{parts}
+\end{exlist}
+
+\subsection*{Part B: Is the effect real?}
+\begin{exlist}[resume*=ex2]
+\item \tagcalc{} \tagexplain{} The control weights add up to
+$W_{\text{control}} = 175$. The drug weights add up to $W_{\text{drug}} = 70$.
+\begin{parts}
+\item Calculate $\text{SE}(\beta_1) = \sqrt{1/W_{\text{control}} +
+  1/W_{\text{drug}}}$.
+\item Calculate $t = \beta_1 \div \text{SE}$ and the degrees of freedom
+  (4 libraries, 2 $\beta$ values).
+\item With 2 degrees of freedom, $|t|$ must be larger than 4.30 for
+  $p < 0.05$. Is the effect significant?
+\item Which group adds more uncertainty? What would you change in the next
+  experiment to make the SE smaller?
+\end{parts}
+
+\item \tagcalc{} \tagexplain{} Two guides, P and Q, each have 4 libraries and
+2 $\beta$ values. At $\rho = 0$, the squared Pearson residuals add up to 5.1
+for guide P and to 1.4 for guide Q.
+\begin{parts}
+\item Calculate the variance inflation (sum $\div$ df) of each guide.
+\item For which guide does BARCS use $\rho > 0$? For which does it use
+  $\rho = 0$?
+\item Why do we compare the sum with 2 and not with 4?
+\end{parts}
+
+\item \tagcalc{} \tagexplain{} Guide P has its own inflation 2.55 with
+2 degrees of freedom. In the screen, the typical inflation is 1.5 with
+$d_0 = 10$.
+\begin{parts}
+\item Calculate the moderated inflation.
+\item Calculate the factor for the SE, $\sqrt{\text{moderated} \div
+  \text{own}}$, and the new degrees of freedom.
+\item Why is it reasonable to borrow information from other guides? When
+  could it be a bad idea?
+\end{parts}
+\end{exlist}
+
+\subsection*{Part C: From guides to a list of genes}
+\begin{exlist}[resume*=ex2]
+\item \tagcalc{} \tagdecide{} The screen has 300 non-targeting control
+guides. 45 of them get $p < 0.05$.
+\begin{parts}
+\item How many would you expect if the noise model were correct? What does
+  the real number tell you?
+\item 95\% of the control guides have $|t|$ below 2.6. The $t$ table says
+  1.96. Calculate the scale factor.
+\item A gene has $t = 3.0$. Calculate its new $t$. Is it still beyond 1.96?
+\end{parts}
+
+\item \tagcalc{} \tagexplain{} A gene has four guides with the z scores 2.2,
+1.8, $-0.3$ and 2.5.
+\begin{parts}
+\item Calculate $Z_{\text{gene}}$ with the Stouffer method (no shared
+  noise).
+\item Calculate $Z_{\text{gene}}$ again with the guide correlation
+  $r = 0.2$.
+\item Why does one guide with a negative $z$ lower the result? Why does
+  shared noise lower the result?
+\end{parts}
+
+\item \tagcalc{} \tagdecide{} A screen tests 10{,}000 genes. 40 genes have
+$p \le 0.0005$.
+\begin{parts}
+\item If no gene had an effect, about how many genes would have
+  $p \le 0.0005$ by chance?
+\item Estimate the false discovery rate of this list of 40 genes.
+\item You want a list with an FDR of about 0.05. Should you use a smaller or
+  a larger p-value limit? Explain.
+\end{parts}
+
+\item \tagdecide{} \tagexplain{} A collaborator says: ``We will read 20
+million reads per library. With so many reads, 2 replicates per group are
+enough.'' Use $\rho = 0.000001$ and the degrees of freedom to answer.
+(Hint: calculate the extra factor $1 + (N-1) \times \rho$ for
+$N = 20{,}000{,}000$.)
+\end{exlist}

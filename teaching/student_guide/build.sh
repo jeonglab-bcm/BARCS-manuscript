@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build the combined student guide, the two chapter booklets and the two
-# slide decks.
+# Build the combined student guide, the two chapter booklets, the two
+# slide decks and the two answer sheets.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 build() {  # build <folder> <file>
@@ -15,4 +15,6 @@ build chapter1 barcs_student_guide_ch1
 build chapter2 barcs_student_guide_ch2
 build slides barcs_slides_ch1
 build slides barcs_slides_ch2
+build answers barcs_answers_ch1
+build answers barcs_answers_ch2
 rm -f "$here"/slides/*.{nav,snm,vrb}

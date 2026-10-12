@@ -1,0 +1,171 @@
+% Answer sheet for the Chapter 2 exercises. Build here: pdflatex (run twice).
+\documentclass[12pt]{article}
+\newcommand{\guideroot}{../}
+\input{../common/preamble}
+\standalonetrue
+\title{\textbf{How BARCS Finds Important Genes}\\[6pt]
+\Large Answer sheet: Chapter 2 exercises}
+\author{\guideauthor}
+\date{\guidedate}
+\newcommand{\why}[1]{\par\smallskip\noindent\textcolor{barcsgreen!70!black}{\textbf{Why this matters.}} #1}
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+Each answer shows the calculation first. ``Why this matters'' explains the
+idea behind the question. Values: $\mu = 0.00015$ (control), $\mu =
+0.000075$ (drug), $\rho = 0.000001$, $\beta_1 = -0.69$.
+
+\section*{Part A: Fitting}
+\begin{exlist}
+\item
+\begin{parts}
+\item $0.00015 \times 0.99985 = 0.000149978$. Slope: $1 \div 0.000149978 =
+  6{,}668$.
+\item Step: $(0.00018 - 0.00015) \times 6{,}668 = 0.00003 \times 6{,}668 =
+  0.200$. Working value: $v = -8.8047 + 0.200 = -8.6047$.
+\item $0.00018 \div 0.99982 = 0.000180032$. $\ln(0.000180032) = -8.6224$.
+  The difference is only $0.018$.
+\item With $K = 0$, the real log-odds is $\ln(0)$, which does not exist. The
+  working value still exists: $v = -8.8047 + (0 - 0.00015) \times 6{,}668 =
+  -8.8047 - 1.000 = -9.805$. The straight line also makes the variance of
+  $v$ easy to calculate, which gives the weight.
+\end{parts}
+\why{The working value lets BARCS use simple weighted averages, even for
+guides with zero reads.}
+
+\item
+\begin{parts}
+\item Library with 1 million reads: top $= 1{,}000{,}000 \times 0.00015
+  \times 0.99985 = 149.98$; bottom $= 1 + 999{,}999 \times 0.000001 = 2.0$;
+  $w = 149.98 \div 2.0 = 75.0$.\\
+  Library with 2 million reads: top $= 299.96$; bottom $= 1 + 1{,}999{,}999
+  \times 0.000001 = 3.0$; $w = 299.96 \div 3.0 = 100.0$.
+\item No. Twice the reads gives only $100 \div 75 = 1.33$ times the weight.
+  The extra reads shrink the counting noise, but the biological noise of
+  the flask stays. The bottom of the weight grows from 2 to 3.
+\item With $\rho = 0$, the bottom is 1. The weights are 150 and 300, exactly
+  double.
+\end{parts}
+\why{The weight says how much a library can tell you. Depth helps only
+until biological noise dominates.}
+
+\item
+\begin{parts}
+\item $(75 \times (-8.60) + 100 \times (-8.90)) \div (75 + 100) = (-645 -
+  890) \div 175 = -1{,}535 \div 175 = -8.771$.
+\item $\sqrt{1 \div 175} = \sqrt{0.005714} = 0.0756$.
+\item The weight is $1 \div$ variance. The library with weight 100 has less
+  noise, so it should count more. ``Weight $= 1 \div$ variance'' gives the
+  average with the smallest possible variance.
+\end{parts}
+\why{A weighted average trusts the precise libraries more. This is the core
+of the BARCS fit.}
+\end{exlist}
+
+\section*{Part B: Is the effect real?}
+\begin{exlist}[resume]
+\item
+\begin{parts}
+\item $1 \div 175 = 0.005714$; $1 \div 70 = 0.014286$; sum $= 0.020000$;
+  $\text{SE} = \sqrt{0.020000} = 0.1414$.
+\item $t = -0.69 \div 0.1414 = -4.88$. $\text{df} = 4 - 2 = 2$.
+\item $|t| = 4.88$ is larger than 4.30. So $p < 0.05$ (a computer gives
+  $p = 0.040$). It is significant, but only just.
+\item The drug group: $0.014286$ of the $0.020000$ is from the drug group
+  (71\%). Its total weight is small because its libraries are smaller and
+  its proportion is lower. Add drug replicates. That adds weight where it is
+  missing, and it adds degrees of freedom.
+\end{parts}
+\why{The SE shows where the uncertainty comes from. That tells you how to
+design the next experiment.}
+
+\item
+\begin{parts}
+\item Guide P: $5.1 \div 2 = 2.55$. Guide Q: $1.4 \div 2 = 0.70$.
+\item Guide P has a sum above 2, so it has more noise than counting noise:
+  BARCS uses $\rho > 0$. Guide Q has a sum of 2 or less: BARCS uses
+  $\rho = 0$.
+\item The predictions use two $\beta$ values that were fitted to the same
+  four libraries. The fit pulls the predictions toward the data, and each
+  fitted $\beta$ takes away 1 from the sum on average. So the expected sum
+  is $4 - 2 = 2$, the degrees of freedom.
+\end{parts}
+\why{BARCS measures $\rho$ by making the noise model agree with the data on
+average.}
+
+\item
+\begin{parts}
+\item $(2 \times 2.55 + 10 \times 1.5) \div (2 + 10) = (5.1 + 15) \div 12 =
+  20.1 \div 12 = 1.675$.
+\item $\sqrt{1.675 \div 2.55} = \sqrt{0.657} = 0.81$. The SE becomes 19\%
+  smaller. New degrees of freedom: $2 + 10 = 12$. Now $|t|$ needs to be
+  larger than only 2.18 (not 4.30) for $p < 0.05$.
+\item The guides of one screen went through the same cells, the same
+  library preparation and the same sequencer. So their noise is similar. One
+  guide with 2 degrees of freedom gives a very unsure noise estimate, and
+  the other guides make it steadier. It can be a bad idea when a guide
+  really is much noisier than the rest, for example when a few cell clones
+  take over a flask. Then borrowing makes that guide look too precise. The
+  check with control guides (Exercise~7) catches this problem.
+\end{parts}
+\why{Moderation turns thousands of guides into extra information about
+noise. That is how a small experiment can still find real effects.}
+\end{exlist}
+
+\section*{Part C: From guides to a list of genes}
+\begin{exlist}[resume]
+\item
+\begin{parts}
+\item $0.05 \times 300 = 15$. The real number is 45, three times more. The
+  noise model is too small: the libraries are noisier than the model
+  thinks. One common cause is replicates that are not independent, for
+  example flasks split from one population of cells.
+\item $2.6 \div 1.96 = 1.33$.
+\item $3.0 \div 1.33 = 2.26$. It is still beyond 1.96, so the gene keeps
+  $p < 0.05$ (with many degrees of freedom).
+\end{parts}
+\why{Control guides have no true effect. They are a free test of the noise
+model inside your own experiment.}
+
+\item
+\begin{parts}
+\item $(2.2 + 1.8 - 0.3 + 2.5) \div \sqrt{4} = 6.2 \div 2 = 3.1$
+  ($p = 0.002$).
+\item Bottom: $\sqrt{4 + 4 \times 3 \times 0.2} = \sqrt{4 + 2.4} =
+  \sqrt{6.4} = 2.53$. $Z = 6.2 \div 2.53 = 2.45$ ($p = 0.014$).
+\item A negative $z$ means that this guide moved the other way. It is
+  evidence against a consistent effect, so it lowers the sum. With shared
+  noise, the guides agree partly because they share noise, not because of
+  the gene. Each of the $4 \times 3 = 12$ pairs adds $r$ to the variance of
+  the sum (squares and pairs, Chapter~1). A bigger variance means a bigger
+  bottom and a smaller $Z$.
+\end{parts}
+\why{A gene is believable when its independent guides agree. Shared noise
+makes agreement less convincing.}
+
+\item
+\begin{parts}
+\item $10{,}000 \times 0.0005 = 5$ genes.
+\item About $5 \div 40 = 0.125$. About one gene in eight on this list is
+  probably false.
+\item Use a smaller limit. Fewer genes pass by chance, and the list usually
+  becomes cleaner, but also shorter. Benjamini--Hochberg finds the limit
+  for you.
+\end{parts}
+\why{With thousands of tests, a few small p-values happen by chance. The
+FDR tells you how many of your hits to expect to be false.}
+
+\item The extra factor at 20 million reads is $1 + 19{,}999{,}999 \times
+0.000001 \approx 21$. So the biological noise is about 20 times the counting
+noise. The standard deviation of the proportion is 12.5 per million,
+almost the same as the limit of 12.2 per million (Chapter~1, Exercise~8),
+and not much better than 17.3 per million at 1 million reads. The deep
+reading buys almost nothing. Also, 2 replicates per group give 4 libraries
+and only $4 - 2 = 2$ degrees of freedom, so $|t|$ must be larger than 4.30.
+A better plan: more replicates per group (for example 4) with fewer reads
+each.
+\why{Reads and replicates are not the same thing. Degrees of freedom and
+biological noise come from replicates only.}
+\end{exlist}
+\end{document}

@@ -1,0 +1,158 @@
+% Chapter 1 exercises. The answers are in answers/barcs_answers_ch1.pdf.
+\section{Exercises for Chapter 1}
+
+These exercises use a new screen. Work on paper. Show each calculation, and
+write one or two sentences when a question asks you to explain. The answers
+are in a separate answer sheet.
+
+The tags tell you what to do: \tagcalc{} work out a number,
+\tagexplain{} say why in your own words, \tagwrite{} write down a table or
+a matrix, \tagdecide{} choose and give a reason.
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\linewidth}
+\textbf{The screen.} A lab tests a new drug. They grow cells with a guide
+library, split them into four flasks, and treat two flasks with the drug.
+After two weeks they read the guides. Here are the results for one guide,
+\textbf{guide g7}:
+
+\smallskip
+\centering
+\begin{tabular}{lcrr}
+\toprule
+Library & Group & Guide count $K$ & Total count $N$\\
+\midrule
+1 & control & 150 & 1{,}000{,}000\\
+2 & control & 210 & 1{,}400{,}000\\
+3 & drug    &  60 &   800{,}000\\
+4 & drug    &  45 &   600{,}000\\
+\bottomrule
+\end{tabular}
+\end{minipage}}
+\end{center}
+
+\subsection*{Part A: From counts to a change}
+\begin{exlist}[series=ex1]
+\item \tagcalc
+\begin{parts}
+\item Calculate the proportion of guide g7 in each library, in reads per
+  million.
+\item Calculate the combined proportion of each group (add the counts, add
+  the totals, then divide).
+\item Calculate the fold change (drug $\div$ control) and the $\log_2$
+  fold change.
+\end{parts}
+
+\item \tagexplain{} A student looks only at the counts. Library~2 has 210
+reads and library~3 has 60. The student says: ``The drug cut guide g7 by
+$210 \div 60 = 3.5$ times.'' What is wrong with this? Why must we divide by
+$N$ before we compare libraries?
+
+\item \tagcalc{} \tagexplain
+\begin{parts}
+\item Calculate the log-odds of the control proportion,
+  $\ln\bigl(0.00015 / (1 - 0.00015)\bigr)$.
+\item BARCS works with log-odds, not with proportions. Give two reasons.
+  (Hint: what values can a proportion have, and what values can a log-odds
+  have? What happens to ``half'' and ``double'' on the log scale?)
+\end{parts}
+\end{exlist}
+
+\subsection*{Part B: Noise}
+\begin{exlist}[resume*=ex1]
+\item \tagcalc{} \tagexplain{} Four repeated counts are 140, 150, 160 and
+150. Their average is 150.
+\begin{parts}
+\item Calculate the distance of each count from 150, and add the four
+  distances.
+\item Calculate the average squared distance (the variance) and its square
+  root (the standard deviation).
+\item Use part (a) to explain why the variance uses \emph{squared}
+  distances.
+\end{parts}
+
+\item \tagcalc{} Use library~1: $N = 1{,}000{,}000$ and the expected
+proportion $\mu = 0.00015$.
+\begin{parts}
+\item Calculate the counting noise $N \times \mu \times (1-\mu)$ and its
+  standard deviation.
+\item BARCS finds $\rho = 0.000001$. Calculate the extra factor
+  $1 + (N-1) \times \rho$, the total variance, and the standard deviation.
+\item Calculate the biological part
+  $N \times (N-1) \times \rho \times \mu \times (1-\mu)$ on its own. Check
+  that counting part $+$ biological part $=$ total.
+\end{parts}
+
+\item \tagexplain
+\begin{parts}
+\item In words, what does $\rho = 0.000001$ say about two reads from the
+  same library?
+\item What would $\rho$ be if every flask had exactly the same true
+  proportion of guide g7?
+\end{parts}
+
+\item \tagcalc{} \tagexplain{} A tiny library has $N = 4$ reads, called
+A, B, C and D.
+\begin{parts}
+\item List every ordered pair of two different reads (A--B and B--A are
+  different pairs). How many are there?
+\item Check your count with the formula $N \times (N-1)$.
+\item Why is the formula $N \times (N-1)$ and not $N \times N$?
+\end{parts}
+
+\item \tagdecide{} The lab can pay for 8 million reads in each group. Keep
+$\mu = 0.00015$ and $\rho = 0.000001$. They have three options:
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Option & Replicates per group & Reads per library\\
+\midrule
+A & 2 & 4{,}000{,}000\\
+B & 4 & 2{,}000{,}000\\
+C & 8 & 1{,}000{,}000\\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{parts}
+\item For one library, the standard deviation of the proportion is
+  $\sqrt{\text{variance of } K} \div N$. Calculate it (in reads per million)
+  for $N = 4$, 2 and 1 million.
+\item The average of $n$ replicates has the standard deviation of one
+  library divided by $\sqrt{n}$. Calculate it for A, B and C.
+\item Which option measures the group proportion most precisely? Explain
+  why, using the extra factor $1 + (N-1) \times \rho$.
+\end{parts}
+\end{exlist}
+
+\subsection*{Part C: The design matrix}
+\begin{exlist}[resume*=ex1]
+\item \tagwrite{} A second experiment has 3 control libraries and 3 drug
+libraries. Write the design matrix $X$ with the columns ``intercept'' and
+``drug''. How many degrees of freedom does the model have?
+
+\item \tagwrite{} \tagexplain{} A third experiment uses cells from two
+donors. Each donor gives one control library and one drug library.
+\begin{parts}
+\item Write $X$ with the columns ``intercept'', ``donor 2'' and ``drug''.
+  Put the libraries in this order: donor~1 control, donor~1 drug, donor~2
+  control, donor~2 drug.
+\item What is the job of the ``donor 2'' column? What could go wrong
+  without it?
+\item How many degrees of freedom are left? What does this mean for the
+  test?
+\end{parts}
+
+\item \tagcalc{} For guide g7, BARCS finds $\beta_0 = -8.8048$ and
+$\beta_1 = -0.6931$.
+\begin{parts}
+\item Use the drug row of $X$, $(1, 1)$, to calculate the predicted
+  log-odds $\eta$ of a drug library.
+\item Change $\eta$ into the proportion $\mu = e^{\eta} / (1 + e^{\eta})$.
+  Give it in reads per million.
+\item Calculate the expected count of library~3 ($N = 800{,}000$). Compare
+  it with the real count.
+\end{parts}
+
+\item \tagexplain{} Calculate $e^{\beta_1}$. What does this number mean for
+the experiment? Why is it useful that $\beta_1$ is on the log-odds scale?
+\end{exlist}

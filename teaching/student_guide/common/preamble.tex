@@ -62,3 +62,12 @@ uses the writing rules of ASD-STE100 Simplified Technical English.
   \end{center}
   \clearpage}
 \providecommand{\guideroot}{}
+% Exercise tags: what kind of thinking a question asks for.
+\newcommand{\tagcalc}{\textcolor{barcsblue}{\textsf{\footnotesize[Calculate]}}}
+\newcommand{\tagexplain}{\textcolor{barcsgreen!70!black}{\textsf{\footnotesize[Explain]}}}
+\newcommand{\tagdecide}{\textcolor{barcsorange}{\textsf{\footnotesize[Decide]}}}
+\newcommand{\tagwrite}{\textcolor{barcsdark}{\textsf{\footnotesize[Write]}}}
+\newlist{exlist}{enumerate}{1}
+\setlist[exlist]{label=\textbf{\arabic*.},leftmargin=2em,itemsep=8pt}
+\newlist{parts}{enumerate}{1}
+\setlist[parts]{label=(\alph*),leftmargin=2em,itemsep=2pt,topsep=2pt}
