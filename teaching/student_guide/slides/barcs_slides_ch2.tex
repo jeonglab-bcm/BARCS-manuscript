@@ -48,7 +48,7 @@ numbers are real BARCS 0.2.1 output for our example.
 \item Proportions: 191 (control) and 111 (drug) per million. Fold change
   0.58.
 \item Log-odds: $-8.56$ (control), $-9.10$ (drug).
-\item Variance: $N\mu(1-\mu)\bigl(1 + (N-1)\rho\bigr)$.
+\item Variance: $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \rho\bigr)$.
 \item Design matrix $X$ rows: $(1,0)$, $(1,0)$, $(1,1)$, $(1,1)$.
 \item Prediction $\eta$ = row of $X$ times $\beta$;
   $\mu = e^{\eta}/(1+e^{\eta})$.
@@ -78,11 +78,11 @@ BARCS uses a loop: \alert{iteratively reweighted least squares} (IRLS).
 \begin{frame}{The formulas}
 Weight of library $i$:
 \[
-w_i = \frac{N_i\,\mu_i\,(1-\mu_i)}{1 + (N_i - 1)\,\rho}
+w_i = \frac{N_i \times \mu_i \times (1-\mu_i)}{1 + (N_i - 1) \times \rho}
 \]
 Working value of library $i$ (prediction plus a correction):
 \[
-v_i = \eta_i + \frac{K_i/N_i - \mu_i}{\mu_i\,(1-\mu_i)}
+v_i = \eta_i + \frac{K_i/N_i - \mu_i}{\mu_i \times (1-\mu_i)}
 \]
 For our design matrix, the new $\beta$ values are weighted averages:
 \[
@@ -184,7 +184,7 @@ most reads and the least relative noise, so it counts the most.
 A \alert{Pearson residual} is the distance from the prediction in standard
 deviations:
 \[
-r_i = \frac{K_i - N_i\mu_i}{\sqrt{N_i\mu_i(1-\mu_i)\bigl(1 + (N_i-1)\rho\bigr)}}
+r_i = \frac{K_i - N_i \times \mu_i}{\sqrt{N_i \times \mu_i \times (1-\mu_i) \times \bigl(1 + (N_i-1) \times \rho\bigr)}}
 \]
 \begin{remember}
 BARCS chooses $\rho$ so that the squared Pearson residuals add up to the
@@ -200,7 +200,7 @@ r_1^2 + r_2^2 + r_3^2 + r_4^2 = \text{df}
 \centering\small
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-Library & $(K - N\mu)^2$ & $N\mu(1-\mu)$ & Squared residual\\
+Library & $(K - N \times \mu)^2$ & $N \times \mu \times (1-\mu)$ & Squared residual\\
 \midrule
 1 & $(-10.64)^2 = 113.21$ & 190.60 & 0.594\\
 2 & $(+11.23)^2 = 126.16$ & 228.72 & 0.552\\

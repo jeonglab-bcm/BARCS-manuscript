@@ -242,45 +242,163 @@ variance is the average squared distance of a value from its expected
 value. The \textbf{standard deviation} is the square root of the variance.
 It is the typical distance in the same units as the counts.
 
-BARCS uses this formula for the variance of a guide count:
-\[
-\text{variance} = \underbrace{N\,\mu\,(1-\mu)}_{\text{counting noise}}
- \times \underbrace{\bigl(1 + (N-1)\,\rho\bigr)}_{\text{extra biological noise}}.
-\]
+This step builds the variance formula of BARCS in four parts. In all
+formulas, the sign $\times$ means ``multiply''. So $N \times \mu$ means
+``$N$ multiplied by $\mu$''.
 
 \begin{symbols}
 \begin{tabular}{@{}l p{0.78\linewidth}@{}}
-$\mu$ & ``mu''. The true proportion of the guide that we expect. For the
-        control group, our best value is $\mu = 0.000191$.\\
-$N$ & The library total, as before.\\
+$N$ & The library total, as before. Our example uses
+      $N = 1{,}000{,}000$.\\
+$\mu$ & ``mu''. The proportion of the guide that we expect in the library.
+        For the control group, our best value is $\mu = 0.000191$. It is
+        like $p$ from Step~1, but it is the expected value, not the value
+        that we measure.\\
 $\rho$ & ``rho''. A number that measures the biological noise. If
          $\rho = 0$, only counting noise exists. A bigger $\rho$ means more
-         biological noise.\\
+         biological noise. Part~3 explains it.\\
 \end{tabular}
 \end{symbols}
 
-\begin{worked}[ 4: variance]
-Use $N = 1{,}000{,}000$ and $\mu = 0.000191$. For our guide, BARCS
-estimates $\rho = 0.000000386$.
+\subsection{Part 1: The expected count}
 
-\textbf{Counting noise:}
-$N\mu(1-\mu) = 1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$.
+The machine reads $N$ reads. Each read belongs to our guide with the chance
+$\mu$. So we expect
+\[
+\text{expected count} = N \times \mu .
+\]
 
-\textbf{Extra factor:}
-$1 + (N-1)\rho = 1 + 999{,}999 \times 0.000000386 = 1.39$.
+\begin{worked}[ 4a: expected count]
+$N \times \mu = 1{,}000{,}000 \times 0.000191 = 191$ reads.
 
-\textbf{Total variance:} $191 \times 1.39 = 265$.
+The real counts are near 191, but not exactly 191. The variance tells how
+far they normally are from 191.
+\end{worked}
 
-\textbf{Standard deviation:} $\sqrt{265} = 16.3$ reads.
+\subsection{Part 2: Counting noise}
 
-So a count of about 191 normally moves up or down by about 16. Biological
-noise adds 39\% to the counting noise.
+Start with \textbf{one read}. It belongs to our guide (value 1) or it does
+not (value 0). The chance of 1 is $\mu$. The chance of 0 is $1 - \mu$. The
+average of this value is $\mu$.
+
+The variance of one read is the average squared distance from $\mu$:
+\begin{itemize}
+\item With the chance $\mu$, the value is 1. Its distance from $\mu$ is
+  $1 - \mu$.
+\item With the chance $1 - \mu$, the value is 0. Its distance from $\mu$ is
+  $\mu$.
+\end{itemize}
+\[
+\text{variance of one read} = \mu \times (1-\mu)^2 + (1-\mu) \times \mu^2
+ = \mu \times (1-\mu).
+\]
+The last part follows because $(1-\mu) + \mu = 1$.
+
+\begin{worked}[ 4b: one read and 100 reads]
+Use an easy chance first: $\mu = 0.2$ (one marble in five is red).
+
+\textbf{One read:} $0.2 \times 0.8^2 + 0.8 \times 0.2^2 = 0.128 + 0.032 =
+0.16$. The short formula gives the same value: $0.2 \times 0.8 = 0.16$.
+
+\textbf{100 reads:} The reads are independent. The variances of independent
+values add up. So 100 reads have the variance $100 \times 0.16 = 16$. The
+expected count is $100 \times 0.2 = 20$. The standard deviation is
+$\sqrt{16} = 4$.
+
+\textbf{Check by repeating.} We took 100 marbles ten times. The red counts
+were 17, 19, 21, 25, 17, 25, 27, 22, 21 and 14. They are near 20, and they
+usually differ from 20 by about 4.
+\end{worked}
+
+For $N$ reads, the variances of the $N$ reads add up. So the counting noise
+is
+\[
+\text{counting noise} = N \times \mu \times (1-\mu).
+\]
+For our guide: $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$.
+
+\subsection{Part 3: Biological noise --- the proportion wobbles}
+
+Counting noise assumes that every replicate has exactly the same true
+proportion $\mu$. But each replicate is a different group of living cells.
+So the true proportion itself \textbf{wobbles} a little from replicate to
+replicate.
+
+BARCS describes the size of this wobble with $\rho$. The variance of the true
+proportion between replicates is
+\[
+\text{wobble of the proportion} = \rho \times \mu \times (1-\mu).
+\]
+The number $\mu \times (1-\mu)$ is the largest wobble that is possible. So
+$\rho$ is the wobble as a fraction of the largest possible wobble. It is
+always between 0 and 1.
+
+A wobble in the proportion becomes a wobble in the count, because the count
+is $N$ times the proportion. When you multiply a value by $N$, its variance
+is multiplied by $N \times N$. So the biological part of the count variance
+is about $N \times N \times \rho \times \mu \times (1-\mu)$. The exact
+formula uses $N \times (N-1)$ instead of $N \times N$. For a million reads,
+the two numbers are almost equal.
+\[
+\text{biological noise} = N \times (N-1) \times \rho \times \mu \times (1-\mu).
+\]
+
+\begin{worked}[ 4c: the wobble of our guide]
+For our guide, BARCS estimates $\rho = 0.000000386$ (Step~7 in Chapter~2
+shows how).
+
+\textbf{Wobble of the proportion:}
+$\rho \times \mu \times (1-\mu) = 0.000000386 \times 0.000191 \times
+0.999809 = 0.0000000000737$.
+Its square root is $0.0000086$, which is 8.6 per million. So the true
+proportion moves by about 8.6 per million between replicates, for example
+from 191 to 183 or 199 per million.
+
+\textbf{Biological noise in the count:}
+$1{,}000{,}000 \times 999{,}999 \times 0.000000386 \times 0.000191 \times
+0.999809 = 73.7$.
+\end{worked}
+
+\subsection{Part 4: Add the two parts}
+
+The two kinds of noise are independent. So their variances add up:
+\[
+\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting}}
+ + \underbrace{N \times (N-1) \times \rho \times \mu \times (1-\mu)}_{\text{biological}}.
+\]
+Both parts contain $N \times \mu \times (1-\mu)$. Take this common part out
+of the brackets, as in $a + a \times b = a \times (1 + b)$. The result is
+the formula that BARCS uses:
+\[
+\boxed{\;\text{variance} = \underbrace{N \times \mu \times (1-\mu)}_{\text{counting noise}}
+ \times \underbrace{\bigl(1 + (N-1) \times \rho\bigr)}_{\text{extra factor from biological noise}}\;}
+\]
+The second bracket tells how many times bigger the variance is than
+counting noise alone.
+
+\begin{worked}[ 4d: the total variance of our guide]
+\textbf{Add the parts:} $191 + 73.7 = 264.7$.
+
+\textbf{Or use the boxed formula:}
+\begin{itemize}[leftmargin=1.2em]
+\item Counting noise: $1{,}000{,}000 \times 0.000191 \times 0.999809 = 191$.
+\item Extra factor: $1 + 999{,}999 \times 0.000000386 = 1 + 0.386 = 1.386$.
+\item Variance: $191 \times 1.386 = 264.7$.
+\end{itemize}
+Both ways give the same answer, as they must.
+
+\textbf{Standard deviation:} $\sqrt{264.7} = 16.3$ reads.
+
+So a count of about 191 normally moves up or down by about 16 reads.
+Counting noise alone gives $\sqrt{191} = 13.8$ reads. Biological noise adds
+39\% to the variance.
 \end{worked}
 
 \begin{remember}
-Look at the extra factor $1 + (N-1)\rho$. It contains $N$. When the machine
-reads more, $N$ grows, and the factor grows too. So more reading does not
-remove biological noise. Only more replicates help with biological noise.
+Look at the extra factor $1 + (N-1) \times \rho$. It contains $N$. When the
+machine reads more, $N$ grows, and the factor grows too. So more reading
+does not remove biological noise. Only more replicates help with biological
+noise.
 \end{remember}
 
 %=====================================================================
@@ -379,7 +497,7 @@ million.
 
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Library & $N$ & $\mu$ (per million) & Expected count $N\mu$ & Real count $K$\\
+Library & $N$ & $\mu$ (per million) & Expected count $N \times \mu$ & Real count $K$\\
 \midrule
 1 & 1{,}000{,}000 & 190.6 & 190.6 & 180\\
 2 & 1{,}200{,}000 & 190.6 & 228.8 & 240\\
@@ -692,7 +810,7 @@ guide?
 \item The guide has zero reads.
 \end{choices}
 
-\item Use $N\mu(1-\mu)$ with $N = 100$ and $\mu = 0.5$. What is the counting
+\item Use $N \times \mu \times (1-\mu)$ with $N = 100$ and $\mu = 0.5$. What is the counting
 variance?
 \begin{choices}
 \item 25
@@ -789,7 +907,7 @@ How many degrees of freedom stay?
   counting noise stays (Step~4).
 \item \textbf{A.} $100 \times 0.5 \times (1 - 0.5) = 100 \times 0.5 \times
   0.5 = 25$.
-\item \textbf{C.} The factor $1 + (N-1)\rho$ grows with $N$. Deeper reading
+\item \textbf{C.} The factor $1 + (N-1) \times \rho$ grows with $N$. Deeper reading
   does not remove biological noise (Step~4).
 \item \textbf{C.} The column of 1s is the intercept. It belongs to
   $\beta_0$, the starting level (Step~5).

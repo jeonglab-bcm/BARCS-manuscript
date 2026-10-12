@@ -27,7 +27,7 @@ Library & Group & Guide count $K$ & Total count $N$\\
 \item \textbf{Log-odds} $= \ln\bigl(p/(1-p)\bigr)$: $-8.56$ (control) and
   $-9.10$ (drug).
 \item \textbf{Noise.} The variance of a count is
-  $N\mu(1-\mu)\times\bigl(1 + (N-1)\rho\bigr)$. Here $\mu$ is the expected
+  $N \times \mu \times (1-\mu) \times \bigl(1 + (N-1) \times \rho\bigr)$. Here $\mu$ is the expected
   proportion and $\rho$ measures the biological noise.
 \item \textbf{Design matrix} $X$: one row for each library, one column for
   each $\beta$. Our $X$ has the rows $(1,0)$, $(1,0)$, $(1,1)$, $(1,1)$.
@@ -69,14 +69,14 @@ loop is an \textbf{iteration}.
 
 The weight of library $i$ is
 \[
-w_i = \frac{N_i\,\mu_i\,(1-\mu_i)}{1 + (N_i - 1)\,\rho}.
+w_i = \frac{N_i \times \mu_i \times (1-\mu_i)}{1 + (N_i - 1) \times \rho}.
 \]
 The top is the counting noise turned upside down. The bottom is the extra
 biological noise from Step~4 in Chapter~1. So more noise gives a smaller weight.
 
 The working value of library $i$ is
 \[
-\text{working value}_i = \eta_i + \frac{K_i/N_i - \mu_i}{\mu_i\,(1-\mu_i)}.
+\text{working value}_i = \eta_i + \frac{K_i/N_i - \mu_i}{\mu_i \times (1-\mu_i)}.
 \]
 It is the current prediction $\eta_i$ plus a correction. The correction is
 large when the real proportion $K_i/N_i$ is far from the expected proportion
@@ -177,7 +177,7 @@ It divides the result by the standard deviation from Step~4 in Chapter~1. The re
 \textbf{Pearson residual}:
 \[
 \text{Pearson residual}_i =
-\frac{K_i - N_i\mu_i}{\sqrt{N_i\mu_i(1-\mu_i)\bigl(1 + (N_i-1)\rho\bigr)}}.
+\frac{K_i - N_i \times \mu_i}{\sqrt{N_i \times \mu_i \times (1-\mu_i) \times \bigl(1 + (N_i-1) \times \rho\bigr)}}.
 \]
 A Pearson residual tells how many standard deviations a library is from its
 prediction.
@@ -197,7 +197,7 @@ residual is the counting noise only.
 
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-Library & $(K - N\mu)^2$ & $N\mu(1-\mu)$ & Squared residual\\
+Library & $(K - N \times \mu)^2$ & $N \times \mu \times (1-\mu)$ & Squared residual\\
 \midrule
 1 & $(-10.64)^2 = 113.21$ & 190.60 & 0.594\\
 2 & $(+11.23)^2 = 126.16$ & 228.72 & 0.552\\
