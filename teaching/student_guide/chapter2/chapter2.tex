@@ -732,6 +732,106 @@ $\text{FDR} < 0.10$, genes A, B, C and D are hits.
 \end{worked}
 
 %=====================================================================
+\section{Step 13: Let the control guides decide (new in BARCS 0.2.2)}
+%=====================================================================
+
+Step~10 checks the noise model with the control guides and makes all $t$
+values smaller by one scale factor. Sometimes that is not enough. In some
+screens, the control guides have \emph{more extreme} values than any
+scaling can fix. This happens, for example, when the replicate flasks were
+split from one population of cells and share the same large clones. Then
+the noise model is wrong in its shape, not only in its size.
+
+BARCS 0.2.2 has an answer for this case: the function
+\texttt{bb\_gene\_empirical\_null()}. Its idea is simple: \textbf{do not
+trust the model for ``no effect''. Ask the control guides what ``no
+effect'' looks like in this experiment.}
+
+\subsection{Pseudo-genes}
+
+A control guide has no true effect. So a ``gene'' made of control guides
+shows what a gene with no effect looks like. BARCS builds many of these
+\textbf{pseudo-genes}:
+
+\begin{enumerate}
+\item Take a real gene with $m$ guides.
+\item Pick $m$ control guides at random. This is one pseudo-gene.
+\item Summarize it in the same way as a real gene: the average of the signed
+  z scores of its guides.
+\item Repeat many times, for example 999 times.
+\end{enumerate}
+
+The 999 pseudo-gene values show the spread of ``no effect'' in your own
+data, with all its real noise.
+
+\subsection{The p-value from a count}
+
+Now compare the real gene with the pseudo-genes. Count how many pseudo-genes
+are at least as extreme. The p-value is
+\[
+p = 2 \times \frac{1 + (\text{number of pseudo-genes at least as far out on the same side})}{1 + (\text{number of pseudo-genes})} .
+\]
+The ``$1 +$'' counts the real gene itself, so $p$ is never 0. The
+``$2 \times$'' makes the test two-sided, as in Step~8.
+
+\begin{worked}[ 21: a p-value from pseudo-genes]
+A gene has 4 guides. The average of their z scores is $+2.4$. BARCS draws
+999 pseudo-genes of 4 control guides each. Only 4 of them have an average
+of $+2.4$ or more.
+\[
+p = 2 \times \frac{1 + 4}{1 + 999} = 2 \times \frac{5}{1{,}000} = 0.01 .
+\]
+Then BARCS uses the Benjamini--Hochberg method of Step~12 on these
+p-values.
+\end{worked}
+
+\subsection{Widen the pseudo-genes for shared noise}
+
+The guides of a real gene can share noise (the guide correlation $r$ of
+Step~11). Random control guides do not share noise, because they come from
+different places. So a pseudo-gene would wobble less than a real gene with
+no effect. BARCS fixes this. It moves each pseudo-gene away from the centre
+by the factor $\sqrt{1 + (m-1) \times r}$.
+
+This factor comes from the squares-and-pairs rule of Chapter~1. The average
+of $m$ z scores with correlation $r$ has the variance
+\[
+\frac{m + m \times (m-1) \times r}{m \times m}
+ = \frac{1}{m} \times \bigl(1 + (m-1) \times r\bigr) .
+\]
+Without correlation it is $1 \div m$. So the variance is
+$1 + (m-1) \times r$ times bigger, and the standard deviation is
+$\sqrt{1 + (m-1) \times r}$ times bigger. For $m = 4$ and $r = 0.2$:
+$\sqrt{1 + 3 \times 0.2} = \sqrt{1.6} = 1.26$.
+
+\subsection{Limits}
+
+\begin{itemize}
+\item \textbf{The smallest p-value.} With $n$ pseudo-genes (or $n$ control
+  guides for genes of one guide), the smallest possible p-value is
+  $2 \div (n+1)$. With 1{,}000 controls, it is $2 \div 1{,}001 = 0.002$.
+  Benjamini--Hochberg over 20{,}000 genes then needs about
+  $0.002 \times 20{,}000 \div 0.1 = 400$ genes at that floor before it
+  calls any gene at an FDR of 0.10. So ``no hits'' from the empirical null
+  can mean ``the controls are too few to confirm the hits'', not ``there
+  are no hits''.
+\item \textbf{Offset controls.} Non-targeting control guides make no cut
+  in the DNA. In knockout screens, every targeting guide pays a small cost
+  for the cut, so all targeting guides sit a little away from the controls.
+  The option \texttt{centre = "targets"} takes the centre of ``no effect''
+  from the targeting guides and only the spread from the controls.
+\item \textbf{It is optional.} BARCS uses it only when you ask, and it needs
+  at least 100 usable control guides. The model results stay available next
+  to it.
+\end{itemize}
+
+\begin{remember}
+The model says what ``no effect'' should look like. The control guides show
+what it really looks like in your experiment. When the two disagree,
+the empirical null trusts the controls.
+\end{remember}
+
+%=====================================================================
 \section{Two special cases}
 %=====================================================================
 
@@ -813,6 +913,7 @@ $z$, $Z$ & z score of a guide, of a gene & 3.46 (Example 18)\\
 $m$ & number of guides for a gene & 3\\
 $r$ & guide correlation (shared noise) & 0.1 (Example 19)\\
 FDR & expected fraction of false hits & 0.005 for gene A\\
+pseudo-gene & $m$ random control guides, summarized like a gene & $p = 0.01$ (Example 21)\\
 \bottomrule
 \end{tabular}
 \end{center}

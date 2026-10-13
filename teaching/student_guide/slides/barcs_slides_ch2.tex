@@ -26,7 +26,7 @@
 \begin{column}{0.4\textwidth}
 \begin{remember}
 Each section has the same title as a step in Chapter~2 of the textbook. The
-numbers are real BARCS 0.2.1 output for our example.
+numbers are real BARCS output for our example (0.2.1; unchanged in 0.2.2).
 \end{remember}
 \end{column}
 \end{columns}
@@ -567,6 +567,50 @@ $Z = 6.0 \div 1.897 = 3.16$, \ $p = 0.0016$.
 
 %=====================================================================
 \section{Step 12: Many genes and false discoveries}
+%=====================================================================
+\section{Step 13: Let the control guides decide (BARCS 0.2.2)}
+%=====================================================================
+
+\begin{frame}{When scaling is not enough: pseudo-genes}
+\small
+Sometimes control guides have \alert{more extreme values} than any scale
+factor fixes (e.g.\ flasks split from one population share large clones).
+\alert{Idea: do not trust the model for ``no effect''. Ask the control
+guides.}\par\smallskip
+\textbf{Pseudo-gene:} pick $m$ control guides at random (as many as the
+gene has), average their signed z scores. Repeat, e.g.\ 999 times.
+\[
+p = 2 \times \frac{1 + (\text{pseudo-genes at least as far out, same side})}{1 + (\text{number of pseudo-genes})}
+\]
+\begin{worked}[ 21]
+Gene with 4 guides, average z $= +2.4$. 4 of 999 pseudo-genes reach $+2.4$:
+$p = 2 \times (1 + 4) \div (1 + 999) = 0.01$. Then Benjamini--Hochberg.
+\end{worked}
+\end{frame}
+
+\begin{frame}{Shared noise and limits}
+\small
+\textbf{Widen for shared noise.} Random controls do not share noise; a real
+gene's guides do ($r$). Squares and pairs:
+\[
+\text{variance of the average of } m = \frac{m + m \times (m-1) \times r}{m \times m}
+ = \frac{1}{m} \times \bigl(1 + (m-1) \times r\bigr)
+\]
+So BARCS widens each pseudo-gene by $\sqrt{1 + (m-1) \times r}$
+($m = 4$, $r = 0.2$: $\sqrt{1.6} = 1.26$).
+\medskip
+
+\textbf{Limits.}
+\begin{itemize}
+\item Smallest p-value $= 2 \div (n + 1)$: 1{,}000 controls give 0.002.
+  Over 20{,}000 one-guide genes, BH needs about 400 genes at that floor to
+  call any at FDR 0.10. ``No hits'' can mean ``too few controls''.
+\item Knockout screens: controls make no cut and can sit apart;
+  \texttt{centre = "targets"} takes the centre from the targeting guides.
+\item Optional; needs at least 100 usable controls.
+\end{itemize}
+\end{frame}
+
 %=====================================================================
 
 \begin{frame}{Why we need a false discovery rate}

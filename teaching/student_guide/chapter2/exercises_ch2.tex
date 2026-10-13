@@ -127,4 +127,19 @@ million reads per library. With so many reads, 2 replicates per group are
 enough.'' Use $\rho = 0.000001$ and the degrees of freedom to answer.
 (Hint: calculate the extra factor $1 + (N-1) \times \rho$ for
 $N = 20{,}000{,}000$.)
+
+\item \tagcalc{} \tagexplain{} \tagdecide{} (Step~13) In the control check of
+Exercise~7, the control guides still have too many extreme values after
+scaling. You try the empirical null.
+\begin{parts}
+\item A gene has 3 guides with the z scores 2.0, 2.6 and 2.2. Calculate the
+  average z score.
+\item BARCS draws 1{,}999 pseudo-genes of 3 control guides. 9 of them have
+  an average of your answer to (a) or more. Calculate the p-value.
+\item The guide correlation is $r = 0.1$. By what factor does BARCS widen
+  each pseudo-gene? Why is this needed?
+\item The screen has only 150 control guides and many genes with one guide.
+  What is the smallest p-value a one-guide gene can get? What would you
+  tell a student who sees ``no hits'' from the empirical null?
+\end{parts}
 \end{exlist}
